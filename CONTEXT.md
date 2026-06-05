@@ -4,6 +4,14 @@ Last updated: 2026-06-05
 
 ## Current Status
 
+CTC-002 is In Development - 2026-06-05. Codex selected it from the Notion
+Backlog because CTC-004 and CTC-019 need an app shell, local setup commands,
+test harness, fixture structure, and CI before implementing Overpass feature
+behavior. Scope is limited to the initial Vite/TypeScript scaffold, README,
+CONTRIBUTING, CI, local tests, and generated placeholder fixture. No map
+provider, basemap tiles, Overpass runtime call, PDF export behavior, API key,
+user data flow, or production dependency is being added.
+
 CTC-015 is Done - 2026-06-05. Commit `0f07ac0` added the Overpass query
 contract and a synthetic parser fixture so CTC-004 can implement reviewed
 request behavior instead of inventing it in runtime code. Claude final audit
@@ -188,8 +196,9 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- CTC-004 should implement the reviewed CTC-015 Overpass contract, not a new
-  ad hoc query shape.
+- After CTC-002 final audit, CTC-004 should implement the reviewed CTC-015
+  Overpass contract in the scaffolded app rather than inventing a new ad hoc
+  query shape.
 - Define provider-review cadence when the first basemap provider is adopted.
 - Upgrade `@cyclonedx/cyclonedx-npm` to the 4.x series and pin
   `--spec-version 1.6` when the first production dependency lands.
