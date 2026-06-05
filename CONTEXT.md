@@ -1,6 +1,6 @@
 # Chart the Course Context
 
-Last updated: 2026-06-04
+Last updated: 2026-06-05
 
 ## Current Status
 
@@ -54,6 +54,15 @@ project-controlled storage. MapTiler or Stadia may be evaluated later only
 after plan, attribution, billing, and PDF/print requirements are reviewed.
 
 Detailed decision record: `docs/tile-provider-strategy.md`.
+
+Governance workflow note: docs-only governance tasks may skip separate Gemini
+research and separate Claude adversarial planning when no runtime code,
+production dependency, provider integration, deployment behavior, or user data
+flow changes. Codex must still check primary sources directly when current
+external terms matter, record sources/check dates, and provide Claude Chat a
+self-contained final audit prompt that includes changed file contents because
+Claude Chat does not have filesystem or GitHub access by default. Detailed
+workflow: `docs/governance-workflow.md`.
 
 ## Compliance Commands
 
