@@ -4,9 +4,9 @@ Last updated: 2026-06-05
 
 ## Current Status
 
-CTC-003 is in development on 2026-06-05. This docs-only governance task drafts
-the legal/trademark disclaimer posture before public app scaffolding or course
-data pipeline work.
+CTC-003 is in Final Audit (Claude) on 2026-06-05. Commit `2a23607` drafted the
+legal/trademark disclaimer posture before public app scaffolding or course data
+pipeline work. Claude final audit is required before marking Done.
 
 CTC-018 is Done - 2026-06-05. Claude final audit returned `PASS WITH MINOR
 FIXES`; MF-1 through MF-4 were applied. This repository scaffold is
