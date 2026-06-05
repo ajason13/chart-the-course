@@ -5,6 +5,9 @@
 Use GitHub private vulnerability reporting for Chart the Course security reports
 until the project has a verified, monitored security contact.
 
+GitHub private vulnerability reporting was enabled for
+`ajason13/chart-the-course` on 2026-06-05.
+
 Do not publish `security@chartthecourse.app` or any other project email address
 until that mailbox exists, is monitored, and has an owner. Setting a monitored
 security contact before v1.0 is a launch-blocking milestone item.

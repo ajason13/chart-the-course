@@ -4,6 +4,11 @@ Last updated: 2026-06-05
 
 ## Current Status
 
+CTC-021 is In Development - 2026-06-05. GitHub private vulnerability reporting
+was enabled for `ajason13/chart-the-course` via the GitHub API, and
+`SECURITY.md` now records that status while preserving the v1.0 launch blocker
+to set and verify a monitored security contact email.
+
 CTC-003 is Done - 2026-06-05. Commit `2a23607` drafted the legal/trademark
 disclaimer posture before public app scaffolding or course data pipeline work.
 Claude final audit returned `PASS WITH MINOR FIXES`; commit `35d83e0` applied
@@ -128,7 +133,8 @@ root package as `UNLICENSED` even though `package.json` declares Apache-2.0 and
 
 ## Security Disclosure
 
-Use GitHub private vulnerability reporting until a monitored security email
+GitHub private vulnerability reporting is enabled for
+`ajason13/chart-the-course`. Continue using it until a monitored security email
 exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
