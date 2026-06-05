@@ -13,13 +13,15 @@ task to final audit context. Claude final audit returned `PASS` with no
 blockers and no minor fixes. Verification passed: `git diff --check` and
 `npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`.
 
-CTC-013 is In Development (ChatGPT) - 2026-06-05. Codex selected this
-governance/research task from Backlog because it settles reference-project reuse
-boundaries before app scaffolding or data-pipeline work. Initial decision record:
-`docs/reference-project-reuse-policy.md`. Docs-only governance exception is in
-use; separate Gemini research and Claude QA planning are skipped because no
-runtime code, dependency, provider integration, deployment behavior, or user data
-flow changes are included. Claude final audit remains required before Done.
+CTC-013 is Final Audit (Claude) - 2026-06-05. Commit `1943d59` added
+`docs/reference-project-reuse-policy.md` to settle reference-project reuse
+boundaries before app scaffolding or data-pipeline work. Docs-only governance
+exception is in use; separate Gemini research and Claude QA planning were
+skipped because no runtime code, dependency, provider integration, deployment
+behavior, or user data flow changes are included. Verification passed:
+`git diff --check`, `git diff --check --cached`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`.
+Claude final audit remains required before Done.
 
 CTC-003 is Done - 2026-06-05. Commit `2a23607` drafted the legal/trademark
 disclaimer posture before public app scaffolding or course data pipeline work.
