@@ -9,13 +9,16 @@ reference projects. It is a governance decision, not legal advice.
 
 | Project | Observed license status | Allowed use | Blocked use |
 | --- | --- | --- | --- |
-| `npilk/hacker-yardage` | No license file found in the repository root; GitHub license API returned 404 on 2026-06-05. | Product and architecture inspiration only. Public README behavior may inform problem framing, provided implementation remains original. | Dependency, fork, code copy, translation, adaptation, asset/template reuse, query text reuse, or distinctive workflow/UI reuse without written permission or a later verified license. |
-| `npilk/openyardage-web` | No license file found in the repository root; GitHub license API returned 404 on 2026-06-05. | Product and architecture inspiration only. Public README behavior may inform problem framing, provided implementation remains original. | Dependency, fork, code copy, translation, adaptation, asset reuse, query text reuse, PDF/export implementation reuse, or distinctive workflow/UI reuse without written permission or a later verified license. |
+| `npilk/hacker-yardage` | GitHub license detection found no recognizable license file such as `LICENSE`, `COPYING`, or an equivalent root license file; the GitHub license API returned 404 on 2026-06-05. | Product and architecture inspiration only. Public README behavior may inform problem framing, provided implementation remains original. | Dependency, fork, code copy, translation, adaptation, asset/template reuse, query text reuse, or distinctive workflow/UI reuse without written permission or a later verified license. |
+| `npilk/openyardage-web` | GitHub license detection found no recognizable license file such as `LICENSE`, `COPYING`, or an equivalent root license file; the GitHub license API returned 404 on 2026-06-05. | Product and architecture inspiration only. Public README behavior may inform problem framing, provided implementation remains original. | Dependency, fork, code copy, translation, adaptation, asset reuse, query text reuse, PDF/export implementation reuse, or distinctive workflow/UI reuse without written permission or a later verified license. |
 | `bdlucas1/ace` | GitHub identifies `LICENSE.txt` as GNU Affero General Public License v3.0 (`AGPL-3.0`). | Architecture and prior-art reference only. High-level concepts may be studied, then independently designed and implemented. | Copying, modifying, adapting, linking, combining, incorporating, distributing, forking, or using as a dependency unless Chart the Course intentionally adopts an AGPL-compatible licensing posture and records that decision first. |
 
 ## Rationale
 
-An absent license is not permission to reuse code. Until a license or written
+An absent detected license is not permission to reuse code. A GitHub license API
+404 means GitHub did not detect a recognizable license file in the expected
+repository locations; it does not prove that no license text exists anywhere in
+the repository or in another communication channel. Until a license or written
 permission is verified, `hacker-yardage` and `openyardage-web` are treated as
 copyrighted source-available references only. Chart the Course may learn from
 their public behavior and broad product ideas, but implementation must be

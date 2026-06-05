@@ -13,15 +13,18 @@ task to final audit context. Claude final audit returned `PASS` with no
 blockers and no minor fixes. Verification passed: `git diff --check` and
 `npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`.
 
-CTC-013 is Final Audit (Claude) - 2026-06-05. Commit `1943d59` added
+CTC-013 is Done - 2026-06-05. Commit `1943d59` added
 `docs/reference-project-reuse-policy.md` to settle reference-project reuse
-boundaries before app scaffolding or data-pipeline work. Docs-only governance
-exception is in use; separate Gemini research and Claude QA planning were
-skipped because no runtime code, dependency, provider integration, deployment
-behavior, or user data flow changes are included. Verification passed:
-`git diff --check`, `git diff --check --cached`, and
+boundaries before app scaffolding or data-pipeline work. Claude final audit
+returned `PASS WITH MINOR FIXES`; the minor fix clarified that GitHub license
+API 404 responses mean GitHub license detection found no recognizable license
+file such as `LICENSE`, `COPYING`, or an equivalent root license file, not that
+no license text could exist anywhere. Docs-only governance exception was used;
+separate Gemini research and Claude QA planning were skipped because no runtime
+code, dependency, provider integration, deployment behavior, or user data flow
+changes were included. Verification passed: `git diff --check`,
+`git diff --check --cached`, and
 `npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`.
-Claude final audit remains required before Done.
 
 CTC-003 is Done - 2026-06-05. Commit `2a23607` drafted the legal/trademark
 disclaimer posture before public app scaffolding or course data pipeline work.
@@ -103,8 +106,9 @@ include OSM attribution and the full copyright URL when links are not available.
 Baseline disclaimer text and legal source monitoring are in
 `docs/legal-disclaimers.md`.
 
-CTC-013 reference-project reuse policy: `hacker-yardage` and `openyardage-web`
-are inspiration-only unless a license or written permission is verified. Do not
+CTC-013 reference-project reuse policy: GitHub license detection found no
+recognizable license file for `hacker-yardage` or `openyardage-web`, so both are
+inspiration-only unless a license or written permission is verified. Do not
 copy, translate, adapt, fork, depend on, reuse assets/templates, reuse query
 text, or reuse distinctive workflow/UI details from either project. `ace` is
 AGPL-3.0 and may be used only as an architecture/prior-art reference unless
@@ -162,8 +166,6 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- Complete Claude final audit for CTC-013, then mark Done only after findings
-  are resolved or explicitly accepted.
 - Define provider-review cadence when the first basemap provider is adopted.
 - Upgrade `@cyclonedx/cyclonedx-npm` to the 4.x series and pin
   `--spec-version 1.6` when the first production dependency lands.
