@@ -4,9 +4,11 @@ Last updated: 2026-06-05
 
 ## Current Status
 
-CTC-003 is in Final Audit (Claude) on 2026-06-05. Commit `2a23607` drafted the
-legal/trademark disclaimer posture before public app scaffolding or course data
-pipeline work. Claude final audit is required before marking Done.
+CTC-003 is Done - 2026-06-05. Commit `2a23607` drafted the legal/trademark
+disclaimer posture before public app scaffolding or course data pipeline work.
+Claude final audit returned `PASS WITH MINOR FIXES`; commit `35d83e0` applied
+MF-1 through MF-3, and Claude stated no re-audit was required if fixes remained
+docs-only.
 
 CTC-018 is Done - 2026-06-05. Claude final audit returned `PASS WITH MINOR
 FIXES`; MF-1 through MF-4 were applied. This repository scaffold is
@@ -131,7 +133,6 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- Mark CTC-003 Done in Notion after committing Claude minor fixes.
 - Define provider-review cadence when the first basemap provider is adopted.
 - Upgrade `@cyclonedx/cyclonedx-npm` to the 4.x series and pin
   `--spec-version 1.6` when the first production dependency lands.
