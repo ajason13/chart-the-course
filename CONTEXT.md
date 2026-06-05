@@ -1,0 +1,91 @@
+# Chart the Course Context
+
+Last updated: 2026-06-04
+
+## Current Status
+
+CTC-017 is started. Governance policy was unblocked by CTC-001 and CTC-016.
+This repository scaffold is governance-first and intentionally contains no
+runtime app shell, map provider, tile provider, PDF library, or production
+dependency yet.
+
+## Source of Truth
+
+- Original Chart the Course code uses Apache-2.0.
+- CTC-001 is Done.
+- CTC-016 is Done.
+- Claude re-review verdict for the governance policy was `PASS WITH MINOR
+  FIXES`, and the corrected snippets are accepted as source of truth.
+
+## Governance Guardrails
+
+Do not copy, modify, adapt, link, combine, incorporate, or distribute code from
+`ace` because it is AGPL-3.0. Because Chart the Course is a network-delivered
+browser app, incorporating AGPL-covered code can trigger AGPL Section 13
+source-availability obligations for the combined or modified work.
+
+`hacker-yardage` and `openyardage-web` are study-only unless license or
+permission is verified. Do not copy source code, UI structure, query text,
+generated assets, or distinctive expressive implementation from unlicensed
+repositories.
+
+Browser API request identity must not rely on custom `User-Agent`. Use app
+origin/referrer where available plus Overpass QL identifying comments.
+
+PDFs that contain OSM-derived maps must include the full URL:
+
+```text
+https://www.openstreetmap.org/copyright
+```
+
+ODbL Section 4.6 source availability applies when PDFs are distributed or
+shared. Raw GIS source export must ship with PDF export later.
+
+Tile-provider selection is tracked separately in CTC-018.
+
+## Compliance Commands
+
+Canonical npm compliance flow:
+
+```bash
+npm ci
+npx @cyclonedx/cyclonedx-npm \
+  --omit dev \
+  --output-format JSON \
+  --output-file sbom.json \
+  --validate
+npx license-checker-rseidelsohn \
+  --production \
+  --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;OFL-1.1;CC0-1.0;Unlicense;0BSD" \
+  --failOn "GPL-2.0-only;GPL-3.0-only;AGPL-3.0;UNLICENSED"
+npm audit --omit=dev --audit-level=high
+```
+
+Do not run `npm ci --omit=dev` before invoking a devDependency SBOM tool. Do not
+use `--package-lock-only` in the authoritative SBOM command.
+
+Local script:
+
+```bash
+npm run compliance
+```
+
+Implementation note: `license-checker-rseidelsohn` rejects `--onlyAllow` and
+`--failOn` in the same invocation, so `npm run compliance` enforces the accepted
+license policy as separate allowlist and denylist passes. The scripts also pass
+`--excludePrivatePackages` because this scanner reports the unpublished private
+root package as `UNLICENSED` even though `package.json` declares Apache-2.0 and
+`LICENSE` is present.
+
+## Security Disclosure
+
+Use GitHub private vulnerability reporting until a monitored security email
+exists. Do not publish `security@chartthecourse.app` until verified.
+
+## Next Work
+
+- Finish CTC-017 verification and Notion status update.
+- CTC-018 must decide tile provider and attribution obligations before deployed
+  map scaffold.
+- Future app scaffold tasks should add a selected web stack, runtime tests, and
+  provider-specific attribution checks.

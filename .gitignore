@@ -1,0 +1,4 @@
+node_modules/
+sbom.json
+npm-debug.log*
+.DS_Store
