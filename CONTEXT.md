@@ -4,10 +4,10 @@ Last updated: 2026-06-04
 
 ## Current Status
 
-CTC-018 is In Development - 2026-06-04. CTC-017 is Done, and Claude re-review
-returned `PASS`. This repository scaffold is governance-first and intentionally
-contains no runtime app shell, map provider, tile provider, PDF library, or
-production dependency yet.
+CTC-018 is Done - 2026-06-05. Claude final audit returned `PASS WITH MINOR
+FIXES`; MF-1 through MF-4 were applied. This repository scaffold is
+governance-first and intentionally contains no runtime app shell, map provider,
+tile provider, PDF library, or production dependency yet.
 
 ## Source of Truth
 
@@ -104,7 +104,7 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- CTC-018 needs Claude final audit before being marked Done.
+- Define provider-review cadence when the first basemap provider is adopted.
 - Upgrade `@cyclonedx/cyclonedx-npm` to the 4.x series and pin
   `--spec-version 1.6` when the first production dependency lands.
 - Future app scaffold tasks should add a selected web stack, runtime tests, and

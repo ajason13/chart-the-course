@@ -58,14 +58,14 @@ required because the displayed course geometry is OSM-derived.
 Required MVP UI attribution for geometry-only views:
 
 ```text
-Course data (C) OpenStreetMap contributors
+Course data © OpenStreetMap contributors
 https://www.openstreetmap.org/copyright
 ```
 
 Required MVP PDF attribution for geometry-only exports:
 
 ```text
-Course geometry and map data (C) OpenStreetMap contributors.
+Course geometry and map data © OpenStreetMap contributors.
 OpenStreetMap copyright and license: https://www.openstreetmap.org/copyright
 ```
 

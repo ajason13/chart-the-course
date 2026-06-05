@@ -18,13 +18,15 @@ before release with:
 - Required PDF/print attribution text, including full URLs where links are not
   possible.
 - Whether provider attribution is needed in PDFs.
+- Whether the provider's data is an ODbL Produced Work and source availability
+  applies.
 - Verification date and owner.
 
 OSM attribution is still required for OSM-derived course geometry even when no
 third-party basemap tiles are used:
 
 ```text
-Course data (C) OpenStreetMap contributors
+Course data © OpenStreetMap contributors
 https://www.openstreetmap.org/copyright
 ```
 
