@@ -4,12 +4,13 @@ Last updated: 2026-06-05
 
 ## Current Status
 
-CTC-021 is in Final Audit - 2026-06-05. Commit `cd12021` enabled GitHub private
+CTC-021 is Done - 2026-06-05. Commit `cd12021` enabled GitHub private
 vulnerability reporting for `ajason13/chart-the-course` via the GitHub API,
 added durable `AGENTS.md` repo instructions, and updated `SECURITY.md` to
 record the enabled reporting path while preserving the v1.0 launch blocker to
-set and verify a monitored security contact email. Verification passed:
-`git diff --check` and
+set and verify a monitored security contact email. Commit `b68e4c0` moved the
+task to final audit context. Claude final audit returned `PASS` with no
+blockers and no minor fixes. Verification passed: `git diff --check` and
 `npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`.
 
 CTC-003 is Done - 2026-06-05. Commit `2a23607` drafted the legal/trademark
