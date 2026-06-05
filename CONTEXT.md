@@ -4,10 +4,10 @@ Last updated: 2026-06-04
 
 ## Current Status
 
-CTC-017 is in final audit response. Governance policy was unblocked by CTC-001
-and CTC-016. This repository scaffold is governance-first and intentionally
-contains no runtime app shell, map provider, tile provider, PDF library, or
-production dependency yet.
+CTC-017 is Done - 2026-06-04. Governance policy was unblocked by CTC-001 and
+CTC-016. This repository scaffold is governance-first and intentionally contains
+no runtime app shell, map provider, tile provider, PDF library, or production
+dependency yet.
 
 ## Source of Truth
 
@@ -92,8 +92,9 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- Finish CTC-017 verification and Notion status update.
 - CTC-018 must decide tile provider and attribution obligations before deployed
   map scaffold.
+- Upgrade `@cyclonedx/cyclonedx-npm` to the 4.x series and pin
+  `--spec-version 1.6` when the first production dependency lands.
 - Future app scaffold tasks should add a selected web stack, runtime tests, and
   provider-specific attribution checks.
