@@ -46,6 +46,38 @@ Raw GIS export must ship in the same release as PDF export. This requirement
 does not apply to purely private local previews that are not distributed or
 shared.
 
+## Tile Provider and Basemap Attribution
+
+CTC-018 selects a blank/vector-only MVP. The deployed MVP must not load
+third-party basemap tiles by default and must not use the OSM public tile CDN
+without explicit project approval.
+
+Even when no third-party basemap tiles are used, OSM attribution remains
+required because the displayed course geometry is OSM-derived.
+
+Required MVP UI attribution for geometry-only views:
+
+```text
+Course data (C) OpenStreetMap contributors
+https://www.openstreetmap.org/copyright
+```
+
+Required MVP PDF attribution for geometry-only exports:
+
+```text
+Course geometry and map data (C) OpenStreetMap contributors.
+OpenStreetMap copyright and license: https://www.openstreetmap.org/copyright
+```
+
+If a hosted or self-hosted basemap provider is enabled later, the provider's
+required attribution must be visible in every UI map view that uses it, included
+in PDFs or printed outputs when relevant, and recorded in
+`THIRD_PARTY_NOTICES.md`.
+
+Current fallback preference if basemap context becomes necessary:
+self-hosted scoped PMTiles/Protomaps extracts in project-controlled storage,
+followed by MapTiler or Stadia only after plan and attribution review.
+
 ## Overpass and Nominatim Request Identity
 
 Browser JavaScript cannot reliably set a custom `User-Agent` header. Browser
@@ -65,7 +97,8 @@ must provide an explicit "Refresh course data" action, rate-limited to prevent
 repeated refetches. Operators using self-hosted or commercial providers may
 configure a different TTL, with a minimum guardrail to prevent abuse.
 
-Tile-provider selection and attribution are tracked separately in CTC-018.
+Detailed tile-provider comparison and source notes are in
+`docs/tile-provider-strategy.md`.
 
 ## Reference Projects
 

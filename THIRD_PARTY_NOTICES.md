@@ -2,6 +2,32 @@
 
 This scaffold contains no production runtime dependencies yet.
 
+## Current Map and Tile Provider Policy
+
+CTC-018 selects a blank/vector-only MVP with no third-party basemap tiles loaded
+by default. No MapTiler, Stadia, Protomaps, Thunderforest, OpenFreeMap, Esri, or
+OSM public tile CDN runtime dependency is currently adopted.
+
+The deployed MVP must not use the OSM public tile CDN without explicit project
+approval. If a basemap provider is adopted later, this file must be updated
+before release with:
+
+- Provider name and plan or self-hosting mode.
+- Tile/data source and license or terms URL.
+- Required UI attribution text.
+- Required PDF/print attribution text, including full URLs where links are not
+  possible.
+- Whether provider attribution is needed in PDFs.
+- Verification date and owner.
+
+OSM attribution is still required for OSM-derived course geometry even when no
+third-party basemap tiles are used:
+
+```text
+Course data (C) OpenStreetMap contributors
+https://www.openstreetmap.org/copyright
+```
+
 ## Original Project License
 
 Original Chart the Course code is licensed under Apache-2.0. See `LICENSE`.

@@ -4,16 +4,17 @@ Last updated: 2026-06-04
 
 ## Current Status
 
-CTC-017 is Done - 2026-06-04. Governance policy was unblocked by CTC-001 and
-CTC-016. This repository scaffold is governance-first and intentionally contains
-no runtime app shell, map provider, tile provider, PDF library, or production
-dependency yet.
+CTC-018 is In Development - 2026-06-04. CTC-017 is Done, and Claude re-review
+returned `PASS`. This repository scaffold is governance-first and intentionally
+contains no runtime app shell, map provider, tile provider, PDF library, or
+production dependency yet.
 
 ## Source of Truth
 
 - Original Chart the Course code uses Apache-2.0.
 - CTC-001 is Done.
 - CTC-016 is Done.
+- CTC-017 is Done.
 - Claude re-review verdict for the governance policy was `PASS WITH MINOR
   FIXES`, and the corrected snippets are accepted as source of truth.
 
@@ -41,7 +42,18 @@ https://www.openstreetmap.org/copyright
 ODbL Section 4.6 source availability applies when PDFs are distributed or
 shared. Raw GIS source export must ship with PDF export later.
 
-Tile-provider selection is tracked separately in CTC-018.
+CTC-018 selected the MVP tile strategy: use blank/vector-only rendering of
+OSM-derived course geometry and user-authored yardage-book overlays, with no
+third-party basemap tiles loaded by default. Deployed builds must not use the
+OSM public tile CDN without explicit project approval.
+
+OSM attribution remains required in UI and PDFs even without basemap tiles
+because course geometry is OSM-derived. If basemap context becomes necessary,
+the preferred fallback is self-hosted scoped PMTiles/Protomaps in
+project-controlled storage. MapTiler or Stadia may be evaluated later only
+after plan, attribution, billing, and PDF/print requirements are reviewed.
+
+Detailed decision record: `docs/tile-provider-strategy.md`.
 
 ## Compliance Commands
 
@@ -92,9 +104,8 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- CTC-018 must decide tile provider and attribution obligations before deployed
-  map scaffold.
+- CTC-018 needs Claude final audit before being marked Done.
 - Upgrade `@cyclonedx/cyclonedx-npm` to the 4.x series and pin
   `--spec-version 1.6` when the first production dependency lands.
 - Future app scaffold tasks should add a selected web stack, runtime tests, and
-  provider-specific attribution checks.
+  attribution checks enforcing the selected tile strategy.
