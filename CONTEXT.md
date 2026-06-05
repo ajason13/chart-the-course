@@ -4,14 +4,15 @@ Last updated: 2026-06-05
 
 ## Current Status
 
-CTC-015 is In Development - 2026-06-05. Codex selected this task from Notion
-after CTC-013 was marked Done because CTC-004's live Overpass spike should
-implement a reviewed query/data contract rather than invent request behavior in
-runtime code. The scoped deliverable is a docs-only Overpass contract and
-synthetic fixture; no app scaffold, production dependency, provider
-integration, deployment behavior, or user data flow is introduced. Docs-only
-governance exception is being used, with final Claude audit still required
-before Done.
+CTC-015 is Done - 2026-06-05. Commit `0f07ac0` added the Overpass query
+contract and a synthetic parser fixture so CTC-004 can implement reviewed
+request behavior instead of inventing it in runtime code. Claude final audit
+returned `PASS WITH MINOR FIXES`; F-1 through F-3 were applied, and F-4 was
+accepted by moving synthetic IDs above 9,000,000,000. Claude stated CTC-015 may
+be marked Done after these confined docs/fixture fixes without re-audit.
+Verification passed: fixture JSON parse, `git diff --check`,
+`git diff --check --cached`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`.
 
 CTC-021 is Done - 2026-06-05. Commit `cd12021` enabled GitHub private
 vulnerability reporting for `ajason13/chart-the-course` via the GitHub API,
@@ -129,8 +130,9 @@ CTC-015 Overpass query contract: course discovery and detail loading should use
 bounded bbox-scoped Overpass QL with identifying comments, JSON output,
 explicit timeout/maxsize settings, no default `out meta`, and local public
 Overpass caching aligned to the 7-day TTL in `ATTRIBUTION.md` unless a CTC-004
-spike temporarily uses session storage before CTC-019. The
-contract covers `leisure=golf_course`, core `golf=*` course features,
+exploration spike temporarily uses session storage before CTC-019 establishes
+durable local persistence. The contract covers `leisure=golf_course`, core
+`golf=*` course features,
 water/tree/forest hazards where available, error handling for rate limits and
 timeouts, and OSM/ODbL source metadata needed for later PDF source export.
 Detailed design record: `docs/overpass-query-contract.md`. Initial synthetic
@@ -186,8 +188,8 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- Send CTC-015 to Claude final audit, resolve or accept findings, then mark
-  Done before implementing CTC-004.
+- CTC-004 should implement the reviewed CTC-015 Overpass contract, not a new
+  ad hoc query shape.
 - Define provider-review cadence when the first basemap provider is adopted.
 - Upgrade `@cyclonedx/cyclonedx-npm` to the 4.x series and pin
   `--spec-version 1.6` when the first production dependency lands.

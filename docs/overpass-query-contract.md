@@ -35,6 +35,11 @@ degrees latitude unless a future maintainer decision records a different limit.
 This keeps browser requests scoped to a city/neighborhood-scale search instead
 of using public Overpass as a bulk data backend.
 
+`courseName` must be treated as a literal string before it is interpolated into
+the regex filter. Escape at least these regular-expression metacharacters:
+`\`, `.`, `*`, `+`, `?`, `(`, `)`, `[`, `]`, `{`, `}`, `|`, `^`, and `$`.
+Do not concatenate raw user input into Overpass QL.
+
 ## Request Identity
 
 Browser JavaScript cannot reliably set a custom upstream `User-Agent`. Every
@@ -120,7 +125,8 @@ treat them as a constrained public service, not a guaranteed production backend.
 - Cache successful public Overpass responses locally. The durable public
   Overpass cache target remains the 7-day TTL in `ATTRIBUTION.md`; if CTC-004
   ships before durable local persistence exists, session storage is acceptable
-  only as a temporary spike constraint.
+  only as a temporary CTC-004 exploration-spike constraint before CTC-019
+  establishes durable local persistence.
 - Debounce user search input and require an explicit search action before
   querying.
 - On HTTP `429`, show a rate-limit state and back off before retrying. Do not
@@ -163,7 +169,8 @@ Future parser tests should assert that the fixture can produce:
 
 - One course boundary.
 - One numbered hole line.
-- Tee, fairway, green, bunker, and water feature layers.
+- Tee, fairway, green, bunker, golf-specific water hazard, generic water, and
+  vegetation feature layers.
 - OSM IDs, source tags, bbox, and query metadata preserved in the normalized
   model.
 
