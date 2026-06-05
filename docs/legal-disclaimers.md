@@ -44,6 +44,9 @@ approval by third-party brands.
 - When a third-party name is necessary for attribution, compatibility, source
   identification, legal monitoring, or a provider notice, use the minimum text
   needed and avoid logos, trade dress, slogans, and marketing claims.
+- In this policy, `reviewed` means a logged maintainer decision with the
+  rationale, source or brand being referenced, where the reference will appear,
+  and why the reference is nominative and necessary.
 - Do not imply that a named course, club, tournament, governing body, equipment
   vendor, GPS app, or simulator platform approves or validates Chart the Course.
 - Do not use famous course names or commercial brand names as bundled demo data,
@@ -65,6 +68,10 @@ high-fidelity commercial course replicas.
 - Demo fixtures should use synthetic courses, permissioned data, or heavily
   simplified generic examples unless a real course has been reviewed for
   permission, attribution, and jurisdiction-specific risk.
+- A real-course fixture review must be logged before merge and must identify
+  the data source, permission or open-data basis, required attribution, brand or
+  course-name risk, jurisdiction-specific concerns, and why the fixture is
+  necessary instead of a synthetic course.
 - If the project later adds import, PDF, fixture, or marketplace features, those
   features must preserve this no-prepackaged-replica rule before release.
 
@@ -75,6 +82,12 @@ and user inputs may be incomplete, stale, approximate, or inconsistent with
 course conditions. The app must keep data-quality warnings visible when geometry
 is missing or ambiguous, and generated PDFs should remind users to verify
 yardages and hazards before play.
+
+Any generated PDF, print output, source export, or downloadable artifact that
+contains OSM-derived course geometry must include OSM attribution near the
+map-bearing page, export metadata, acknowledgements block, or source-download
+notice as appropriate for the artifact, including the full URL
+`https://www.openstreetmap.org/copyright` when links are not available.
 
 ## Source Monitoring
 

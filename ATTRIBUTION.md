@@ -128,9 +128,20 @@ simulator platform, map provider, or other commercial brand unless that
 relationship is stated expressly.
 
 Avoid third-party brand names in product positioning unless the reference is
-nominative, necessary, and reviewed. Do not bundle prepackaged high-fidelity
-commercial course replicas, proprietary course maps, commercial yardage-book
-artwork, or simulator course assets.
+nominative, necessary, and reviewed. Reviewed means a logged maintainer decision
+with rationale, source or brand being referenced, where the reference appears,
+and why it is nominative and necessary.
+
+Do not bundle prepackaged high-fidelity commercial course replicas, proprietary
+course maps, commercial yardage-book artwork, or simulator course assets.
+Real-course fixtures require a logged review of data source, permission or
+open-data basis, attribution, brand/course-name risk, jurisdiction-specific
+concerns, and why a real fixture is necessary instead of a synthetic course.
+
+Any generated PDF, print output, source export, or downloadable artifact that
+contains OSM-derived course geometry must include OSM attribution in the
+artifact, including the full URL `https://www.openstreetmap.org/copyright` when
+links are not available.
 
 Baseline disclaimer text and monitored legal/trademark source URLs are recorded
 in `docs/legal-disclaimers.md`.

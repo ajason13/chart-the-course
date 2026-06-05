@@ -72,10 +72,15 @@ CTC-003 legal/trademark policy: public docs, app surfaces, sample fixtures, and
 generated exports must state that Chart the Course is independent and
 unaffiliated with commercial brands unless a relationship is expressly stated.
 Avoid third-party brand names in product positioning unless nominative,
-necessary, and reviewed. Do not ship prepackaged high-fidelity replicas of
-commercial golf courses, proprietary course maps, commercial yardage-book
-artwork, or simulator course assets. Baseline disclaimer text and legal source
-monitoring are in `docs/legal-disclaimers.md`.
+necessary, and reviewed by logged maintainer decision. Do not ship prepackaged
+high-fidelity replicas of commercial golf courses, proprietary course maps,
+commercial yardage-book artwork, or simulator course assets. Real-course
+fixtures require logged review of data source, permissions or open-data basis,
+attribution, brand/course-name risk, jurisdiction-specific concerns, and why a
+real fixture is necessary. Generated artifacts with OSM-derived geometry must
+include OSM attribution and the full copyright URL when links are not available.
+Baseline disclaimer text and legal source monitoring are in
+`docs/legal-disclaimers.md`.
 
 ## Compliance Commands
 
@@ -126,7 +131,7 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- Complete Claude final audit for CTC-003 before marking Done.
+- Mark CTC-003 Done in Notion after committing Claude minor fixes.
 - Define provider-review cadence when the first basemap provider is adopted.
 - Upgrade `@cyclonedx/cyclonedx-npm` to the 4.x series and pin
   `--spec-version 1.6` when the first production dependency lands.
