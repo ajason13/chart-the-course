@@ -13,6 +13,14 @@ task to final audit context. Claude final audit returned `PASS` with no
 blockers and no minor fixes. Verification passed: `git diff --check` and
 `npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`.
 
+CTC-013 is In Development (ChatGPT) - 2026-06-05. Codex selected this
+governance/research task from Backlog because it settles reference-project reuse
+boundaries before app scaffolding or data-pipeline work. Initial decision record:
+`docs/reference-project-reuse-policy.md`. Docs-only governance exception is in
+use; separate Gemini research and Claude QA planning are skipped because no
+runtime code, dependency, provider integration, deployment behavior, or user data
+flow changes are included. Claude final audit remains required before Done.
+
 CTC-003 is Done - 2026-06-05. Commit `2a23607` drafted the legal/trademark
 disclaimer posture before public app scaffolding or course data pipeline work.
 Claude final audit returned `PASS WITH MINOR FIXES`; commit `35d83e0` applied
@@ -93,6 +101,15 @@ include OSM attribution and the full copyright URL when links are not available.
 Baseline disclaimer text and legal source monitoring are in
 `docs/legal-disclaimers.md`.
 
+CTC-013 reference-project reuse policy: `hacker-yardage` and `openyardage-web`
+are inspiration-only unless a license or written permission is verified. Do not
+copy, translate, adapt, fork, depend on, reuse assets/templates, reuse query
+text, or reuse distinctive workflow/UI details from either project. `ace` is
+AGPL-3.0 and may be used only as an architecture/prior-art reference unless
+Chart the Course intentionally adopts an AGPL-compatible licensing posture in a
+future logged maintainer decision. Detailed decision record:
+`docs/reference-project-reuse-policy.md`.
+
 ## Compliance Commands
 
 Canonical npm compliance flow:
@@ -143,6 +160,8 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
+- Complete Claude final audit for CTC-013, then mark Done only after findings
+  are resolved or explicitly accepted.
 - Define provider-review cadence when the first basemap provider is adopted.
 - Upgrade `@cyclonedx/cyclonedx-npm` to the 4.x series and pin
   `--spec-version 1.6` when the first production dependency lands.
