@@ -4,13 +4,17 @@ Last updated: 2026-06-05
 
 ## Current Status
 
-CTC-002 is In Development - 2026-06-05. Codex selected it from the Notion
-Backlog because CTC-004 and CTC-019 need an app shell, local setup commands,
-test harness, fixture structure, and CI before implementing Overpass feature
-behavior. Scope is limited to the initial Vite/TypeScript scaffold, README,
-CONTRIBUTING, CI, local tests, and generated placeholder fixture. No map
-provider, basemap tiles, Overpass runtime call, PDF export behavior, API key,
-user data flow, or production dependency is being added.
+CTC-002 is in Final Audit - 2026-06-05. PR #1
+(`ctc-002-app-scaffold`) adds the initial Vite/TypeScript scaffold, README,
+CONTRIBUTING, CI, local tests, and generated placeholder fixture. Commit
+`5b4ec25` created the app shell, Vitest unit test, Playwright smoke test,
+fixture-backed first screen, and updated durable repo guidance. Scope remained
+limited: no map provider, basemap tiles, Overpass runtime call, PDF export
+behavior, API key, user data flow, or production dependency was added.
+Verification passed: `npm run check`, `git diff --check`,
+`git diff --check --cached`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`.
+Claude final audit is required before Done.
 
 CTC-015 is Done - 2026-06-05. Commit `0f07ac0` added the Overpass query
 contract and a synthetic parser fixture so CTC-004 can implement reviewed
