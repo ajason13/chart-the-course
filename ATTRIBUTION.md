@@ -118,3 +118,19 @@ Do not copy, modify, adapt, link, combine, incorporate, or distribute any `ace`
 code in Chart the Course. Because Chart the Course is a network-delivered
 browser app, incorporating AGPL-covered code can trigger AGPL Section 13
 source-availability obligations for the combined or modified work.
+
+## Legal and Trademark Disclaimers
+
+Public docs, app surfaces, sample data, and generated exports must not imply
+that Chart the Course is affiliated with, sponsored by, endorsed by, or approved
+by any golf course, golf governing body, GPS app, launch-monitor vendor,
+simulator platform, map provider, or other commercial brand unless that
+relationship is stated expressly.
+
+Avoid third-party brand names in product positioning unless the reference is
+nominative, necessary, and reviewed. Do not bundle prepackaged high-fidelity
+commercial course replicas, proprietary course maps, commercial yardage-book
+artwork, or simulator course assets.
+
+Baseline disclaimer text and monitored legal/trademark source URLs are recorded
+in `docs/legal-disclaimers.md`.

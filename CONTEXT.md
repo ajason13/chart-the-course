@@ -4,6 +4,10 @@ Last updated: 2026-06-05
 
 ## Current Status
 
+CTC-003 is in development on 2026-06-05. This docs-only governance task drafts
+the legal/trademark disclaimer posture before public app scaffolding or course
+data pipeline work.
+
 CTC-018 is Done - 2026-06-05. Claude final audit returned `PASS WITH MINOR
 FIXES`; MF-1 through MF-4 were applied. This repository scaffold is
 governance-first and intentionally contains no runtime app shell, map provider,
@@ -64,6 +68,15 @@ self-contained final audit prompt that includes changed file contents because
 Claude Chat does not have filesystem or GitHub access by default. Detailed
 workflow: `docs/governance-workflow.md`.
 
+CTC-003 legal/trademark policy: public docs, app surfaces, sample fixtures, and
+generated exports must state that Chart the Course is independent and
+unaffiliated with commercial brands unless a relationship is expressly stated.
+Avoid third-party brand names in product positioning unless nominative,
+necessary, and reviewed. Do not ship prepackaged high-fidelity replicas of
+commercial golf courses, proprietary course maps, commercial yardage-book
+artwork, or simulator course assets. Baseline disclaimer text and legal source
+monitoring are in `docs/legal-disclaimers.md`.
+
 ## Compliance Commands
 
 Canonical npm compliance flow:
@@ -113,6 +126,7 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
+- Complete Claude final audit for CTC-003 before marking Done.
 - Define provider-review cadence when the first basemap provider is adopted.
 - Upgrade `@cyclonedx/cyclonedx-npm` to the 4.x series and pin
   `--spec-version 1.6` when the first production dependency lands.
