@@ -1,0 +1,140 @@
+{
+  "version": 0.6,
+  "generator": "Chart the Course synthetic Overpass fixture",
+  "osm3s": {
+    "timestamp_osm_base": "2026-06-05T00:00:00Z",
+    "copyright": "Synthetic fixture for parser tests; not real OSM data."
+  },
+  "chartTheCourseFixture": {
+    "contract": "docs/overpass-query-contract.md",
+    "synthetic": true,
+    "sourceCheckedDate": "2026-06-05",
+    "sourceCopyrightUrl": "https://www.openstreetmap.org/copyright",
+    "bbox": {
+      "south": 35.0000,
+      "west": -80.0000,
+      "north": 35.0100,
+      "east": -79.9900
+    },
+    "queryPurpose": "golf-course-detail"
+  },
+  "elements": [
+    {
+      "type": "way",
+      "id": 900000001,
+      "bounds": {
+        "minlat": 35.0000,
+        "minlon": -80.0000,
+        "maxlat": 35.0100,
+        "maxlon": -79.9900
+      },
+      "nodes": [910000001, 910000002, 910000003, 910000004, 910000001],
+      "geometry": [
+        { "lat": 35.0000, "lon": -80.0000 },
+        { "lat": 35.0100, "lon": -80.0000 },
+        { "lat": 35.0100, "lon": -79.9900 },
+        { "lat": 35.0000, "lon": -79.9900 },
+        { "lat": 35.0000, "lon": -80.0000 }
+      ],
+      "tags": {
+        "leisure": "golf_course",
+        "name": "Synthetic Municipal Course",
+        "golf:course": "9_hole"
+      }
+    },
+    {
+      "type": "way",
+      "id": 900000101,
+      "nodes": [910000101, 910000102, 910000103],
+      "geometry": [
+        { "lat": 35.0010, "lon": -79.9990 },
+        { "lat": 35.0040, "lon": -79.9965 },
+        { "lat": 35.0070, "lon": -79.9940 }
+      ],
+      "tags": {
+        "golf": "hole",
+        "ref": "1",
+        "par": "4"
+      }
+    },
+    {
+      "type": "way",
+      "id": 900000201,
+      "nodes": [910000201, 910000202, 910000203, 910000204, 910000201],
+      "geometry": [
+        { "lat": 35.0008, "lon": -79.9993 },
+        { "lat": 35.0013, "lon": -79.9993 },
+        { "lat": 35.0013, "lon": -79.9987 },
+        { "lat": 35.0008, "lon": -79.9987 },
+        { "lat": 35.0008, "lon": -79.9993 }
+      ],
+      "tags": {
+        "golf": "tee",
+        "ref": "1"
+      }
+    },
+    {
+      "type": "way",
+      "id": 900000301,
+      "nodes": [910000301, 910000302, 910000303, 910000304, 910000301],
+      "geometry": [
+        { "lat": 35.0020, "lon": -79.9982 },
+        { "lat": 35.0056, "lon": -79.9960 },
+        { "lat": 35.0052, "lon": -79.9951 },
+        { "lat": 35.0018, "lon": -79.9973 },
+        { "lat": 35.0020, "lon": -79.9982 }
+      ],
+      "tags": {
+        "golf": "fairway",
+        "ref": "1"
+      }
+    },
+    {
+      "type": "way",
+      "id": 900000401,
+      "nodes": [910000401, 910000402, 910000403, 910000404, 910000401],
+      "geometry": [
+        { "lat": 35.0065, "lon": -79.9945 },
+        { "lat": 35.0073, "lon": -79.9942 },
+        { "lat": 35.0071, "lon": -79.9935 },
+        { "lat": 35.0064, "lon": -79.9937 },
+        { "lat": 35.0065, "lon": -79.9945 }
+      ],
+      "tags": {
+        "golf": "green",
+        "ref": "1"
+      }
+    },
+    {
+      "type": "way",
+      "id": 900000501,
+      "nodes": [910000501, 910000502, 910000503, 910000504, 910000501],
+      "geometry": [
+        { "lat": 35.0058, "lon": -79.9948 },
+        { "lat": 35.0061, "lon": -79.9947 },
+        { "lat": 35.0060, "lon": -79.9943 },
+        { "lat": 35.0057, "lon": -79.9944 },
+        { "lat": 35.0058, "lon": -79.9948 }
+      ],
+      "tags": {
+        "golf": "bunker"
+      }
+    },
+    {
+      "type": "way",
+      "id": 900000601,
+      "nodes": [910000601, 910000602, 910000603, 910000604, 910000601],
+      "geometry": [
+        { "lat": 35.0035, "lon": -79.9952 },
+        { "lat": 35.0043, "lon": -79.9949 },
+        { "lat": 35.0040, "lon": -79.9940 },
+        { "lat": 35.0033, "lon": -79.9944 },
+        { "lat": 35.0035, "lon": -79.9952 }
+      ],
+      "tags": {
+        "natural": "water",
+        "water": "pond"
+      }
+    }
+  ]
+}
