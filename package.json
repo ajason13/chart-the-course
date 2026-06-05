@@ -5,12 +5,14 @@
   "description": "Governance scaffold for Chart the Course.",
   "license": "Apache-2.0",
   "scripts": {
-    "build:sbom": "npm ci && npx @cyclonedx/cyclonedx-npm --omit dev --output-format JSON --output-file sbom.json --validate",
+    "install:ci": "npm ci",
+    "generate:sbom": "npx @cyclonedx/cyclonedx-npm --omit dev --output-format JSON --output-file sbom.json --validate",
+    "build:sbom": "npm run install:ci && npm run generate:sbom",
     "license:allow": "npx license-checker-rseidelsohn --production --excludePrivatePackages --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;OFL-1.1;CC0-1.0;Unlicense;0BSD\"",
     "license:deny": "npx license-checker-rseidelsohn --production --excludePrivatePackages --failOn \"GPL-2.0-only;GPL-3.0-only;AGPL-3.0;UNLICENSED\"",
     "license:check": "npm run license:allow && npm run license:deny",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
-    "compliance": "npm run build:sbom && npm run license:check && npm run audit:prod"
+    "compliance": "npm run generate:sbom && npm run license:check && npm run audit:prod"
   },
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "2.1.0",

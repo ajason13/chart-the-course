@@ -36,9 +36,17 @@ npx @cyclonedx/cyclonedx-npm \
   --output-format JSON \
   --output-file sbom.json \
   --validate
+
+# Pass 1 - allowlist
 npx license-checker-rseidelsohn \
   --production \
-  --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;OFL-1.1;CC0-1.0;Unlicense;0BSD" \
+  --excludePrivatePackages \
+  --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;OFL-1.1;CC0-1.0;Unlicense;0BSD"
+
+# Pass 2 - denylist
+npx license-checker-rseidelsohn \
+  --production \
+  --excludePrivatePackages \
   --failOn "GPL-2.0-only;GPL-3.0-only;AGPL-3.0;UNLICENSED"
 npm audit --omit=dev --audit-level=high
 ```
@@ -46,12 +54,11 @@ npm audit --omit=dev --audit-level=high
 Do not run `npm ci --omit=dev` before invoking a devDependency SBOM tool. Do not
 use `--package-lock-only` in the authoritative SBOM command.
 
-The runnable npm scripts enforce the license policy in two
-`license-checker-rseidelsohn` passes because the tool rejects `--onlyAllow` and
-`--failOn` in the same invocation. They also pass `--excludePrivatePackages`
-because this scanner reports the unpublished private root package as
-`UNLICENSED` even though `package.json` declares Apache-2.0 and `LICENSE` is
-present.
+`license-checker-rseidelsohn` does not support `--onlyAllow` and `--failOn` in
+the same invocation, so these must run as separate passes. They also pass
+`--excludePrivatePackages` because this scanner reports the unpublished private
+root package as `UNLICENSED` even though `package.json` declares Apache-2.0 and
+`LICENSE` is present.
 
 ## Future Production Dependencies
 

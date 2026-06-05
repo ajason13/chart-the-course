@@ -4,10 +4,10 @@ Last updated: 2026-06-04
 
 ## Current Status
 
-CTC-017 is started. Governance policy was unblocked by CTC-001 and CTC-016.
-This repository scaffold is governance-first and intentionally contains no
-runtime app shell, map provider, tile provider, PDF library, or production
-dependency yet.
+CTC-017 is in final audit response. Governance policy was unblocked by CTC-001
+and CTC-016. This repository scaffold is governance-first and intentionally
+contains no runtime app shell, map provider, tile provider, PDF library, or
+production dependency yet.
 
 ## Source of Truth
 
@@ -54,9 +54,17 @@ npx @cyclonedx/cyclonedx-npm \
   --output-format JSON \
   --output-file sbom.json \
   --validate
+
+# Pass 1 - allowlist
 npx license-checker-rseidelsohn \
   --production \
-  --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;OFL-1.1;CC0-1.0;Unlicense;0BSD" \
+  --excludePrivatePackages \
+  --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;OFL-1.1;CC0-1.0;Unlicense;0BSD"
+
+# Pass 2 - denylist
+npx license-checker-rseidelsohn \
+  --production \
+  --excludePrivatePackages \
   --failOn "GPL-2.0-only;GPL-3.0-only;AGPL-3.0;UNLICENSED"
 npm audit --omit=dev --audit-level=high
 ```
@@ -71,7 +79,7 @@ npm run compliance
 ```
 
 Implementation note: `license-checker-rseidelsohn` rejects `--onlyAllow` and
-`--failOn` in the same invocation, so `npm run compliance` enforces the accepted
+`--failOn` in the same invocation, so the compliance flow enforces the accepted
 license policy as separate allowlist and denylist passes. The scripts also pass
 `--excludePrivatePackages` because this scanner reports the unpublished private
 root package as `UNLICENSED` even though `package.json` declares Apache-2.0 and
