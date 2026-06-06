@@ -3,9 +3,9 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
   "version": 1,
-  "serialNumber": "urn:uuid:b10d9fbc-b5f0-4084-94a6-2229e6adbea9",
+  "serialNumber": "urn:uuid:29fe4396-b047-4aee-8062-0b61f26a8bfb",
   "metadata": {
-    "timestamp": "2026-06-06T04:34:48.881Z",
+    "timestamp": "2026-06-06T04:42:54.211Z",
     "tools": {
       "components": [
         {
@@ -141,7 +141,13 @@
         {
           "url": "https://registry.npmjs.org/react-dom/-/react-dom-19.2.7.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "b74051557bdb884fe8db41dfc3aebdacb6cc0835ad6192ef9898a0cb67f4331b1717eef5a71851df13a4b299ac3bc877665373ca26c09ad09ade5e2560a93a81"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
         }
       ],
       "properties": [
@@ -165,7 +171,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/react@19.2.7?vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Ffacebook%2Freact.git#packages/react",
+      "purl": "pkg:npm/react@19.2.7#packages/react",
       "externalReferences": [
         {
           "url": "git+https://github.com/facebook/react.git#packages/react",
@@ -181,6 +187,17 @@
           "url": "https://github.com/facebook/react/issues",
           "type": "issue-tracker",
           "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "https://registry.npmjs.org/react/-/react-19.2.7.tgz",
+          "type": "distribution",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "1cd7bd5ac9536d79852bca3c726c2001e245481bedd5b3dd1c254ab5a695f96940377ea6a53e21711a706dfddf639e9aaf6a085f3b01a4e0222111c0758d0e95"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
         }
       ],
       "properties": [
@@ -224,7 +241,13 @@
         {
           "url": "https://registry.npmjs.org/scheduler/-/scheduler-0.27.0.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "78dbfe5ab55b2aed5fdef6d8253ff1b62179b320391cf20cb5ff48818fe72a0d2c5aacc0504bea63fc66ece71973fa9a7cbc7f88ef4580e99e480a78bf9b62fd"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
         }
       ],
       "properties": [

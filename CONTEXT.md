@@ -4,8 +4,8 @@ Last updated: 2026-06-05
 
 ## Current Status
 
-CTC-002 is in Final Audit - 2026-06-05. PR #1
-(`ctc-002-app-scaffold`) remains provisional after a workflow correction:
+CTC-002 is Done - 2026-06-05. PR #1
+(`ctc-002-app-scaffold`) completed after a workflow correction:
 Gemini Deep Research completed specification review, then Claude completed
 adversarial QA planning before Codex resumed implementation. Accepted
 architecture is React 19.2.7, React DOM 19.2.7, TypeScript 6.0.3, Vite 8.0.16,
@@ -21,7 +21,10 @@ Commit `71da9ed` applies the planning revisions. Verification passed:
 Playwright tests), `git diff --check`, `git diff --check --cached`, and
 `npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`
 with React/React DOM/Scheduler verified as MIT and 0 production
-vulnerabilities. Claude final audit is required before merge or Done.
+vulnerabilities. Claude final audit returned `PASS` with no blockers or minor
+fixes and explicitly authorized immediate Done. Residual future-hardening notes
+include broader Playwright browser coverage, safer local preview-server reuse,
+and documenting the current Node-only Vitest environment.
 
 CTC-015 is Done - 2026-06-05. Commit `0f07ac0` added the Overpass query
 contract and a synthetic parser fixture so CTC-004 can implement reviewed
@@ -210,6 +213,9 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 - After CTC-002 final audit, CTC-004 should implement the reviewed CTC-015
   Overpass contract in the scaffolded app rather than inventing a new ad hoc
   query shape.
+- Future test-harness hardening should evaluate Firefox/WebKit Playwright
+  coverage, explicit local preview-server reuse behavior, and a documented
+  transition path if DOM-focused Vitest tests are introduced.
 - Define provider-review cadence when the first basemap provider is adopted.
 - Upgrade `@cyclonedx/cyclonedx-npm` to the 4.x series and pin
   `--spec-version 1.6` when the first production dependency lands.
