@@ -5,6 +5,10 @@
   "description": "Browser-based yardage book and course layout generator.",
   "license": "Apache-2.0",
   "type": "module",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11 <12"
+  },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
@@ -12,7 +16,8 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test": "npm run test:unit && npm run test:e2e",
-    "check": "npm run build && npm run test",
+    "verify:scaffold": "node scripts/verify-scaffold.mjs",
+    "check": "npm run verify:scaffold && npm run build && npm run test",
     "install:ci": "npm ci",
     "generate:sbom": "npx @cyclonedx/cyclonedx-npm --omit dev --output-format JSON --output-file sbom.json --validate",
     "build:sbom": "npm run install:ci && npm run generate:sbom",
@@ -23,11 +28,19 @@
     "compliance": "npm run generate:sbom && npm run license:check && npm run audit:prod"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.11.3",
     "@cyclonedx/cyclonedx-npm": "2.1.0",
-    "@playwright/test": "^1.60.0",
+    "@playwright/test": "1.60.0",
+    "@types/react": "19.2.0",
+    "@types/react-dom": "19.2.0",
+    "@vitejs/plugin-react": "6.0.2",
     "license-checker-rseidelsohn": "4.4.2",
-    "typescript": "^6.0.3",
-    "vite": "^8.0.16",
-    "vitest": "^4.1.8"
+    "typescript": "6.0.3",
+    "vite": "8.0.16",
+    "vitest": "4.1.8"
+  },
+  "dependencies": {
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
   }
 }

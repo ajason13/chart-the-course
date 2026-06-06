@@ -4,17 +4,18 @@ Last updated: 2026-06-05
 
 ## Current Status
 
-CTC-002 is in Final Audit - 2026-06-05. PR #1
-(`ctc-002-app-scaffold`) adds the initial Vite/TypeScript scaffold, README,
-CONTRIBUTING, CI, local tests, and generated placeholder fixture. Commit
-`5b4ec25` created the app shell, Vitest unit test, Playwright smoke test,
-fixture-backed first screen, and updated durable repo guidance. Scope remained
-limited: no map provider, basemap tiles, Overpass runtime call, PDF export
-behavior, API key, user data flow, or production dependency was added.
-Verification passed: `npm run check`, `git diff --check`,
-`git diff --check --cached`, and
-`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`.
-Claude final audit is required before Done.
+CTC-002 is In Development - 2026-06-05. PR #1
+(`ctc-002-app-scaffold`) remains provisional after a workflow correction:
+Gemini Deep Research completed specification review, then Claude completed
+adversarial QA planning before Codex resumed implementation. Accepted
+architecture is React 19.2.7, React DOM 19.2.7, TypeScript 6.0.3, Vite 8.0.16,
+Vitest 4.1.8, Playwright 1.60.0, and axe-playwright 4.11.3 on Node 24 LTS.
+Direct dependencies are exact-pinned, CI actions are SHA-pinned with read-only
+contents permission, and tests enforce synthetic non-geographic fixture data,
+runtime network isolation, responsive smoke coverage, and an axe oracle test.
+Map/geometry algorithms, Overpass behavior, basemap tiles, persistence, PDF
+behavior, API keys, and user data flows remain out of scope. The tracked SBOM
+and existing ODbL Section 4.6 PDF source-export policy remain authoritative.
 
 CTC-015 is Done - 2026-06-05. Commit `0f07ac0` added the Overpass query
 contract and a synthetic parser fixture so CTC-004 can implement reviewed

@@ -8,6 +8,8 @@ This repository contains the initial Chart the Course browser app scaffold plus 
 
 - `npm ci`: install dependencies from the lockfile.
 - `npm run dev`: start the Vite app on `127.0.0.1`.
+- `npm run verify:scaffold`: enforce exact direct dependency pins, Node 24,
+  React bootstrap, and SHA-pinned/read-only CI policy.
 - `npm run build`: type-check and build the browser app.
 - `npm run test:unit`: run Vitest unit tests.
 - `npm run test:e2e`: run Playwright smoke tests against the local preview server.
@@ -19,7 +21,12 @@ This repository contains the initial Chart the Course browser app scaffold plus 
 - `scripts/compliance.sh`: shell wrapper for the same compliance flow.
 - `git diff --check`: catch whitespace errors before review.
 
-The current app shell is intentionally local-first and fixture-backed. Do not add Overpass runtime calls, map providers, basemap tiles, PDF export behavior, production dependencies, API keys, or user data flows unless the selected task explicitly covers them and governance docs are updated.
+The current React app shell is intentionally local-first and fixture-backed.
+Use Node 24 LTS and npm 11 as declared in `.nvmrc` and `package.json`. Keep
+direct dependencies exact-pinned. Do not add Overpass runtime calls, map
+providers, basemap tiles, PDF export behavior, additional production
+dependencies, API keys, or user data flows unless the selected task explicitly
+covers them and governance docs are updated.
 
 ## Agent Workflow
 

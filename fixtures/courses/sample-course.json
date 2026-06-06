@@ -1,26 +1,28 @@
 {
   "name": "CTC synthetic sample course",
+  "synthetic": true,
+  "coordinateSystem": "local-normalized",
   "source": "Generated placeholder fixture for local scaffold tests.",
-  "attribution": "Contains generated placeholder geometry only. OSM attribution requirements are documented for later OSM-derived data.",
-  "center": [-122.082203, 37.422004],
+  "notice": "Contains generated non-geographic placeholder geometry only.",
+  "center": [50, 50],
   "holes": [
     {
       "number": 1,
       "par": 4,
-      "tee": [-122.085, 37.421],
-      "green": [-122.079, 37.423]
+      "tee": [12, 22],
+      "green": [42, 34]
     },
     {
       "number": 2,
       "par": 3,
-      "tee": [-122.078, 37.422],
-      "green": [-122.075, 37.425]
+      "tee": [46, 38],
+      "green": [64, 58]
     },
     {
       "number": 3,
       "par": 5,
-      "tee": [-122.076, 37.426],
-      "green": [-122.084, 37.428]
+      "tee": [68, 62],
+      "green": [88, 82]
     }
   ]
 }

@@ -13,7 +13,7 @@ governance review.
 
 This repository now contains the initial web app scaffold for CTC-002:
 
-- Vanilla TypeScript and Vite app shell.
+- React, TypeScript, and Vite app shell.
 - Local fixture-backed first screen.
 - Unit and Playwright smoke tests.
 - Governance, attribution, security, and compliance documentation.
@@ -25,7 +25,8 @@ geometry remains subject to OSM attribution requirements; see
 
 ## Local Setup
 
-Use Node.js 20 or newer.
+Use Node.js 24 LTS and npm 11. The checked-in `.nvmrc` and `package.json`
+engine constraints define the supported local and CI runtime.
 
 ```bash
 npm ci
@@ -38,6 +39,7 @@ Open the local URL printed by Vite.
 
 ```bash
 npm run build
+npm run verify:scaffold
 npm run test:unit
 npm run test:e2e
 git diff --check
