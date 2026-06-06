@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 
 const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+const packageLock = JSON.parse(readFileSync("package-lock.json", "utf8"));
 const workflow = readFileSync(".github/workflows/ci.yml", "utf8");
 const indexHtml = readFileSync("index.html", "utf8");
 
@@ -8,6 +9,13 @@ for (const group of ["dependencies", "devDependencies"]) {
   for (const [name, version] of Object.entries(packageJson[group] ?? {})) {
     if (!/^\d+\.\d+\.\d+(-[\w.-]+)?$/.test(version)) {
       throw new Error(`${group}.${name} must use an exact version; found ${version}`);
+    }
+
+    const lockedVersion = packageLock.packages?.[""]?.[group]?.[name];
+    if (lockedVersion !== version) {
+      throw new Error(
+        `package-lock.json root ${group}.${name} must match package.json; found ${lockedVersion}`
+      );
     }
   }
 }
