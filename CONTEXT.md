@@ -4,7 +4,7 @@ Last updated: 2026-06-05
 
 ## Current Status
 
-CTC-002 is In Development - 2026-06-05. PR #1
+CTC-002 is in Final Audit - 2026-06-05. PR #1
 (`ctc-002-app-scaffold`) remains provisional after a workflow correction:
 Gemini Deep Research completed specification review, then Claude completed
 adversarial QA planning before Codex resumed implementation. Accepted
@@ -16,6 +16,12 @@ runtime network isolation, responsive smoke coverage, and an axe oracle test.
 Map/geometry algorithms, Overpass behavior, basemap tiles, persistence, PDF
 behavior, API keys, and user data flows remain out of scope. The tracked SBOM
 and existing ODbL Section 4.6 PDF source-export policy remain authoritative.
+Commit `71da9ed` applies the planning revisions. Verification passed:
+`npm ci`, `npm run check` (policy verification, build, 3 unit tests, and 4
+Playwright tests), `git diff --check`, `git diff --check --cached`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`
+with React/React DOM/Scheduler verified as MIT and 0 production
+vulnerabilities. Claude final audit is required before merge or Done.
 
 CTC-015 is Done - 2026-06-05. Commit `0f07ac0` added the Overpass query
 contract and a synthetic parser fixture so CTC-004 can implement reviewed
