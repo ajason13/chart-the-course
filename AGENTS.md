@@ -2,11 +2,18 @@
 
 ## Project Structure & Module Organization
 
-This repository is currently a governance scaffold for Chart the Course, not a runtime app. Root documents define project policy and status: `CONTEXT.md`, `SECURITY.md`, `ATTRIBUTION.md`, `THIRD_PARTY_NOTICES.md`, and `LICENSE`. Focused decision records live in `docs/`, including tile-provider, governance-workflow, and legal-disclaimer guidance. Automation lives in `scripts/`; `scripts/compliance.sh` delegates to the canonical npm compliance flow. Dependency metadata is tracked in `package.json`, `package-lock.json`, and generated `sbom.json`.
+This repository contains the initial Chart the Course browser app scaffold plus governance docs. Runtime source lives in `src/`, Playwright smoke tests live in `test/e2e/`, and deterministic fixtures live in `fixtures/`. Root documents define project policy and status: `README.md`, `CONTRIBUTING.md`, `CONTEXT.md`, `SECURITY.md`, `ATTRIBUTION.md`, `THIRD_PARTY_NOTICES.md`, and `LICENSE`. Focused decision records live in `docs/`, including tile-provider, governance-workflow, legal-disclaimer, reference-reuse, and Overpass-contract guidance. Automation lives in `scripts/`; `scripts/compliance.sh` delegates to the canonical npm compliance flow. Dependency metadata is tracked in `package.json`, `package-lock.json`, and generated `sbom.json`.
 
 ## Build, Test, and Development Commands
 
 - `npm ci`: install dependencies from the lockfile.
+- `npm run dev`: start the Vite app on `127.0.0.1`.
+- `npm run verify:scaffold`: enforce exact direct dependency pins, Node 24,
+  React bootstrap, and SHA-pinned/read-only CI policy.
+- `npm run build`: type-check and build the browser app.
+- `npm run test:unit`: run Vitest unit tests.
+- `npm run test:e2e`: run Playwright smoke tests against the local preview server.
+- `npm run check`: run app build, unit tests, and Playwright smoke tests.
 - `npm run generate:sbom`: regenerate `sbom.json` with CycloneDX.
 - `npm run license:check`: run production dependency allowlist and denylist checks.
 - `npm run audit:prod`: run `npm audit --omit=dev --audit-level=high`.
@@ -14,7 +21,12 @@ This repository is currently a governance scaffold for Chart the Course, not a r
 - `scripts/compliance.sh`: shell wrapper for the same compliance flow.
 - `git diff --check`: catch whitespace errors before review.
 
-There is no app build or local dev server yet. Add those commands only when runtime source is introduced.
+The current React app shell is intentionally local-first and fixture-backed.
+Use Node 24 LTS and npm 11 as declared in `.nvmrc` and `package.json`. Keep
+direct dependencies exact-pinned. Do not add Overpass runtime calls, map
+providers, basemap tiles, PDF export behavior, additional production
+dependencies, API keys, or user data flows unless the selected task explicitly
+covers them and governance docs are updated.
 
 ## Agent Workflow
 
@@ -32,7 +44,7 @@ Keep Markdown concise, source-linked where policy depends on external terms, and
 
 ## Testing Guidelines
 
-No unit or integration test framework is present yet. For current changes, run `git diff --check` and `npm run compliance` before review. When app code is added, place tests near the source or in a clearly named `tests/` tree, and document the framework and naming pattern here.
+Unit tests use Vitest and should sit next to the source as `*.test.ts`. Browser smoke tests use Playwright under `test/e2e/`. For current changes, run `npm run check`, `git diff --check`, and `npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh` before review.
 
 ## Commit & Pull Request Guidelines
 

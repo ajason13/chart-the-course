@@ -1,6 +1,16 @@
 # Third-Party Notices
 
-This scaffold contains no production runtime dependencies yet.
+This scaffold contains the following reviewed production runtime dependencies:
+
+| Package | Version | License | Purpose |
+| --- | --- | --- | --- |
+| `react` | 19.2.7 | MIT | Declarative application UI |
+| `react-dom` | 19.2.7 | MIT | Browser DOM rendering |
+| `scheduler` | 0.27.0 | MIT | Transitive React scheduling runtime |
+
+These packages were verified through the production SBOM and license checks on
+2026-06-05. Their upstream license files are preserved in installed package
+artifacts and represented in `sbom.json`.
 
 ## Current Map and Tile Provider Policy
 

@@ -1,0 +1,28 @@
+{
+  "name": "CTC synthetic sample course",
+  "synthetic": true,
+  "coordinateSystem": "local-normalized",
+  "source": "Generated placeholder fixture for local scaffold tests.",
+  "notice": "Contains generated non-geographic placeholder geometry only.",
+  "center": [50, 50],
+  "holes": [
+    {
+      "number": 1,
+      "par": 4,
+      "tee": [12, 22],
+      "green": [42, 34]
+    },
+    {
+      "number": 2,
+      "par": 3,
+      "tee": [46, 38],
+      "green": [64, 58]
+    },
+    {
+      "number": 3,
+      "par": 5,
+      "tee": [68, 62],
+      "green": [88, 82]
+    }
+  ]
+}
