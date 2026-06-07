@@ -232,7 +232,7 @@ export function App() {
         </form>
       </section>
 
-      <section className={`status ${errorState ? "error" : ""}`} aria-live="polite" aria-atomic="true">
+      <section className={`status ${errorState ? "error" : ""}`} aria-live={errorState ? "assertive" : "polite"} aria-atomic="true">
         <strong>Status</strong>
         <p>{stateMessage(state)}</p>
         {warning && <p className="warning">{warning}</p>}

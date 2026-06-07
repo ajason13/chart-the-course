@@ -140,6 +140,9 @@ for (const scenario of [
     await fillBounds(page);
     await page.getByRole("button", { name: "Search courses" }).click();
     await expect(page.getByText(scenario.expected)).toBeVisible();
+    if (scenario.status === 429) {
+      await expect(page.locator(".status")).toHaveAttribute("aria-live", "assertive");
+    }
     expect(requests).toBe(1);
   });
 }

@@ -87,6 +87,7 @@ describe("bbox validation", () => {
 
   it("handles span, polar, ordering, and dateline edges", () => {
     expect(parseBbox({ south: "89.65", west: "10", north: "90", east: "10.35" }).ok).toBe(true);
+    expect(parseBbox({ south: "37.0", west: "-122.1", north: "37.35", east: "-121.75" }).ok).toBe(true);
     expect(parseBbox({ south: "0", west: "0", north: "0.3500001", east: "0.35" }).ok).toBe(false);
     expect(parseBbox({ south: "1", west: "0", north: "0", east: "0.1" }).ok).toBe(false);
     expect(parseBbox({ south: "0", west: "179.9", north: "0.1", east: "-179.9" }).ok).toBe(false);

@@ -85,10 +85,10 @@ export function parseBbox(fields: Record<keyof Bbox, string>):
   if (values.west < -180 || values.west >= values.east || values.east > 180) {
     return { ok: false, field: "west", message: "West must be below east within -180 to 180." };
   }
-  if (values.north - values.south > 0.35 + Number.EPSILON) {
+  if (Number((values.north - values.south).toFixed(7)) > 0.35) {
     return { ok: false, field: "north", message: "Latitude span cannot exceed 0.35 degrees." };
   }
-  if (values.east - values.west > 0.35 + Number.EPSILON) {
+  if (Number((values.east - values.west).toFixed(7)) > 0.35) {
     return { ok: false, field: "east", message: "Longitude span cannot exceed 0.35 degrees." };
   }
 

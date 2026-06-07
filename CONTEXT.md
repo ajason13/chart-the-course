@@ -4,22 +4,26 @@ Last updated: 2026-06-06
 
 ## Current Status
 
-CTC-004 is in Final Audit (Claude) - 2026-06-06. Branch
-`ctc-004-overpass-search-spike` implements the reviewed CTC-015 contract as a
-bounded manual-coordinate browser spike. It uses one reviewed Overpass endpoint,
-native fetch/AbortController/sessionStorage, exact discovery/detail query
-shapes, single-pass injection-safe course-name encoding, strict decimal bbox
+CTC-004 is Done - 2026-06-07. Branch `ctc-004-overpass-search-spike`
+implements the reviewed CTC-015 contract as a bounded manual-coordinate browser
+spike. It uses one reviewed Overpass endpoint, native
+fetch/AbortController/sessionStorage, exact discovery/detail query shapes,
+single-pass injection-safe course-name encoding, strict decimal bbox
 validation, exact candidate bounds for explicit detail requests, minimum raw
 entity-shape validation, exact raw response/source-metadata caching, stale
 request protection, recoverable storage warnings, visible OSM attribution, and
-no new dependency. The React UI exposes explicit discovery, detail, cancel,
-empty, rate-limit, timeout, network, HTTP, parse, and shape states without
-geocoding, retries, failover, basemap tiles, geometry normalization, durable
-cache, or automatic detail loading. Verification passed: temporary-cache
-`npm ci`, `npm run check` (scaffold policy, build, 17 Vitest tests, and 12
-route-isolated Playwright tests), `git diff --check`, and
+no new dependency. Claude final audit returned `PASS WITH MINOR FIXES`. F-1
+corrected exact 0.35-degree span handling at non-zero coordinates and added a
+regression test. F-2 made error-state live announcements assertive and added a
+429 accessibility assertion. Claude explicitly authorized Done after these
+confined fixes without re-audit. Accepted CTC-019 hardening advisories are to
+validate all cached source-metadata fields and pre-check already-aborted
+signals; the deterministic trailing colon for an empty discovery-name cache key
+requires no change. Verification passed after fixes: `npm run check` (scaffold
+policy, build, 17 Vitest tests, and 12 route-isolated Playwright tests),
+`git diff --check`, and
 `npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`
-with 0 production vulnerabilities. Claude final audit is required before Done.
+with 0 production vulnerabilities.
 
 CTC-002 is Done - 2026-06-05. PR #1
 (`ctc-002-app-scaffold`) completed after a workflow correction:
@@ -227,10 +231,10 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- Claude should final-audit CTC-004. Do not mark it Done until findings are
-  resolved or explicitly accepted.
 - CTC-005 geometry normalization and CTC-019 durable cache/request policy remain
   downstream; do not absorb them into CTC-004.
+- CTC-019 should validate every cached source-metadata field and pre-check
+  already-aborted request signals as accepted CTC-004 audit hardening notes.
 - Future test-harness hardening should evaluate Firefox/WebKit Playwright
   coverage, explicit local preview-server reuse behavior, and a documented
   transition path if DOM-focused Vitest tests are introduced.
