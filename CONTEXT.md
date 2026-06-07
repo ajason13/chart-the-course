@@ -1,8 +1,31 @@
 # Chart the Course Context
 
-Last updated: 2026-06-05
+Last updated: 2026-06-06
 
 ## Current Status
+
+CTC-004 implementation and audit are Done - 2026-06-07. PR #2
+(`ctc-004-overpass-search-spike`) implements the reviewed CTC-015 contract as a
+bounded manual-coordinate browser spike. Notion records the Done verdict, fix
+commit, PR URL, and CTC-019 hardening advisories. The implementation uses one
+reviewed Overpass endpoint, native
+fetch/AbortController/sessionStorage, exact discovery/detail query shapes,
+single-pass injection-safe course-name encoding, strict decimal bbox
+validation, exact candidate bounds for explicit detail requests, minimum raw
+entity-shape validation, exact raw response/source-metadata caching, stale
+request protection, recoverable storage warnings, visible OSM attribution, and
+no new dependency. Claude final audit returned `PASS WITH MINOR FIXES`. F-1
+corrected exact 0.35-degree span handling at non-zero coordinates and added a
+regression test. F-2 made error-state live announcements assertive and added a
+429 accessibility assertion. Claude explicitly authorized Done after these
+confined fixes without re-audit. Accepted CTC-019 hardening advisories are to
+validate all cached source-metadata fields and pre-check already-aborted
+signals; the deterministic trailing colon for an empty discovery-name cache key
+requires no change. Verification passed after fixes: `npm run check` (scaffold
+policy, build, 17 Vitest tests, and 12 route-isolated Playwright tests),
+`git diff --check`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`
+with 0 production vulnerabilities.
 
 CTC-002 is Done - 2026-06-05. PR #1
 (`ctc-002-app-scaffold`) completed after a workflow correction:
@@ -210,9 +233,10 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- After CTC-002 final audit, CTC-004 should implement the reviewed CTC-015
-  Overpass contract in the scaffolded app rather than inventing a new ad hoc
-  query shape.
+- CTC-005 geometry normalization and CTC-019 durable cache/request policy remain
+  downstream; do not absorb them into CTC-004.
+- CTC-019 should validate every cached source-metadata field and pre-check
+  already-aborted request signals as accepted CTC-004 audit hardening notes.
 - Future test-harness hardening should evaluate Firefox/WebKit Playwright
   coverage, explicit local preview-server reuse behavior, and a documented
   transition path if DOM-focused Vitest tests are introduced.

@@ -1,54 +1,211 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-test("renders the scaffolded app shell", async ({ page }) => {
-  const externalRequests: string[] = [];
+const endpoint = "https://overpass-api.de/api/interpreter";
+const discovery = {
+  elements: [
+    {
+      type: "way",
+      id: 9000000001,
+      bounds: { minlat: 35, minlon: -80, maxlat: 35.01, maxlon: -79.99 },
+      tags: { leisure: "golf_course", name: "Synthetic Municipal Course" },
+    },
+    {
+      type: "node",
+      id: 9000000002,
+      tags: { leisure: "golf_course", name: "Bounds unavailable" },
+    },
+  ],
+};
+const syntheticDetail = {
+  elements: [
+    discovery.elements[0],
+    { type: "way", id: 9000000101, tags: { golf: "hole", ref: "1" } },
+    { type: "node", id: 9000000201, tags: { golf: "tee", ref: "1" } },
+  ],
+};
 
-  page.on("request", (request) => {
-    const url = new URL(request.url());
-    if (!["127.0.0.1", "localhost"].includes(url.hostname)) {
-      externalRequests.push(request.url());
+async function isolateNetwork(page: Page, overpassHandler?: (route: Route) => Promise<void> | void) {
+  await page.route("**/*", async (route) => {
+    const url = new URL(route.request().url());
+    if (["127.0.0.1", "localhost"].includes(url.hostname)) {
+      await route.continue();
+    } else if (route.request().url() === endpoint && overpassHandler) {
+      await overpassHandler(route);
+    } else {
+      await route.abort("blockedbyclient");
+      throw new Error(`Unexpected external request: ${route.request().url()}`);
     }
   });
+}
 
-  await page.goto("/");
+async function fillBounds(page: Page) {
+  await page.getByLabel("South").fill("35");
+  await page.getByLabel("West").fill("-80");
+  await page.getByLabel("North").fill("35.01");
+  await page.getByLabel("East").fill("-79.99");
+}
 
-  await expect(page.getByRole("heading", { name: "Chart the Course" })).toBeVisible();
-  await expect(page.getByText("Runtime LLM")).toBeVisible();
-  await expect(page.getByText("None")).toBeVisible();
-  await expect(page.getByText("Basemap tiles")).toBeVisible();
-  await expect(page.getByText("Not loaded by default")).toBeVisible();
-  await expect(page.getByText("3 placeholder holes / par 12")).toBeVisible();
-  await expect(page.getByText("Generated non-geographic placeholder geometry")).toBeVisible();
-  expect(externalRequests).toEqual([]);
-});
-
-test("has no detectable accessibility violations", async ({ page }) => {
-  await page.goto("/");
-
+async function assertAxe(page: Page) {
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();
-
   expect(results.violations).toEqual([]);
+}
+
+test("discovers candidates, loads detail explicitly, caches it, and shows attribution", async ({ page }) => {
+  let discoveryRequests = 0;
+  let detailRequests = 0;
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    expect(route.request().method()).toBe("POST");
+    if (query.includes("purpose:golf-course-detail")) {
+      detailRequests += 1;
+      await route.fulfill({ json: syntheticDetail });
+    } else {
+      discoveryRequests += 1;
+      await route.fulfill({ json: discovery });
+    }
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByLabel(/Course name/).fill("Synthetic.*");
+  await page.getByRole("button", { name: "Search courses" }).click();
+
+  await expect(page.getByText("Synthetic Municipal Course")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Detail unavailable" })).toBeDisabled();
+  await expect(page.getByText(/Data © OpenStreetMap contributors/)).toBeVisible();
+  expect(discoveryRequests).toBe(1);
+  expect(detailRequests).toBe(0);
+
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await expect(page.getByText(/raw detail entities loaded/)).toBeVisible();
+  await expect(page.getByText("way/9000000001")).toBeVisible();
+  expect(detailRequests).toBe(1);
+
+  await page.reload();
+  await fillBounds(page);
+  await page.getByLabel(/Course name/).fill("Synthetic.*");
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await expect(page.getByText(/raw discovery entities loaded from session cache/)).toBeVisible();
+  expect(discoveryRequests).toBe(1);
 });
 
-test("renders the scaffold at a mobile viewport", async ({ page }) => {
+test("makes no requests on keystrokes, blocks duplicate submit, and cancels explicitly", async ({ page }) => {
+  let requests = 0;
+  await isolateNetwork(page, async (route) => {
+    requests += 1;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await route.fulfill({ json: discovery });
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByLabel(/Course name/).fill("No automatic query");
+  expect(requests).toBe(0);
+
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await expect(page.getByRole("button", { name: "Search courses" })).toBeDisabled();
+  expect(requests).toBe(1);
+  await page.getByRole("button", { name: "Cancel request" }).click();
+  await expect(page.getByText("Request cancelled.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Search courses" })).toBeFocused();
+  await page.waitForTimeout(600);
+  await expect(page.getByText("Request cancelled.")).toBeVisible();
+  expect(requests).toBe(1);
+});
+
+test("validates input before requests and focuses the first invalid field", async ({ page }) => {
+  let requests = 0;
+  await isolateNetwork(page, () => { requests += 1; });
+  await page.goto("/");
+  await page.getByLabel("South").fill("1e2");
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await expect(page.getByText(/Use decimal degrees/)).toBeVisible();
+  await expect(page.getByLabel("South")).toBeFocused();
+  expect(requests).toBe(0);
+});
+
+for (const scenario of [
+  { name: "rate limit", status: 429, expected: /rate-limited/ },
+  { name: "gateway timeout", status: 504, expected: /timed out/ },
+  { name: "generic HTTP", status: 500, expected: /HTTP 500/ },
+]) {
+  test(`shows ${scenario.name} state without retry or failover`, async ({ page }) => {
+    let requests = 0;
+    await isolateNetwork(page, async (route) => {
+      requests += 1;
+      await route.fulfill({ status: scenario.status, body: "error" });
+    });
+    await page.goto("/");
+    await fillBounds(page);
+    await page.getByRole("button", { name: "Search courses" }).click();
+    await expect(page.getByText(scenario.expected)).toBeVisible();
+    if (scenario.status === 429) {
+      await expect(page.locator(".status")).toHaveAttribute("aria-live", "assertive");
+    }
+    expect(requests).toBe(1);
+  });
+}
+
+for (const scenario of [
+  { name: "malformed JSON", body: "{", expected: /malformed JSON/ },
+  { name: "invalid shape", body: '{"elements":[{"type":"area","id":1}]}', expected: /invalid entity shape/ },
+  { name: "empty response", body: '{"elements":[]}', expected: /No discovery results/ },
+]) {
+  test(`shows ${scenario.name} state`, async ({ page }) => {
+    await isolateNetwork(page, async (route) => route.fulfill({ body: scenario.body, contentType: "application/json" }));
+    await page.goto("/");
+    await fillBounds(page);
+    await page.getByRole("button", { name: "Search courses" }).click();
+    await expect(page.getByText(scenario.expected)).toBeVisible();
+  });
+}
+
+test("shows a network failure without retry", async ({ page }) => {
+  let requests = 0;
+  await isolateNetwork(page, async (route) => {
+    requests += 1;
+    await route.abort("internetdisconnected");
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await expect(page.getByText(/Network request failed/)).toBeVisible();
+  expect(requests).toBe(1);
+});
+
+test("supports keyboard flow, mobile layout, and axe scans across states", async ({ page }) => {
+  let resolveRequest: (() => void) | undefined;
+  await isolateNetwork(page, async (route) => {
+    await new Promise<void>((resolve) => { resolveRequest = resolve; });
+    await route.fulfill({ json: discovery });
+  });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
+  await assertAxe(page);
+  await fillBounds(page);
+  await page.getByLabel("East").press("Enter");
+  await expect(page.getByText("Loading discovery results.")).toBeVisible();
+  await assertAxe(page);
+  resolveRequest?.();
+  await expect(page.getByText("Synthetic Municipal Course")).toBeVisible();
+  await assertAxe(page);
+  const detailButton = page.getByRole("button", { name: "Load raw detail" });
+  await expect(detailButton).toBeVisible();
+  expect(await detailButton.evaluate((button) => button.getBoundingClientRect().right <= window.innerWidth)).toBe(true);
 
-  await expect(page.getByRole("heading", { name: "Chart the Course" })).toBeVisible();
-  await expect(page.getByLabel("Scaffold status")).toBeVisible();
-  await expect(page.getByLabel("Vector-only map placeholder")).toBeVisible();
+  await page.getByLabel("South").fill("bad");
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await expect(page.getByText(/Use decimal degrees/)).toBeVisible();
+  await assertAxe(page);
 });
 
-test("accessibility scan detects a known injected violation", async ({ page }) => {
+test("accessibility oracle detects a known injected violation", async ({ page }) => {
+  await isolateNetwork(page);
   await page.goto("/");
   await page.locator("main").evaluate((main) => {
     main.insertAdjacentHTML("beforeend", '<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==">');
   });
-
   const results = await new AxeBuilder({ page }).include("main").analyze();
-
   expect(results.violations.map((violation) => violation.id)).toContain("image-alt");
 });

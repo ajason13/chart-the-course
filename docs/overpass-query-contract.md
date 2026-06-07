@@ -1,11 +1,11 @@
 # Overpass Query Contract
 
-Status: Drafted for CTC-015 on 2026-06-05.
+Status: Implemented as a bounded CTC-004 browser spike on 2026-06-06.
 
 This contract defines the first Chart the Course Overpass API request shape for
-course discovery and course-detail loading. It is a design artifact, not a
-runtime integration. CTC-004 should implement this contract only after an app
-scaffold and test harness exist.
+course discovery and course-detail loading. CTC-004 implements the bounded
+session-only browser spike; later durable cache and geometry work remain
+separate tasks.
 
 ## Goals
 
@@ -26,19 +26,25 @@ All coordinates use WGS84 decimal degrees in Overpass order:
 | --- | --- | --- |
 | `bbox` | Yes | User-selected or geocoded search extent. The client must reject global, country-scale, or otherwise unbounded boxes. |
 | `courseName` | No | User-entered search text. Escape for Overpass regular-expression syntax before interpolation. |
-| `selectedCourseBbox` | Yes for detail | Bounding box from the selected `leisure=golf_course` result, padded enough to include related features but not nearby unrelated courses. |
+| `selectedCourseBbox` | Yes for detail | Exact valid bounding box from the selected `leisure=golf_course` result. Bbox padding is deferred beyond CTC-004. |
 | `appVersion` | Yes | Used in the identifying Overpass QL comment. |
 | `contactUrl` | Yes | Public project or support URL in the identifying Overpass QL comment. |
 
-Initial guardrail: reject bboxes wider than 0.35 degrees longitude or 0.35
-degrees latitude unless a future maintainer decision records a different limit.
-This keeps browser requests scoped to a city/neighborhood-scale search instead
-of using public Overpass as a bulk data backend.
+Initial guardrail: accept only manually entered decimal coordinate syntax with
+at most seven decimal places. Reject exponent notation, locale commas,
+non-finite values, antimeridian crossing, invalid ordering, and bboxes wider
+than 0.35 degrees longitude or 0.35 degrees latitude unless a future maintainer
+decision records a different limit. Exactly 0.35 degrees is allowed. This keeps
+browser requests scoped to a city/neighborhood-scale search instead of using
+public Overpass as a bulk data backend.
 
-`courseName` must be treated as a literal string before it is interpolated into
-the regex filter. Escape at least these regular-expression metacharacters:
-`\`, `.`, `*`, `+`, `?`, `(`, `)`, `[`, `]`, `{`, `}`, `|`, `^`, and `$`.
-Do not concatenate raw user input into Overpass QL.
+`courseName` must be trimmed, limited to 200 Unicode code points, and rejected
+if it contains ASCII control characters. Treat it as a literal string with a
+single-pass encoder before interpolation into the regex filter: prefix `\`
+before `"`, `\`, and each of `.`, `*`, `+`, `?`, `(`, `)`, `[`, `]`, `{`,
+`}`, `|`, `^`, and `$`. Treat `*/` in a course name as ordinary quoted-string
+content; it cannot terminate the separate leading comment. Do not concatenate
+raw user input into Overpass QL.
 
 ## Request Identity
 
@@ -54,6 +60,10 @@ browser policy permits it.
 If Chart the Course later uses a proxy, self-hosted Overpass, or commercial
 provider, that server-side layer should also set a descriptive upstream
 `User-Agent`.
+
+For CTC-004, the app version and contact URL are fixed trusted constants from
+`package.json` and the GitHub repository URL. Validate both constants before
+query construction and reject control characters or `*/`.
 
 ## Course Discovery Query
 
@@ -127,8 +137,10 @@ treat them as a constrained public service, not a guaranteed production backend.
   ships before durable local persistence exists, session storage is acceptable
   only as a temporary CTC-004 exploration-spike constraint before CTC-019
   establishes durable local persistence.
-- Debounce user search input and require an explicit search action before
-  querying.
+- CTC-004 cache keys are
+  `ctc:overpass:v1:discovery:{bbox}:{encoded-lowercase-name}` and
+  `ctc:overpass:v1:detail:{bbox}`.
+- Never query on keystrokes; require an explicit search action.
 - On HTTP `429`, show a rate-limit state and back off before retrying. Do not
   retry automatically in a tight loop.
 - On HTTP `504` or timeout, show a scoped-search prompt asking the user to
@@ -139,10 +151,20 @@ treat them as a constrained public service, not a guaranteed production backend.
 - If expected traffic exceeds public Overpass safety guidance, switch to a
   self-hosted instance or approved provider before broad deployment.
 
+A minimally valid raw response is an object with an `elements` array. Every
+element must be an object with `type` equal to `node`, `way`, or `relation` and
+an integer `id`. `elements: []` is an empty discovery or detail response. Any
+non-empty valid elements array is success, even when expected feature types are
+absent.
+
 ## Attribution and ODbL Records
 
 Every successful detail response must be retained with enough source metadata
 to support later ODbL source availability for PDFs and other generated outputs.
+
+CTC-004 stores the exact response text plus source metadata in `sessionStorage`
+and parses a separate in-memory representation for display. This session cache
+does not satisfy later ODbL source-export obligations.
 
 Persist or export alongside normalized geometry:
 
