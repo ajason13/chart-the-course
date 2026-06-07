@@ -4,9 +4,12 @@ Last updated: 2026-06-06
 
 ## Current Status
 
-CTC-004 is Done - 2026-06-07. Branch `ctc-004-overpass-search-spike`
-implements the reviewed CTC-015 contract as a bounded manual-coordinate browser
-spike. It uses one reviewed Overpass endpoint, native
+CTC-004 implementation and audit are Done - 2026-06-07. PR #2
+(`ctc-004-overpass-search-spike`) implements the reviewed CTC-015 contract as a
+bounded manual-coordinate browser spike. The live Notion task still requires
+the Done verdict, fix commit, PR URL, and CTC-019 advisory sync because Notion
+OAuth expired during the final update. The implementation uses one reviewed
+Overpass endpoint, native
 fetch/AbortController/sessionStorage, exact discovery/detail query shapes,
 single-pass injection-safe course-name encoding, strict decimal bbox
 validation, exact candidate bounds for explicit detail requests, minimum raw
