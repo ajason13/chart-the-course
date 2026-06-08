@@ -62,6 +62,9 @@ verification passed: `npm run check` with scaffold policy, build, 24 Vitest
 tests, and 12 Playwright tests; `git diff --check`; and the canonical compliance
 flow with 0 production vulnerabilities. CTC-006 rendering and CTC-019 durable
 cache/request policy remain downstream.
+PR #3 passed required CI and merged into `main` as `a624fec` on 2026-06-07.
+Notion records the merged PR, implementation commit, audit-fix commit, final
+Claude verdict, and Done status.
 
 CTC-004 is Done - 2026-06-07. PR #2 (`ctc-004-overpass-search-spike`) passed
 required CI and merged into `main` as `50638ee`. It implements the reviewed
