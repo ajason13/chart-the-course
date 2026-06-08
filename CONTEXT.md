@@ -4,7 +4,7 @@ Last updated: 2026-06-06
 
 ## Current Status
 
-CTC-005 is in Development (ChatGPT) - 2026-06-07. Codex selected CTC-005
+CTC-005 is Done - 2026-06-07. Codex selected CTC-005
 after confirming `main` is clean and synchronized at `918f801`, CTC-015 is
 Done and defines the raw Overpass/detail-query contract, and CTC-004 is Done
 and merged as `50638ee` with validated raw entities and source metadata.
@@ -49,12 +49,19 @@ pure dependency-free normalizer, strict geometry/tag/ref handling, explicit-ref
 feature association, preserved source evidence, deterministic warnings, and
 complete/incomplete synthetic Vitest coverage. No rendering, spatial inference,
 geometry healing, relation assembly, storage/network behavior, or new
-dependency was added. Verification passed: `npm run check` with scaffold
-policy, build, 22 Vitest tests, and 12 Playwright tests; `git diff --check`; and
-`npm_config_cache=/private/tmp/chart-the-course-npm-cache
-scripts/compliance.sh` with 0 production vulnerabilities. Final Claude audit
-bundle generation from the audited commit remains required before moving to
-Final Audit.
+dependency was added. Verification passed before audit: `npm run check` with
+scaffold policy, build, 22 Vitest tests, and 12 Playwright tests;
+`git diff --check`; and `npm_config_cache=/private/tmp/chart-the-course-npm-cache
+scripts/compliance.sh` with 0 production vulnerabilities. Claude final audit
+returned `PASS WITH MINOR FIXES` with no blockers and authorized Done after two
+test-only additions without re-audit. MF-1 added explicit
+`ZERO_COURSE_CANDIDATES` coverage. MF-2 added explicit
+`MULTIPLE_COURSE_CANDIDATES` coverage for two distinct unique candidates. No
+normalization logic, fixture, dependency, or scope changed. Post-fix
+verification passed: `npm run check` with scaffold policy, build, 24 Vitest
+tests, and 12 Playwright tests; `git diff --check`; and the canonical compliance
+flow with 0 production vulnerabilities. CTC-006 rendering and CTC-019 durable
+cache/request policy remain downstream.
 
 CTC-004 is Done - 2026-06-07. PR #2 (`ctc-004-overpass-search-spike`) passed
 required CI and merged into `main` as `50638ee`. It implements the reviewed

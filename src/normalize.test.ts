@@ -110,4 +110,46 @@ describe("normalizeGolfCourse incomplete synthetic fixture", () => {
     const result = normalizeGolfCourse(fixture, source);
     expect(result.unassociatedFeatures.map(({ kind }) => kind)).toEqual(["vegetation", "rough"]);
   });
+
+  it("emits ZERO_COURSE_CANDIDATES for input with no leisure=golf_course elements", () => {
+    const result = normalizeGolfCourse({ elements: [] }, source);
+    expect(result.courseCandidates).toHaveLength(0);
+    expect(result.warnings.map(({ code }) => code)).toContain("ZERO_COURSE_CANDIDATES");
+    expect(result.warnings.find(({ code }) => code === "ZERO_COURSE_CANDIDATES")?.severity).toBe("error");
+  });
+
+  it("emits MULTIPLE_COURSE_CANDIDATES for two distinct leisure=golf_course elements", () => {
+    const fixture: OverpassResponse = {
+      elements: [
+        {
+          type: "way",
+          id: 9000009001,
+          geometry: [
+            { lat: 35, lon: -80 },
+            { lat: 35.01, lon: -80 },
+            { lat: 35.01, lon: -79.99 },
+            { lat: 35, lon: -79.99 },
+            { lat: 35, lon: -80 },
+          ],
+          tags: { leisure: "golf_course", name: "Synthetic Course A" },
+        },
+        {
+          type: "way",
+          id: 9000009002,
+          geometry: [
+            { lat: 35, lon: -80 },
+            { lat: 35.01, lon: -80 },
+            { lat: 35.01, lon: -79.99 },
+            { lat: 35, lon: -79.99 },
+            { lat: 35, lon: -80 },
+          ],
+          tags: { leisure: "golf_course", name: "Synthetic Course B" },
+        },
+      ],
+    };
+    const result = normalizeGolfCourse(fixture, source);
+    expect(result.courseCandidates).toHaveLength(2);
+    expect(result.warnings.map(({ code }) => code)).toContain("MULTIPLE_COURSE_CANDIDATES");
+    expect(result.warnings.find(({ code }) => code === "MULTIPLE_COURSE_CANDIDATES")?.severity).toBe("warning");
+  });
 });
