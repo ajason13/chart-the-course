@@ -1,0 +1,60 @@
+{
+  "elements": [
+    {
+      "type": "way",
+      "id": 9000001001,
+      "geometry": [
+        { "lat": 35, "lon": -80 },
+        { "lat": 35.01, "lon": -80 },
+        { "lat": 35.01, "lon": -79.99 },
+        { "lat": 35, "lon": -79.99 },
+        { "lat": 35, "lon": -80 }
+      ],
+      "tags": { "leisure": "golf_course", "name": "Synthetic Incomplete Course" }
+    },
+    {
+      "type": "way",
+      "id": 9000001101,
+      "geometry": [{ "lat": 35.001, "lon": -79.999 }, { "lat": 35.007, "lon": -79.994 }],
+      "tags": { "golf": "hole", "ref": "1", "par": "four" }
+    },
+    {
+      "type": "way",
+      "id": 9000001102,
+      "geometry": [{ "lat": 35.002, "lon": -79.998 }, { "lat": 35.008, "lon": -79.993 }],
+      "tags": { "golf": "hole", "ref": "1" }
+    },
+    {
+      "type": "way",
+      "id": 9000001103,
+      "geometry": [{ "lat": 35.003, "lon": -79.997 }, { "lat": 35.009, "lon": -79.992 }],
+      "tags": { "golf": "hole", "ref": "9B" }
+    },
+    {
+      "type": "way",
+      "id": 9000001201,
+      "geometry": [{ "lat": 35.001, "lon": -79.999 }, { "lat": 35.002, "lon": -79.998 }],
+      "tags": { "golf": "tee", "ref": "1" }
+    },
+    {
+      "type": "relation",
+      "id": 9000001301,
+      "members": [],
+      "tags": { "golf": "green", "ref": "1" }
+    },
+    {
+      "type": "node",
+      "id": 9000001401,
+      "lat": 35.004,
+      "lon": -79.996,
+      "tags": { "golf": "bunker", "ref": "19" }
+    },
+    {
+      "type": "node",
+      "id": 9000001401,
+      "lat": 35.005,
+      "lon": -79.995,
+      "tags": { "golf": "bunker", "ref": "19" }
+    }
+  ]
+}

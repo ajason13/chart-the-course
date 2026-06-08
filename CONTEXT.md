@@ -4,6 +4,65 @@ Last updated: 2026-06-06
 
 ## Current Status
 
+CTC-005 is Done - 2026-06-07. Codex selected CTC-005
+after confirming `main` is clean and synchronized at `918f801`, CTC-015 is
+Done and defines the raw Overpass/detail-query contract, and CTC-004 is Done
+and merged as `50638ee` with validated raw entities and source metadata.
+CTC-005 is the correct next task because pure deterministic normalization is
+needed before CTC-006 rendering. CTC-019 durable cache/request policy is an
+independent downstream task, not a prerequisite, and remains excluded.
+Notion records the selection/dependency rationale and the status move from
+Backlog to Spec Drafting. The self-contained Gemini prompt is at
+`docs/handoffs/ctc-005-gemini-specification-prompt.md`. The prompt was revised
+after Gemini interpreted its original role framing as a request for generic
+product-management research; the active prompt now explicitly permits only
+CTC-005 OSM/Overpass normalization research. A concise Deep Research
+plan-confirmation correction is at
+`docs/handoffs/ctc-005-gemini-plan-correction.md` because Gemini continued to
+substitute an unrelated saved plan. Do not create a feature branch or implement
+runtime code until the Gemini specification is critically reviewed and Claude
+adversarial QA planning is completed and critically reviewed.
+
+Gemini's CTC-005 specification response was critically reviewed on 2026-06-07.
+Useful recommendations were retained for a pure deterministic normalization
+boundary, preserved source evidence, unassociated features, stable warnings,
+and synthetic tests. Scope-broadening or unsupported recommendations were
+rejected, including Turf/MapLibre dependencies, rendering/z-index concerns,
+convex hulls, geometry healing, auto-closing polygons, multipolygon assembly,
+spatial containment/proximity association, arbitrary 150-meter thresholds,
+area-based conflict resolution, loose hole-ref coercion, merged source holes,
+real-course fixtures, and parser-owned PDF behavior. The corrected
+specification baseline is recorded in
+`docs/handoffs/ctc-005-gemini-specification-review.md`. CTC-005 must remain out
+of implementation until Claude adversarial QA planning challenges and resolves
+the remaining questions. The self-contained Claude QA-planning bundle is at
+`docs/handoffs/ctc-005-claude-qa-planning-prompt.md`; its ten embedded relevant
+repository files were verified byte-for-byte exact and its SHA-256 is
+`50289cc86f65e835674516b514de245b9abb1d520b6c4a95cba37a2f76709b64`.
+Claude QA planning returned `READY WITH REQUIRED SPEC CORRECTIONS`. B-1 through
+B-4 and Q1 through Q5 were recorded before development. Codex corrected two
+internally inconsistent audit recommendations: source-key conflict winners use
+canonical structural ordering instead of order-dependent first-seen behavior,
+and discarded duplicate course records do not count as multiple course
+candidates. Implementation on branch `ctc-005-normalize-osm-geometry` adds a
+pure dependency-free normalizer, strict geometry/tag/ref handling, explicit-ref
+feature association, preserved source evidence, deterministic warnings, and
+complete/incomplete synthetic Vitest coverage. No rendering, spatial inference,
+geometry healing, relation assembly, storage/network behavior, or new
+dependency was added. Verification passed before audit: `npm run check` with
+scaffold policy, build, 22 Vitest tests, and 12 Playwright tests;
+`git diff --check`; and `npm_config_cache=/private/tmp/chart-the-course-npm-cache
+scripts/compliance.sh` with 0 production vulnerabilities. Claude final audit
+returned `PASS WITH MINOR FIXES` with no blockers and authorized Done after two
+test-only additions without re-audit. MF-1 added explicit
+`ZERO_COURSE_CANDIDATES` coverage. MF-2 added explicit
+`MULTIPLE_COURSE_CANDIDATES` coverage for two distinct unique candidates. No
+normalization logic, fixture, dependency, or scope changed. Post-fix
+verification passed: `npm run check` with scaffold policy, build, 24 Vitest
+tests, and 12 Playwright tests; `git diff --check`; and the canonical compliance
+flow with 0 production vulnerabilities. CTC-006 rendering and CTC-019 durable
+cache/request policy remain downstream.
+
 CTC-004 is Done - 2026-06-07. PR #2 (`ctc-004-overpass-search-spike`) passed
 required CI and merged into `main` as `50638ee`. It implements the reviewed
 CTC-015 contract as a bounded manual-coordinate browser spike. Notion records
