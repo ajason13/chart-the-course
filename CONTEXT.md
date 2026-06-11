@@ -4,7 +4,7 @@ Last updated: 2026-06-10
 
 ## Current Status
 
-CTC-006 is in Development (ChatGPT) - 2026-06-11. Codex selected CTC-006
+CTC-006 is in Final Audit (Claude) - 2026-06-11. Codex selected CTC-006
 after confirming `main` is clean and synchronized at `3449748`, the live
 CTC-006 and CTC-019 Notion tasks both remain Backlog with unchanged acceptance
 criteria, CTC-005 is Done and supplies the normalized WGS84 geometry contract,
@@ -60,6 +60,12 @@ dependency was added.
 Pre-audit verification passed: `npm run check` with scaffold policy, build, 30
 Vitest tests, and 13 Playwright tests; `git diff --check`; and the canonical
 compliance flow with 0 production vulnerabilities.
+Implementation commit `ca1656b` is the final-audit target. The self-contained
+final Claude audit bundle is at
+`docs/handoffs/ctc-006-claude-final-audit-prompt.md`; all 13 changed files were
+generated from the audited commit with `git show`, verified byte-for-byte
+exact, and the bundle SHA-256 is
+`00fe0f0ade2bbb2d05d49976fc5c727492871913d92a4ab60e42b1e2d2efcaac`.
 
 Gemini's first CTC-006 response was rejected on 2026-06-10 because it ignored
 the supplied CTC-006 prompt and replaced the selected-hole rendering task with
