@@ -1,0 +1,122 @@
+{
+  "chartTheCourseFixture": { "synthetic": true, "purpose": "CTC-006 all selected-hole layers" },
+  "elements": [
+    {
+      "type": "way",
+      "id": 9000060001,
+      "geometry": [
+        { "lat": 35, "lon": -80 },
+        { "lat": 35.01, "lon": -80 },
+        { "lat": 35.01, "lon": -79.99 },
+        { "lat": 35, "lon": -79.99 },
+        { "lat": 35, "lon": -80 }
+      ],
+      "tags": { "leisure": "golf_course", "name": "Synthetic CTC-006 Course" }
+    },
+    {
+      "type": "way",
+      "id": 9000060101,
+      "geometry": [
+        { "lat": 35.001, "lon": -79.999 },
+        { "lat": 35.004, "lon": -79.9965 },
+        { "lat": 35.008, "lon": -79.993 }
+      ],
+      "tags": { "golf": "hole", "ref": "1", "par": "4" }
+    },
+    {
+      "type": "way",
+      "id": 9000060201,
+      "geometry": [
+        { "lat": 35.0008, "lon": -79.9993 },
+        { "lat": 35.0013, "lon": -79.9993 },
+        { "lat": 35.0013, "lon": -79.9987 },
+        { "lat": 35.0008, "lon": -79.9993 }
+      ],
+      "tags": { "golf": "tee", "ref": "1" }
+    },
+    {
+      "type": "way",
+      "id": 9000060301,
+      "geometry": [
+        { "lat": 35.002, "lon": -79.9982 },
+        { "lat": 35.006, "lon": -79.9958 },
+        { "lat": 35.0055, "lon": -79.9948 },
+        { "lat": 35.002, "lon": -79.9982 }
+      ],
+      "tags": { "golf": "fairway", "ref": "1" }
+    },
+    {
+      "type": "way",
+      "id": 9000060401,
+      "geometry": [
+        { "lat": 35.0075, "lon": -79.9935 },
+        { "lat": 35.0082, "lon": -79.9933 },
+        { "lat": 35.008, "lon": -79.9926 },
+        { "lat": 35.0075, "lon": -79.9935 }
+      ],
+      "tags": { "golf": "green", "ref": "1" }
+    },
+    {
+      "type": "way",
+      "id": 9000060501,
+      "geometry": [
+        { "lat": 35.0068, "lon": -79.994 },
+        { "lat": 35.0071, "lon": -79.9938 },
+        { "lat": 35.0069, "lon": -79.9935 },
+        { "lat": 35.0068, "lon": -79.994 }
+      ],
+      "tags": { "golf": "bunker", "ref": "1" }
+    },
+    {
+      "type": "way",
+      "id": 9000060601,
+      "geometry": [
+        { "lat": 35.0015, "lon": -79.9988 },
+        { "lat": 35.0064, "lon": -79.9955 },
+        { "lat": 35.006, "lon": -79.9945 },
+        { "lat": 35.0015, "lon": -79.9988 }
+      ],
+      "tags": { "golf": "rough", "ref": "1" }
+    },
+    {
+      "type": "way",
+      "id": 9000060701,
+      "geometry": [
+        { "lat": 35.0046, "lon": -79.9962 },
+        { "lat": 35.005, "lon": -79.996 },
+        { "lat": 35.0048, "lon": -79.9956 },
+        { "lat": 35.0046, "lon": -79.9962 }
+      ],
+      "tags": { "golf": "water_hazard", "ref": "1" }
+    },
+    {
+      "type": "way",
+      "id": 9000060801,
+      "geometry": [
+        { "lat": 35.0034, "lon": -79.9952 },
+        { "lat": 35.004, "lon": -79.995 },
+        { "lat": 35.0037, "lon": -79.9945 },
+        { "lat": 35.0034, "lon": -79.9952 }
+      ],
+      "tags": { "natural": "water", "water": "pond", "ref": "1" }
+    },
+    {
+      "type": "way",
+      "id": 9000060901,
+      "geometry": [
+        { "lat": 35.0025, "lon": -79.996 },
+        { "lat": 35.003, "lon": -79.9958 },
+        { "lat": 35.0027, "lon": -79.9954 },
+        { "lat": 35.0025, "lon": -79.996 }
+      ],
+      "tags": { "natural": "wood", "ref": "1" }
+    },
+    {
+      "type": "node",
+      "id": 9000060999,
+      "lat": 35.009,
+      "lon": -79.991,
+      "tags": { "natural": "tree" }
+    }
+  ]
+}

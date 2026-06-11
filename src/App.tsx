@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { HoleMap } from "./HoleMap";
+import { normalizeGolfCourse } from "./normalize";
 import {
   buildDetailQuery,
   buildDiscoveryQuery,
@@ -77,6 +79,7 @@ export function App() {
   const [state, setState] = useState<ViewState>({ kind: "idle" });
   const [warning, setWarning] = useState("");
   const [invalidField, setInvalidField] = useState<keyof Bbox | "courseName" | null>(null);
+  const [selectedHoleKey, setSelectedHoleKey] = useState("");
   const requestIdentity = useRef(0);
   const controller = useRef<AbortController | null>(null);
   const submitButton = useRef<HTMLButtonElement>(null);
@@ -91,6 +94,14 @@ export function App() {
   }, []);
 
   const loading = state.kind === "loading";
+  const normalized = useMemo(() =>
+    state.kind === "success" && state.mode === "detail"
+      ? normalizeGolfCourse(state.response, state.source)
+      : null, [state]);
+
+  useEffect(() => {
+    setSelectedHoleKey(normalized?.holes[0]?.source.sourceKey ?? "");
+  }, [normalized]);
 
   function setField(field: keyof Bbox, value: string) {
     setFields((current) => ({ ...current, [field]: value }));
@@ -261,9 +272,30 @@ export function App() {
             </ul>
           )}
           {state.mode === "detail" && (
-            <ul className="raw-list">
-              {state.response.elements.map((element) => <li key={`${element.type}-${element.id}`}><code>{element.type}/{element.id}</code> {elementName(element)}</li>)}
-            </ul>
+            <>
+              <ul className="raw-list">
+                {state.response.elements.map((element) => <li key={`${element.type}-${element.id}`}><code>{element.type}/{element.id}</code> {elementName(element)}</li>)}
+              </ul>
+              {normalized && normalized.holes.length > 0 ? (
+                <section className="map-workspace" aria-labelledby="map-workspace-title">
+                  <div className="map-selection">
+                    <h3 id="map-workspace-title">Selected-hole map</h3>
+                    <label>Hole
+                      <select value={selectedHoleKey} onChange={(event) => setSelectedHoleKey(event.target.value)}>
+                        {normalized.holes.map((hole) => (
+                          <option key={hole.source.sourceKey} value={hole.source.sourceKey}>
+                            {hole.number === null ? hole.source.sourceKey : `Hole ${hole.number}`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  {normalized.holes.filter((hole) => hole.source.sourceKey === selectedHoleKey).map((hole) => (
+                    <HoleMap key={hole.source.sourceKey} hole={hole} warnings={normalized.warnings} source={normalized.source} />
+                  ))}
+                </section>
+              ) : <p className="map-empty" role="status">No normalized holes are available to render.</p>}
+            </>
           )}
           <details>
             <summary>Source diagnostics</summary>
