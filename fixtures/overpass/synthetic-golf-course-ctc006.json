@@ -1,5 +1,12 @@
 {
-  "chartTheCourseFixture": { "synthetic": true, "purpose": "CTC-006 all selected-hole layers" },
+  "chartTheCourseFixture": {
+    "synthetic": true,
+    "purpose": "CTC-006 all selected-hole layers",
+    "contract": "docs/overpass-query-contract.md",
+    "sourceCopyrightUrl": "https://www.openstreetmap.org/copyright",
+    "bbox": { "south": 35, "west": -80, "north": 35.01, "east": -79.99 },
+    "queryPurpose": "golf-course-detail"
+  },
   "elements": [
     {
       "type": "way",

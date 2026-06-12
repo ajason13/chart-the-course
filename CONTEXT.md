@@ -1,10 +1,10 @@
 # Chart the Course Context
 
-Last updated: 2026-06-10
+Last updated: 2026-06-11
 
 ## Current Status
 
-CTC-006 is in Final Audit (Claude) - 2026-06-11. Codex selected CTC-006
+CTC-006 is Done - 2026-06-11. Codex selected CTC-006
 after confirming `main` is clean and synchronized at `3449748`, the live
 CTC-006 and CTC-019 Notion tasks both remain Backlog with unchanged acceptance
 criteria, CTC-005 is Done and supplies the normalized WGS84 geometry contract,
@@ -19,10 +19,7 @@ relevant repository files were verified byte-for-byte exact and its SHA-256 is
 `4b70fbda3decd646df805a36351e98f67a5020f3769b00fab485a1390e4eef2b`.
 Startup-gate verification passed: `npm run check` with scaffold policy, build,
 24 Vitest tests, and 12 Playwright tests; `git diff --check`; and the canonical
-compliance flow with 0 production vulnerabilities. Do not create a feature
-branch or implement runtime code until the Gemini specification is critically
-reviewed and Claude adversarial QA planning is completed and critically
-reviewed.
+compliance flow with 0 production vulnerabilities.
 
 Gemini's final CTC-006 revision was rejected on 2026-06-11. Despite the exact
 mandatory correction prompt, it abandoned the required React SVG architecture
@@ -66,6 +63,16 @@ final Claude audit bundle is at
 generated from the audited commit with `git show`, verified byte-for-byte
 exact, and the bundle SHA-256 is
 `00fe0f0ade2bbb2d05d49976fc5c727492871913d92a4ab60e42b1e2d2efcaac`.
+Claude final audit returned `PASS WITH MINOR FIXES` with no blockers and
+authorized Done after confined fixes without re-audit. MF-1 was confirmed
+already satisfied: every area feature in the committed CTC-006 fixture has at
+least four coordinates and closes with its final coordinate equal to its
+first, matching `normalize.ts`. MF-2 changed the defensive scale-bar fallback
+to a one-meter nice value. MF-3 added the established contract, copyright,
+bbox, and query-purpose governance metadata to the CTC-006 fixture. Post-fix
+verification passed: `npm run check` with scaffold policy, build, 30 Vitest
+tests, and 13 Playwright tests; `git diff --check`; and the canonical
+compliance flow with 0 production vulnerabilities.
 
 Gemini's first CTC-006 response was rejected on 2026-06-10 because it ignored
 the supplied CTC-006 prompt and replaced the selected-hole rendering task with

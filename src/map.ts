@@ -171,8 +171,9 @@ export function scaleBar(projection: Projection): ScaleBar {
   for (let power = exponent - 1; power <= exponent + 1; power += 1) {
     for (const multiplier of [1, 2, 5]) candidates.push(multiplier * 10 ** power);
   }
+  // Defensive fallback; finite positive projection scales always yield a fitting candidate.
   const meters = candidates.filter((candidate) => candidate > 0 && candidate <= maximumMeters)
-    .sort((left, right) => right - left)[0] ?? maximumMeters;
+    .sort((left, right) => right - left)[0] ?? 1;
   return { meters, logicalLength: meters * projection.scale, label: formatDistance(meters) };
 }
 
