@@ -84,6 +84,14 @@ PDF/rendered export, provider, API key, account, server, or external user-data
 flow was added. Pre-audit verification passed: `npm run check` with scaffold
 policy, build, 39 Vitest tests, and 14 Playwright tests; `git diff --check`;
 and the canonical compliance flow with 0 production vulnerabilities.
+Implementation commit `af93ee0` is the final-audit target. The self-contained
+final Claude audit bundle is at
+`docs/handoffs/ctc-007-claude-final-audit-prompt.md`; all 12 embedded relevant
+repository files were generated from the audited commit with `git show`,
+verified byte-for-byte exact, and the bundle SHA-256 is
+`06cc7f4f0c6990332b0c8f0a3d5fc2e4e1cda0f5c89509ff64b4ef30b48ea2a1`.
+CTC-007 is in final Claude audit; do not mark Done until findings are resolved
+or explicitly accepted.
 
 CTC-006 is Done - 2026-06-11. Codex selected CTC-006
 after confirming `main` is clean and synchronized at `3449748`, the live
