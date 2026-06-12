@@ -101,8 +101,10 @@ raw array bounds, and the carry-label contract. Post-fix verification passed:
 `npm run check` with scaffold policy, build, 41 Vitest tests, and 14 Playwright
 tests; `git diff --check`; and the canonical compliance flow with 0 production
 vulnerabilities. Claude authorized CTC-007 to move to Done after these fixes
-without re-audit. PR and merge evidence remain to be recorded before local
-`main` is considered synchronized.
+without re-audit. Required CI passed and PR #5 merged CTC-007 into `main` as
+`e0d9c8f5a92fbab91c76c402361b31e3af03e30a` on 2026-06-12. Local `main` was
+clean and synchronized to the merge commit before this repository-memory
+update.
 
 CTC-006 is Done - 2026-06-11. Codex selected CTC-006
 after confirming `main` is clean and synchronized at `3449748`, the live
