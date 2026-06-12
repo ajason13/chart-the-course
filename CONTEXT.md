@@ -73,6 +73,21 @@ QA-handoff verification passed: `npm run check` with scaffold policy, build,
 41 Vitest tests, and 14 Playwright tests; `git diff --check`; and the canonical
 compliance flow with allowed production licenses and 0 production
 vulnerabilities.
+Claude QA planning returned `READY WITH REQUIRED SPEC CORRECTIONS` on
+2026-06-12. Findings B-1 through B-6 and the experiment-oriented intent of
+Decisions 1 through 12 are accepted with consistency and feasibility
+corrections recorded in `docs/handoffs/ctc-014-spec-corrections.md`.
+Corrections include separate course/hole source identity, all normalized
+geometry variants, required non-color dash distinctions, rejection of
+`pdf-lib` as an unproven preselected inspector, combined scene/operator/render
+vector evidence, reproducible retained devDependencies, explicit dev/full-tree
+license and vulnerability checks, exact named layout constants, tested font
+glyph behavior, deterministic renderer requirements, narrow visual tolerance,
+and established object-URL cleanup. Development is authorized on branch
+`ctc-014-pdf-evaluation` for one isolated fixture experiment. No production
+dependency, production PDF UI, CTC-020 implementation, persistent notes model,
+or external user-data flow is authorized. Final Claude audit remains
+mandatory.
 
 CTC-007 passed final Claude audit with minor fixes resolved - 2026-06-12.
 Codex selected CTC-007
