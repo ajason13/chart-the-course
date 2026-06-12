@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { HoleMap } from "./HoleMap";
 import { normalizeGolfCourse } from "./normalize";
 import {
@@ -20,6 +20,18 @@ import {
   type OverpassResponse,
   type RequestFailure,
 } from "./overpass";
+import {
+  PROJECT_FILENAME,
+  PROJECT_MAX_BYTES,
+  PROJECT_MIME,
+  emptyProject,
+  parseProjectText,
+  projectMatchErrors,
+  serializeProject,
+  type HoleStateV1,
+  type ValidationError,
+} from "./project";
+import type { SourceKey } from "./normalize";
 
 type ViewState =
   | { kind: "idle" }
@@ -80,6 +92,9 @@ export function App() {
   const [warning, setWarning] = useState("");
   const [invalidField, setInvalidField] = useState<keyof Bbox | "courseName" | null>(null);
   const [selectedHoleKey, setSelectedHoleKey] = useState("");
+  const [projectHoles, setProjectHoles] = useState<Partial<Record<SourceKey, HoleStateV1>>>({});
+  const [projectErrors, setProjectErrors] = useState<ValidationError[]>([]);
+  const [projectMessage, setProjectMessage] = useState("");
   const requestIdentity = useRef(0);
   const controller = useRef<AbortController | null>(null);
   const submitButton = useRef<HTMLButtonElement>(null);
@@ -87,6 +102,9 @@ export function App() {
     south: null, west: null, north: null, east: null,
   });
   const courseNameRef = useRef<HTMLInputElement>(null);
+  const importInput = useRef<HTMLInputElement>(null);
+  const projectNotice = useRef<HTMLParagraphElement>(null);
+  const projectErrorHeading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => () => {
     requestIdentity.current += 1;
@@ -101,7 +119,82 @@ export function App() {
 
   useEffect(() => {
     setSelectedHoleKey(normalized?.holes[0]?.source.sourceKey ?? "");
+    setProjectHoles({});
+    setProjectErrors([]);
+    setProjectMessage("");
   }, [normalized]);
+
+  const courseSourceKey = normalized?.courseCandidates[0]?.source.sourceKey ?? null;
+  const holeKeys = normalized?.holes.map(({ source }) => source.sourceKey) ?? [];
+
+  function holeProject(key: SourceKey): HoleStateV1 {
+    return projectHoles[key] ?? { targets: [], carries: [] };
+  }
+
+  function setHoleProject(key: SourceKey, project: HoleStateV1) {
+    setProjectHoles((current) => ({ ...current, [key]: project }));
+    setProjectMessage("");
+  }
+
+  function exportProject() {
+    if (!courseSourceKey) return;
+    const project = emptyProject(courseSourceKey);
+    project.holes = projectHoles;
+    const blob = new Blob([serializeProject(project)], { type: PROJECT_MIME });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = PROJECT_FILENAME;
+    document.body.appendChild(anchor);
+    anchor.click();
+    requestAnimationFrame(() => {
+      URL.revokeObjectURL(url);
+      anchor.remove();
+    });
+    setProjectMessage("Project export started.");
+  }
+
+  async function importProject(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !courseSourceKey) return;
+    const hasState = Object.values(projectHoles).some((hole) => hole && (hole.targets.length > 0 || hole.carries.length > 0));
+    if (hasState && !window.confirm("Importing will replace your current project. Continue?")) {
+      event.target.value = "";
+      importInput.current?.focus();
+      return;
+    }
+    setProjectErrors([]);
+    setProjectMessage("");
+    if (file.size > PROJECT_MAX_BYTES) {
+      setProjectErrors([{ code: "OUT_OF_RANGE", path: "$", message: "File exceeds 512 KiB limit." }]);
+      requestAnimationFrame(() => projectErrorHeading.current?.focus());
+      return;
+    }
+    let text: string;
+    try {
+      text = await file.text();
+    } catch {
+      setProjectErrors([{ code: "INVALID_JSON", path: "$", message: "File could not be read." }]);
+      requestAnimationFrame(() => projectErrorHeading.current?.focus());
+      return;
+    }
+    const validated = parseProjectText(text);
+    if (!validated.ok) {
+      setProjectErrors(validated.errors);
+      requestAnimationFrame(() => projectErrorHeading.current?.focus());
+      return;
+    }
+    const mismatches = projectMatchErrors(validated.project, courseSourceKey, holeKeys);
+    if (mismatches.length > 0) {
+      setProjectErrors(mismatches);
+      requestAnimationFrame(() => projectErrorHeading.current?.focus());
+      return;
+    }
+    setProjectHoles(validated.project.holes);
+    setProjectMessage("Project imported successfully.");
+    event.target.value = "";
+    requestAnimationFrame(() => projectNotice.current?.focus());
+  }
 
   function setField(field: keyof Bbox, value: string) {
     setFields((current) => ({ ...current, [field]: value }));
@@ -291,8 +384,27 @@ export function App() {
                     </label>
                   </div>
                   {normalized.holes.filter((hole) => hole.source.sourceKey === selectedHoleKey).map((hole) => (
-                    <HoleMap key={hole.source.sourceKey} hole={hole} warnings={normalized.warnings} source={normalized.source} />
+                    <HoleMap key={hole.source.sourceKey} hole={hole} warnings={normalized.warnings} source={normalized.source}
+                      project={holeProject(hole.source.sourceKey)}
+                      onProjectChange={(project) => setHoleProject(hole.source.sourceKey, project)} />
                   ))}
+                  <section className="project-io" aria-labelledby="project-io-title">
+                    <h3 id="project-io-title">Local project file</h3>
+                    <p className="hint">Project files contain user-authored targets and carry settings only. Import replaces current project state when valid.</p>
+                    <div className="actions">
+                      <button type="button" onClick={exportProject} disabled={!courseSourceKey}>Export project</button>
+                      <label className="file-label">Import project file (.json)
+                        <input ref={importInput} type="file" accept=".json,application/json" onChange={(event) => void importProject(event)} />
+                      </label>
+                    </div>
+                    {projectMessage && <p ref={projectNotice} tabIndex={-1} aria-live="polite">{projectMessage}</p>}
+                    {projectErrors.length > 0 && <div className="project-errors" role="alert">
+                      <h4 ref={projectErrorHeading} tabIndex={-1}>Import failed - {projectErrors.length} error(s)</h4>
+                      <ul>{projectErrors.map((error, index) => <li key={`${error.code}-${error.path}-${index}`}>
+                        <strong>{error.code}</strong>: {error.message} <code>{error.path}</code>
+                      </li>)}</ul>
+                    </div>}
+                  </section>
                 </section>
               ) : <p className="map-empty" role="status">No normalized holes are available to render.</p>}
             </>

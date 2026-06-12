@@ -36,7 +36,7 @@ fieldset { border: 1px solid #cbd5c5; border-radius: 6px; margin: 0; padding: 1r
 legend { font-weight: 800; padding: 0 .35rem; }
 .coordinate-grid { display: grid; gap: .75rem; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .hint { margin: .75rem 0 0; }
-.actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.actions, .map-tools { display: flex; flex-wrap: wrap; gap: .75rem; }
 .status { padding-block: 1rem; }
 .status p { margin: .25rem 0 0; }
 .status.error { border-color: #b85d52; }
@@ -77,14 +77,32 @@ pre { background: #18221c; border-radius: 5px; color: #eef4ed; font-size: .8rem;
 .layer-green { fill: #82b980; stroke: #285c35; stroke-width: 3; }
 .layer-tee { fill: #d9e7bd; stroke: #244e30; stroke-width: 3; }
 .layer-route { fill: none; stroke: #6d351d; stroke-dasharray: 8 5; stroke-width: 4; }
+.layer-carry-arcs { fill: none; stroke: #713b89; stroke-dasharray: 12 5 3 5; stroke-width: 3; }
+.carry-label { fill: #3f2050; font-size: 14px; font-weight: 800; paint-order: stroke; stroke: #fffdf8; stroke-width: 4; }
+.target-hit { fill: transparent; }
+.target-outer { fill: #fffdf8; stroke: #512c68; stroke-width: 4; }
+.target-inner { fill: #512c68; }
+.target-marker:focus-visible { outline: none; }
+.target-marker:focus-visible .target-hit { fill: none; stroke: #d18b38; stroke-width: 4; }
 .measurement-line { stroke: #932b20; stroke-dasharray: 6 4; stroke-width: 4; }
 .measurement-anchor { fill: #fffdf8; stroke: #932b20; stroke-width: 4; }
 .keyboard-crosshair { fill: none; stroke: #111; stroke-width: 3; }
 .scale-bar line { stroke: #111; stroke-width: 5; }
 .scale-bar text { fill: #111; font-size: 16px; font-weight: 800; }
 .measurement-result { font-size: 1.1rem; font-weight: 800; }
+.layer-measurement.inactive { opacity: .4; }
 .map-warnings { border-left: 4px solid #a86619; padding-left: .75rem; }
 .map-warnings ul, .hole-map-panel details ul { margin-bottom: 0; }
+.project-panel, .project-io { background: #f5f7f1; border: 1px solid #cbd5c5; border-radius: 6px; display: grid; gap: .75rem; padding: 1rem; }
+.project-panel h4, .project-io h3, .project-errors h4, .project-panel p { margin: 0; }
+.target-list, .carry-list { display: grid; gap: .75rem; list-style: none; margin: 0; padding: 0; }
+.target-list li, .carry-list li { background: #fffdf8; border: 1px solid #dbe2d7; border-radius: 5px; display: grid; gap: .75rem; padding: .75rem; }
+.danger { border-color: #8b3028; color: #8b3028; }
+.file-label { align-content: center; border: 1px solid #2f6241; border-radius: 6px; color: #2f6241; cursor: pointer; min-height: 44px; padding: .7rem 1rem; }
+.file-label input { height: 1px; min-height: 0; opacity: 0; padding: 0; position: absolute; width: 1px; }
+.file-label:focus-within { outline: 3px solid #d18b38; outline-offset: 2px; }
+.project-errors { border-left: 4px solid #a1261b; padding-left: .75rem; }
+.project-errors code { overflow-wrap: anywhere; }
 .sr-only {
   clip: rect(0, 0, 0, 0); clip-path: inset(50%); height: 1px; overflow: hidden;
   position: absolute; white-space: nowrap; width: 1px;

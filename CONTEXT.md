@@ -72,6 +72,18 @@ import confirmation/focus behavior, target-specific announcements, explicit
 current-course identity, interactive SVG target semantics, dangling-origin
 behavior, and deterministic-serialization scope. Development is authorized on
 branch `ctc-007-targets-carry-project`; final Claude audit remains mandatory.
+Implementation adds dependency-free strict v1 project validation and
+serialization, memory-only hole-keyed user state, explicit local JSON
+import/export, target add/reposition/label/delete/undo controls, tee/target
+carry origins, 64-bearing geographic carry rings, clipped SVG overlays,
+structured visible import/edit errors, and focused synthetic Vitest/Playwright
+coverage. Existing normalized OSM evidence remains immutable and trusted only
+from the loaded result. No Zod/new dependency, Canvas, pan/zoom/dragging,
+notes/preferences, automatic migration, durable persistence, CTC-019 behavior,
+PDF/rendered export, provider, API key, account, server, or external user-data
+flow was added. Pre-audit verification passed: `npm run check` with scaffold
+policy, build, 39 Vitest tests, and 14 Playwright tests; `git diff --check`;
+and the canonical compliance flow with 0 production vulnerabilities.
 
 CTC-006 is Done - 2026-06-11. Codex selected CTC-006
 after confirming `main` is clean and synchronized at `3449748`, the live
