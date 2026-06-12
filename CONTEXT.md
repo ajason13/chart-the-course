@@ -33,6 +33,22 @@ guidance. No decisions from that plan are accepted and CTC-007 remains in
 Spec Drafting. Submit
 `docs/handoffs/ctc-007-gemini-plan-correction.md` as the pasted instruction
 together with the attached self-contained specification prompt.
+Gemini's first CTC-007 specification response was critically reviewed on
+2026-06-11. It is relevant but not implementation-ready. Accepted fragments are
+limited to browser-local explicit file exchange, explicit interaction modes,
+all-or-nothing failed-import behavior, file-size validation, Blob/object-URL
+export, accessible controls/live feedback, pure helper boundaries, and
+network-isolated tests. The response was rejected where it replaced the
+existing React SVG/Haversine contracts with Canvas/equirectangular math,
+exported and trusted raw OSM data, omitted stable hole-keyed project ownership,
+used malformed/unsafe schema and `any` migration patterns, or added notes,
+colors, zoom/pan/rotation, dragging, automatic migrations, and unsupported
+offline/performance claims. The corrected baseline is at
+`docs/handoffs/ctc-007-gemini-specification-review.md`; the mandatory revision
+prompt is at
+`docs/handoffs/ctc-007-gemini-specification-revision-prompt.md`. CTC-007
+remains in Spec Drafting and must not advance to Claude QA planning or
+implementation until the revision is critically reviewed.
 
 CTC-006 is Done - 2026-06-11. Codex selected CTC-006
 after confirming `main` is clean and synchronized at `3449748`, the live
