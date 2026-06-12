@@ -49,6 +49,30 @@ license/maintenance recommendation. No decisions from that plan are accepted
 and CTC-014 remains in Spec Drafting. Submit
 `docs/handoffs/ctc-014-gemini-plan-correction.md` as the pasted instruction
 together with the attached self-contained specification prompt.
+Gemini's CTC-014 specification response was critically reviewed on 2026-06-12.
+It is relevant but not implementation-ready. Accepted direction is limited to
+browser-local generation, `jspdf@4.2.1` plus `svg2pdf.js@2.7.0` as the leading
+experiment hypothesis, current `pdfkit@0.19.1` plus
+`svg-to-pdfkit@0.1.8` as the required fallback comparison, Canvas as a negative
+control, static fixture notes, visible full-URL OSM attribution, layered
+structural/rendered regression evidence, and dependency compliance gates. The
+response was corrected where it used outdated PDFKit, invented malformed
+fixtures/types/paths, unmeasured bundle figures, overstated SVG/font support,
+destructive sanitization, unsafe or irrelevant APIs, brittle binary/vector/
+visual tests, immediate URL revocation, and an incorrect claim that CTC-008
+cannot merge rather than cannot ship alone. The authoritative corrected
+baseline is `docs/handoffs/ctc-014-gemini-specification-review.md`. CTC-014
+moves to Claude adversarial QA planning; no feature branch, dependency
+installation, experiment implementation, or production PDF behavior is
+authorized until Claude's findings are critically reviewed. The self-contained
+Claude QA-planning bundle is at
+`docs/handoffs/ctc-014-claude-qa-planning-prompt.md`; its 20 embedded relevant
+repository files were verified byte-for-byte exact and its SHA-256 is
+`54dd2c3ae2f3a88dc13a4286bd71200d16fffc79682ed015c3f415622a5a125a`.
+QA-handoff verification passed: `npm run check` with scaffold policy, build,
+41 Vitest tests, and 14 Playwright tests; `git diff --check`; and the canonical
+compliance flow with allowed production licenses and 0 production
+vulnerabilities.
 
 CTC-007 passed final Claude audit with minor fixes resolved - 2026-06-12.
 Codex selected CTC-007
