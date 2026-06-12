@@ -25,6 +25,14 @@ relevant repository files were verified byte-for-byte exact and its SHA-256 is
 Startup-gate verification passed: `npm run check` with scaffold policy, build,
 30 Vitest tests, and 13 Playwright tests; `git diff --check`; and the canonical
 compliance flow with 0 production vulnerabilities.
+Gemini's proposed CTC-007 Deep Research plan was rejected before research
+started because it replaced the concrete CTC-007 task with generic
+product-management methods, AI-agent task formatting, Principal Product
+Manager templates, Notion schemas, roadmaps, and architecture-documentation
+guidance. No decisions from that plan are accepted and CTC-007 remains in
+Spec Drafting. Submit
+`docs/handoffs/ctc-007-gemini-plan-correction.md` as the pasted instruction
+together with the attached self-contained specification prompt.
 
 CTC-006 is Done - 2026-06-11. Codex selected CTC-006
 after confirming `main` is clean and synchronized at `3449748`, the live
