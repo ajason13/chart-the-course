@@ -37,6 +37,18 @@ Startup-gate verification passed: `npm run check` with scaffold policy, build,
 41 Vitest tests, and 14 Playwright tests; `git diff --check`; and the canonical
 compliance flow with allowed production licenses and 0 production
 vulnerabilities.
+Gemini's proposed CTC-014 Deep Research plan was rejected before research
+started because it replaced the concrete vector PDF pipeline evaluation with a
+generic open-source product-management playbook covering prioritization,
+roadmaps, community governance, epics/user stories, AI-agent task formats,
+Notion templates/database schemas, generic application risks, telemetry, and
+execution-process guidance. It did not plan the required current-primary-source
+comparison of pdfkit, jsPDF, and SVG/canvas-to-PDF approaches; fixture hole
+page; vector/font/print decisions; deterministic PDF regression strategy; or
+license/maintenance recommendation. No decisions from that plan are accepted
+and CTC-014 remains in Spec Drafting. Submit
+`docs/handoffs/ctc-014-gemini-plan-correction.md` as the pasted instruction
+together with the attached self-contained specification prompt.
 
 CTC-007 passed final Claude audit with minor fixes resolved - 2026-06-12.
 Codex selected CTC-007
