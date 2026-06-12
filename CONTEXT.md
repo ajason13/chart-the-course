@@ -503,15 +503,16 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- Merge the completed and audited `ctc-006-selected-hole-map` branch before
-  starting another task. The next-session startup prompt is
-  `docs/handoffs/next-codex-task-startup-prompt.md`.
-- After CTC-006 is merged and `main` is synchronized, critically compare
-  CTC-007 with CTC-019. CTC-007 is the leading next feature because it directly
-  depends on the selected-hole map and measurement engine; CTC-019 remains
-  independent pipeline hardening.
-- Keep CTC-019 durable cache/request policy separate from CTC-006 rendering and
-  measurement work.
+- Start from clean synchronized `main` and use
+  `docs/handoffs/next-codex-task-startup-prompt.md` to select the next task
+  against live Notion evidence.
+- CTC-014 is the leading candidate because no PDF pipeline, library,
+  dependency, font, or visual-regression decision exists. Verify this
+  critically against CTC-008, CTC-020, and CTC-019 before selection.
+- Do not ship CTC-008 PDF behavior without CTC-020 raw GIS source availability
+  in the same release. Resolve CTC-008's notes criterion without silently
+  reopening the notes model that CTC-007 deferred.
+- Keep CTC-019 durable cache/request policy separate from PDF pipeline work.
 - CTC-019 should validate every cached source-metadata field and pre-check
   already-aborted request signals as accepted CTC-004 audit hardening notes.
 - Future test-harness hardening should evaluate Firefox/WebKit Playwright
