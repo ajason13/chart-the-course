@@ -225,3 +225,32 @@ Treat these as blockers:
 - target editing that silently activates measurement, inaccessible
   pointer-only CRUD, hidden attribution, color-only semantics, or networked
   tests.
+
+## Final Gemini revision disposition
+
+Gemini received a mandatory revision prompt with nine explicit corrections.
+The revision is rejected in full because it:
+
+- introduced an unapproved Zod production dependency and generated types
+  instead of defining dependency-free strict validation;
+- retained `any`, object spreading/merging of imported objects, automatic
+  migrations, unknown legacy input defaults, and unsafe partial update types;
+- retained notes, colors, display-unit preferences, global settings, pan,
+  dragging, automatic course switching, and error-boundary logging;
+- invented course geometry/state contracts, tuple coordinates, source keys,
+  file/module structure, and OSM IDs that contradict the embedded repository;
+- again replaced existing projection/Haversine constants with new Earth radii,
+  flat-plane distance assumptions, browser-pixel math, and unsupported
+  precision/performance claims;
+- persisted or trusted OSM-derived course identity and attribution fields
+  without resolving the minimal source-reference trust boundary;
+- proposed malformed schemas, fixtures, reducer initializers, and examples
+  that would not compile or validate;
+- failed to resolve exact target ID, strict v1 shape, duplicate-key policy,
+  course/hole mismatch behavior, tee-origin eligibility, carry sample count,
+  geographic sampling, layer order, clipping, and accessible destructive
+  actions while claiming zero blockers.
+
+No decisions from the final revision are accepted. The corrected baseline and
+mandatory unresolved decisions in this document are the sole specification
+authority for Claude adversarial QA planning.

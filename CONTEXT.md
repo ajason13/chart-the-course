@@ -49,6 +49,19 @@ prompt is at
 `docs/handoffs/ctc-007-gemini-specification-revision-prompt.md`. CTC-007
 remains in Spec Drafting and must not advance to Claude QA planning or
 implementation until the revision is critically reviewed.
+Gemini's mandatory CTC-007 revision was rejected in full on 2026-06-11. It
+repeated the prohibited Zod dependency, `any`/spread migrations, automatic
+migration, notes/colors/preferences, pan/drag/global settings, invented
+contracts, new Earth radii, flat-plane distance truth, pixel math, unsafe OSM
+trust, malformed examples, and unsupported accuracy/performance claims. It
+also left the mandatory deterministic decisions unresolved while declaring
+zero blockers. No decisions from the revision are accepted. The corrected
+Codex baseline remains authoritative and CTC-007 moves to Claude adversarial
+QA planning; implementation remains prohibited until Claude's findings are
+critically reviewed. The self-contained Claude QA-planning bundle is at
+`docs/handoffs/ctc-007-claude-qa-planning-prompt.md`; its 16 embedded relevant
+repository files were verified byte-for-byte exact and its SHA-256 is
+`5cc18c73fac708a0f998ad7c9b3e57c8e4db25b9a79334369c3861d6f426ceb4`.
 
 CTC-006 is Done - 2026-06-11. Codex selected CTC-006
 after confirming `main` is clean and synchronized at `3449748`, the live
