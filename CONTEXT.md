@@ -4,7 +4,7 @@ Last updated: 2026-06-12
 
 ## Current Status
 
-CTC-014 is in Development pending final Claude audit - 2026-06-12. After CTC-007 integration, Codex
+CTC-014 is in Final Audit (Claude) - 2026-06-12. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
 `b8536b7dafdd4d793d70ae26763523a1295305e2`, confirmed CTC-007 remains
 `5. Done`, and confirmed PR #5 remains merged as
@@ -104,6 +104,15 @@ strategy, and retained CTC-008/CTC-020 gates are in
 `docs/experiments/ctc-014-vector-pdf-evaluation.md`. No production dependency
 or PDF export UI is authorized. Prepare the self-contained final Claude audit
 handoff after full verification.
+Implementation commit `fc99982` passed pre-audit verification: `npm run check`
+with scaffold policy, build, 44 Vitest tests, and 15 Playwright tests;
+`git diff --check`; and canonical compliance with allowed production licenses
+and 0 production vulnerabilities. The self-contained Claude final-audit bundle
+is at `docs/handoffs/ctc-014-claude-final-audit-prompt.md`; its 14 embedded
+relevant repository files were verified byte-for-byte against `fc99982` and
+its SHA-256 is
+`aa48e21c06b9082cdb69b0f168f18addd2ab9563fccf232f95a3e1e385df14be`.
+Stop at the final-audit gate until Claude returns a verdict.
 
 CTC-007 passed final Claude audit with minor fixes resolved - 2026-06-12.
 Codex selected CTC-007
