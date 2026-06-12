@@ -398,8 +398,13 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- Complete CTC-006 implementation verification and final Claude audit before
-  marking the task Done.
+- Merge the completed and audited `ctc-006-selected-hole-map` branch before
+  starting another task. The next-session startup prompt is
+  `docs/handoffs/next-codex-task-startup-prompt.md`.
+- After CTC-006 is merged and `main` is synchronized, critically compare
+  CTC-007 with CTC-019. CTC-007 is the leading next feature because it directly
+  depends on the selected-hole map and measurement engine; CTC-019 remains
+  independent pipeline hardening.
 - Keep CTC-019 durable cache/request policy separate from CTC-006 rendering and
   measurement work.
 - CTC-019 should validate every cached source-metadata field and pre-check
