@@ -4,6 +4,28 @@ Last updated: 2026-06-11
 
 ## Current Status
 
+CTC-007 is in Spec Drafting (Gemini) - 2026-06-11. Codex selected CTC-007
+after PR #4 merged CTC-006 into `main` as `52395ea`, the repository-memory
+update was pushed as `cb640e1`, and clean synchronized `main` was confirmed.
+The live CTC-007 and CTC-019 Notion tasks both remain Backlog with unchanged
+acceptance criteria. CTC-007 is the highest-value unblocked dependency because
+CTC-006 now supplies stable hole identity, projection/inverse projection,
+geographic distance math, accessible pointer/keyboard interaction patterns,
+and a responsive SVG surface needed by target markers and carry arcs. CTC-007
+must preserve CTC-005 normalized OSM geometry and source evidence as immutable,
+separate user-authored project data, and specify strict versioned local JSON
+import/export before implementation. CTC-019 remains independent Overpass
+cache/request-identity hardening and must not be absorbed into CTC-007. No
+feature branch or runtime implementation is authorized until Gemini
+specification review and Claude adversarial QA planning are completed and
+critically reviewed. The self-contained Gemini specification prompt is at
+`docs/handoffs/ctc-007-gemini-specification-prompt.md`; its 18 embedded
+relevant repository files were verified byte-for-byte exact and its SHA-256 is
+`cf1473a61d221faf79851d6543993c410eabdd03538824cdd57e6b4dc16089a9`.
+Startup-gate verification passed: `npm run check` with scaffold policy, build,
+30 Vitest tests, and 13 Playwright tests; `git diff --check`; and the canonical
+compliance flow with 0 production vulnerabilities.
+
 CTC-006 is Done - 2026-06-11. Codex selected CTC-006
 after confirming `main` is clean and synchronized at `3449748`, the live
 CTC-006 and CTC-019 Notion tasks both remain Backlog with unchanged acceptance
