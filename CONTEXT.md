@@ -1,10 +1,11 @@
 # Chart the Course Context
 
-Last updated: 2026-06-11
+Last updated: 2026-06-12
 
 ## Current Status
 
-CTC-007 is in Spec Drafting (Gemini) - 2026-06-11. Codex selected CTC-007
+CTC-007 passed final Claude audit with minor fixes resolved - 2026-06-12.
+Codex selected CTC-007
 after PR #4 merged CTC-006 into `main` as `52395ea`, the repository-memory
 update was pushed as `cb640e1`, and clean synchronized `main` was confirmed.
 The live CTC-007 and CTC-019 Notion tasks both remain Backlog with unchanged
@@ -90,8 +91,18 @@ final Claude audit bundle is at
 repository files were generated from the audited commit with `git show`,
 verified byte-for-byte exact, and the bundle SHA-256 is
 `06cc7f4f0c6990332b0c8f0a3d5fc2e4e1cda0f5c89509ff64b4ef30b48ea2a1`.
-CTC-007 is in final Claude audit; do not mark Done until findings are resolved
-or explicitly accepted.
+Claude returned `PASS WITH MINOR FIXES` with no blockers and no re-audit
+required. The confined fixes explicitly order serialized project properties,
+render carry labels as yard-only settings, validate raw target/carry array
+bounds before filtering invalid entries, restore deleted targets at their
+original index, reuse named map-boundary constants, and defensively parse carry
+origin values at the first separator. Focused tests cover serialization order,
+raw array bounds, and the carry-label contract. Post-fix verification passed:
+`npm run check` with scaffold policy, build, 41 Vitest tests, and 14 Playwright
+tests; `git diff --check`; and the canonical compliance flow with 0 production
+vulnerabilities. Claude authorized CTC-007 to move to Done after these fixes
+without re-audit. PR and merge evidence remain to be recorded before local
+`main` is considered synchronized.
 
 CTC-006 is Done - 2026-06-11. Codex selected CTC-006
 after confirming `main` is clean and synchronized at `3449748`, the live

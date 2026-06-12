@@ -1,4 +1,14 @@
-import { EARTH_RADIUS_M, YARDS_PER_METER, projectCoordinate, type Projection, type ViewportPoint } from "./map";
+import {
+  EARTH_RADIUS_M,
+  INNER_MAX_X,
+  INNER_MAX_Y,
+  INNER_MIN_X,
+  INNER_MIN_Y,
+  YARDS_PER_METER,
+  projectCoordinate,
+  type Projection,
+  type ViewportPoint,
+} from "./map";
 import { geometryCoordinates, validCoordinate } from "./map";
 import type { Coordinate, NormalizedHole, SourceKey } from "./normalize";
 import type { CarryOriginV1, CarryV1, TargetV1 } from "./project";
@@ -74,7 +84,7 @@ export function carryRings(carry: CarryV1, hole: NormalizedHole, targets: Target
       coordinates,
       points,
       segments: splitSegments(coordinates, points),
-      offMap: points.some(({ x, y }) => x < 40 || x > 760 || y < 40 || y > 560),
+      offMap: points.some(({ x, y }) => x < INNER_MIN_X || x > INNER_MAX_X || y < INNER_MIN_Y || y > INNER_MAX_Y),
     });
   }
   return rings;

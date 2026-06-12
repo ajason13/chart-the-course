@@ -7,6 +7,7 @@ import {
   serializeProject,
   validateProjectFile,
   type ProjectV1,
+  type CarryV1,
 } from "./project";
 
 const valid: ProjectV1 = {
@@ -32,6 +33,19 @@ describe("project v1 validation", () => {
     expect(serialized.endsWith("\n")).toBe(true);
     expect(parseProjectText(serialized)).toEqual({ ok: true, project: valid });
     expect(Object.keys(JSON.parse(serialized).holes)).toEqual(["way/9000000101"]);
+  });
+
+  it("serializes fixed top-level property order regardless of input insertion order", () => {
+    const reordered = {
+      holes: valid.holes,
+      courseCopyrightUrl: valid.courseCopyrightUrl,
+      courseSourceKey: valid.courseSourceKey,
+      exportedAt: valid.exportedAt,
+      schema: valid.schema,
+    } as ProjectV1;
+    expect(Object.keys(JSON.parse(serializeProject(reordered)))).toEqual([
+      "schema", "exportedAt", "courseSourceKey", "courseCopyrightUrl", "holes",
+    ]);
   });
 
   it("rejects invalid JSON, unsupported versions, unknown fields, and dangerous keys", () => {
@@ -60,6 +74,30 @@ describe("project v1 validation", () => {
         "DUPLICATE_ID", "STRING_TOO_LONG", "OUT_OF_RANGE", "NON_FINITE",
         "NON_ASCENDING", "NON_UNIQUE_DISTANCES",
       ]));
+    }
+  });
+
+  it("reports raw target and carry array bounds even when entries are invalid", () => {
+    const broken = structuredClone(valid) as ProjectV1;
+    const hole = broken.holes["way/9000000101"]!;
+    hole.targets = Array.from({ length: 11 }, (_, index) => ({
+      id: `bad-${index}`,
+      label: "",
+      lat: 91,
+      lon: 181,
+    }));
+    hole.carries = Array.from({ length: 6 }, (_, index) => ({
+      id: `bad-${index}`,
+      origin: { kind: "target", targetId: "bad" },
+      distances: [],
+    })) as CarryV1[];
+    const result = validateProjectFile(broken);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.filter(({ code }) => code === "ARRAY_TOO_LONG")).toEqual([
+        expect.objectContaining({ path: "$.holes.way/9000000101.targets" }),
+        expect.objectContaining({ path: "$.holes.way/9000000101.carries" }),
+      ]);
     }
   });
 

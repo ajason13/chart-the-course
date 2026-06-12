@@ -269,6 +269,7 @@ test("manages targets, carry arcs, and strict local project exchange", async ({ 
 
   await page.getByRole("button", { name: "Add carry" }).click();
   await expect(map.locator('[data-layer="carry-arcs"] [data-carry-id]')).toHaveCount(1);
+  await expect(map.locator('[data-layer="carry-arcs"] text')).toHaveText("150 yd");
   await expect(page.getByText(/outside the map view/)).toBeVisible();
 
   await page.getByRole("button", { name: "Delete", exact: true }).click();

@@ -196,6 +196,12 @@ function validateHole(value: unknown, path: string, errors: Errors, ids: Set<str
   if (!object) return null;
   if (!Array.isArray(object.targets)) errors.add("WRONG_TYPE", `${path}.targets`, "Expected an array.");
   if (!Array.isArray(object.carries)) errors.add("WRONG_TYPE", `${path}.carries`, "Expected an array.");
+  if (Array.isArray(object.targets) && object.targets.length > 10) {
+    errors.add("ARRAY_TOO_LONG", `${path}.targets`, "At most ten targets are allowed per hole.");
+  }
+  if (Array.isArray(object.carries) && object.carries.length > 5) {
+    errors.add("ARRAY_TOO_LONG", `${path}.carries`, "At most five carry records are allowed per hole.");
+  }
   for (const item of [
     ...(Array.isArray(object.targets) ? object.targets : []),
     ...(Array.isArray(object.carries) ? object.carries : []),
@@ -211,8 +217,6 @@ function validateHole(value: unknown, path: string, errors: Errors, ids: Set<str
   const carries = Array.isArray(object.carries)
     ? object.carries.map((carry, index) => validateCarry(carry, `${path}.carries[${index}]`, errors)).filter((carry): carry is CarryV1 => carry !== null)
     : [];
-  if (targets.length > 10) errors.add("ARRAY_TOO_LONG", `${path}.targets`, "At most ten targets are allowed per hole.");
-  if (carries.length > 5) errors.add("ARRAY_TOO_LONG", `${path}.carries`, "At most five carry records are allowed per hole.");
   return Array.isArray(object.targets) && Array.isArray(object.carries)
     && targets.length === object.targets.length && carries.length === object.carries.length
     && targets.length <= 10 && carries.length <= 5 ? { targets, carries } : null;
@@ -276,7 +280,13 @@ export function emptyProject(courseSourceKey: SourceKey, exportedAt = new Date()
 
 export function serializeProject(project: ProjectV1): string {
   const holes = Object.fromEntries(Object.entries(project.holes).sort(([left], [right]) => left.localeCompare(right)));
-  return `${JSON.stringify({ ...project, holes }, null, 2)}\n`;
+  return `${JSON.stringify({
+    schema: project.schema,
+    exportedAt: project.exportedAt,
+    courseSourceKey: project.courseSourceKey,
+    courseCopyrightUrl: project.courseCopyrightUrl,
+    holes,
+  }, null, 2)}\n`;
 }
 
 export function generateProjectId(kind: "target" | "carry"): string {

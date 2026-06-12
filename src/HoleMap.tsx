@@ -70,7 +70,7 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
   const [announcement, setAnnouncement] = useState("");
   const [mode, setMode] = useState<Mode>("measure");
   const [repositionId, setRepositionId] = useState<string | null>(null);
-  const [lastDeleted, setLastDeleted] = useState<TargetV1 | null>(null);
+  const [lastDeleted, setLastDeleted] = useState<{ target: TargetV1; index: number } | null>(null);
   const [carryErrors, setCarryErrors] = useState<Record<string, string>>({});
   const [targetErrors, setTargetErrors] = useState<Record<string, string>>({});
   const undoButton = useRef<HTMLButtonElement>(null);
@@ -223,10 +223,11 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
   }
 
   function deleteTarget(id: string) {
-    const target = project.targets.find((entry) => entry.id === id);
-    if (!target) return;
+    const index = project.targets.findIndex((entry) => entry.id === id);
+    if (index === -1) return;
+    const target = project.targets[index];
     onProjectChange({ ...project, targets: project.targets.filter((entry) => entry.id !== id) });
-    setLastDeleted(target);
+    setLastDeleted({ target, index });
     setAnnouncement(`${target.label} deleted. Undo available.`);
   }
 
@@ -245,7 +246,9 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
   }
 
   function updateCarryOrigin(id: string, value: string) {
-    const [kind, identity] = value.split(":");
+    const separator = value.indexOf(":");
+    const kind = value.slice(0, separator);
+    const identity = value.slice(separator + 1);
     const origin: CarryOriginV1 = kind === "tee"
       ? { kind: "tee", sourceKey: identity as SourceKey }
       : { kind: "target", targetId: identity };
@@ -308,7 +311,7 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
               ...ring.segments.map((segment, index) => <polyline key={`${carry.id}-${ring.yards}-${index}`} data-carry-id={carry.id}
                 className="carry-arc" points={segment.map(({ x, y }) => `${x},${y}`).join(" ")} />),
               <text key={`${carry.id}-${ring.yards}-label`} className="carry-label" x={label.x} y={label.y - 6}>
-                {formatDistance(ring.yards * 0.9144)}
+                {ring.yards} yd
               </text>,
             ];
           }) : [])}
@@ -349,8 +352,15 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
         <div className="map-heading">
           <h4 id="targets-title">Targets</h4>
           {lastDeleted && <button ref={undoButton} className="secondary" type="button" onClick={() => {
-            onProjectChange({ ...project, targets: [...project.targets, lastDeleted] });
-            setAnnouncement(`${lastDeleted.label} restored.`);
+            onProjectChange({
+              ...project,
+              targets: [
+                ...project.targets.slice(0, lastDeleted.index),
+                lastDeleted.target,
+                ...project.targets.slice(lastDeleted.index),
+              ],
+            });
+            setAnnouncement(`${lastDeleted.target.label} restored.`);
             setLastDeleted(null);
           }}>Undo delete</button>}
         </div>
