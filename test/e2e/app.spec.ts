@@ -249,3 +249,43 @@ test("renders and measures the selected hole with pointer, keyboard, mobile, and
   await expect(map).toBeFocused();
   await assertAxe(page);
 });
+
+test("manages targets, carry arcs, and strict local project exchange", async ({ page }) => {
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? ctc006Detail : discovery });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+
+  const map = page.getByTestId("hole-vector-map");
+  await page.getByRole("button", { name: "Add target" }).click();
+  await map.click({ position: { x: 180, y: 180 } });
+  await expect(page.locator('input[value="Target 1"]')).toBeVisible();
+  await expect(map.locator('[data-layer="targets"] [data-target-id]')).toHaveCount(1);
+
+  await page.getByRole("button", { name: "Add carry" }).click();
+  await expect(map.locator('[data-layer="carry-arcs"] [data-carry-id]')).toHaveCount(1);
+  await expect(map.locator('[data-layer="carry-arcs"] text')).toHaveText("150 yd");
+  await expect(page.getByText(/outside the map view/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Undo delete" })).toBeVisible();
+  await page.getByRole("button", { name: "Undo delete" }).click();
+  await expect(page.locator('input[value="Target 1"]')).toBeVisible();
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export project" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("chart-the-course-project.json");
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByLabel("Import project file (.json)").setInputFiles("fixtures/projects/synthetic-project-wrong-course.json");
+  await expect(page.getByRole("alert")).toContainText("COURSE_MISMATCH");
+  await expect(page.locator('input[value="Target 1"]')).toBeVisible();
+  await expect(page.getByText("Course data © OpenStreetMap contributors.")).toBeVisible();
+  await assertAxe(page);
+});
