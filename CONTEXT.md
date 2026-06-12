@@ -4,6 +4,40 @@ Last updated: 2026-06-12
 
 ## Current Status
 
+CTC-014 is in Spec Drafting - 2026-06-12. After CTC-007 integration, Codex
+confirmed clean synchronized `main` at
+`b8536b7dafdd4d793d70ae26763523a1295305e2`, confirmed CTC-007 remains
+`5. Done`, and confirmed PR #5 remains merged as
+`e0d9c8f5a92fbab91c76c402361b31e3af03e30a` with required CI successful.
+Live Notion comparison confirmed CTC-014, CTC-008, CTC-020, and CTC-019 were
+all Backlog before selection. CTC-014 is the highest-value unblocked
+prerequisite because no reviewed PDF pipeline, dependency decision, font
+policy, print-layout contract, or deterministic PDF regression strategy exists,
+while CTC-006 and CTC-007 now supply native SVG geometry, measurement, targets,
+and carry overlays suitable for its fixture-only experiment. CTC-008 remains
+downstream because it would introduce broader PDF export behavior before the
+pipeline decision and requires unresolved notes behavior. CTC-020 remains a
+distinct downstream task coupled to the selected PDF workflow; raw GIS source
+availability and visible full-URL OSM attribution remain release-blocking for
+distributed/shared PDF export in the same release as CTC-008. CTC-019 remains
+valuable independent Overpass cache/request-identity hardening and must not be
+absorbed into PDF work. CTC-014 is runtime/research, not docs-only. Static
+fixture text may satisfy the experiment's notes criterion, but no persistent
+or user-authored notes model, production PDF behavior, production dependency,
+font, remote asset, provider, account, server, durable cache, or external
+user-data flow is authorized. CTC-014 moved to
+`1. Spec Drafting (Gemini)`. Stop at the Gemini specification gate until the
+response is critically reviewed and Claude adversarial QA planning is
+completed and critically reviewed. The self-contained Gemini specification
+prompt is at `docs/handoffs/ctc-014-gemini-specification-prompt.md`; its 27
+embedded relevant repository files were verified byte-for-byte exact and its
+SHA-256 is
+`8752064f3b63f711c95c2c5e866264580397d4744bdb5af0c6dfa4cfdc0e91d2`.
+Startup-gate verification passed: `npm run check` with scaffold policy, build,
+41 Vitest tests, and 14 Playwright tests; `git diff --check`; and the canonical
+compliance flow with allowed production licenses and 0 production
+vulnerabilities.
+
 CTC-007 passed final Claude audit with minor fixes resolved - 2026-06-12.
 Codex selected CTC-007
 after PR #4 merged CTC-006 into `main` as `52395ea`, the repository-memory
