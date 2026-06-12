@@ -62,6 +62,16 @@ critically reviewed. The self-contained Claude QA-planning bundle is at
 `docs/handoffs/ctc-007-claude-qa-planning-prompt.md`; its 16 embedded relevant
 repository files were verified byte-for-byte exact and its SHA-256 is
 `5cc18c73fac708a0f998ad7c9b3e57c8e4db25b9a79334369c3861d6f426ceb4`.
+Claude QA planning returned `READY WITH REQUIRED SPEC CORRECTIONS` on
+2026-06-12. BF-1 through BF-8 and Decisions 1 through 10 are accepted with
+consistency corrections recorded in
+`docs/handoffs/ctc-007-spec-corrections.md`: separate target/carry ID
+namespaces, explicit v1 duplicate-key limitation, a true 20-error cap,
+all-or-failure 65-point carry sampling, corrected antimeridian rules, feasible
+import confirmation/focus behavior, target-specific announcements, explicit
+current-course identity, interactive SVG target semantics, dangling-origin
+behavior, and deterministic-serialization scope. Development is authorized on
+branch `ctc-007-targets-carry-project`; final Claude audit remains mandatory.
 
 CTC-006 is Done - 2026-06-11. Codex selected CTC-006
 after confirming `main` is clean and synchronized at `3449748`, the live
