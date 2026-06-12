@@ -73,6 +73,9 @@ bbox, and query-purpose governance metadata to the CTC-006 fixture. Post-fix
 verification passed: `npm run check` with scaffold policy, build, 30 Vitest
 tests, and 13 Playwright tests; `git diff --check`; and the canonical
 compliance flow with 0 production vulnerabilities.
+PR #4 passed required CI and merged into `main` as `52395ea` on 2026-06-11.
+Notion records the merged PR, audited implementation and fix commits, final
+Claude verdict, and Done status.
 
 Gemini's first CTC-006 response was rejected on 2026-06-10 because it ignored
 the supplied CTC-006 prompt and replaced the selected-hole rendering task with
