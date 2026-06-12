@@ -4,7 +4,7 @@ Last updated: 2026-06-12
 
 ## Current Status
 
-CTC-014 is in Spec Drafting - 2026-06-12. After CTC-007 integration, Codex
+CTC-014 is in Development pending final Claude audit - 2026-06-12. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
 `b8536b7dafdd4d793d70ae26763523a1295305e2`, confirmed CTC-007 remains
 `5. Done`, and confirmed PR #5 remains merged as
@@ -88,6 +88,22 @@ and established object-URL cleanup. Development is authorized on branch
 dependency, production PDF UI, CTC-020 implementation, persistent notes model,
 or external user-data flow is authorized. Final Claude audit remains
 mandatory.
+The isolated CTC-014 fixture experiment is implemented on branch
+`ctc-014-pdf-evaluation`. The pure export scene uses current normalized
+geometry, projection, carry, and project contracts without DOM scraping or
+production-app imports. Network-isolated Playwright evidence shows direct
+`jspdf@4.2.1` and `jspdf@4.2.1` plus `svg2pdf.js@2.7.0` each produce one
+612-by-792-point vector PDF with searchable required text, the © glyph, full
+OSM URL, scale bar, and zero raster-image operations. Direct jsPDF produced
+9,739 bytes; SVG translation produced 10,524 bytes. Both tested PDFKit paths
+failed in the browser because `blob-stream@0.1.3` requires Node-style `global`;
+Vite also externalized Node runtime modules. The evidence-based recommendation
+is direct jsPDF drawing from the typed export scene for a later production
+adoption review. Full results, compliance distinctions, visual-regression
+strategy, and retained CTC-008/CTC-020 gates are in
+`docs/experiments/ctc-014-vector-pdf-evaluation.md`. No production dependency
+or PDF export UI is authorized. Prepare the self-contained final Claude audit
+handoff after full verification.
 
 CTC-007 passed final Claude audit with minor fixes resolved - 2026-06-12.
 Codex selected CTC-007
@@ -591,9 +607,9 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 - Start from clean synchronized `main` and use
   `docs/handoffs/next-codex-task-startup-prompt.md` to select the next task
   against live Notion evidence.
-- CTC-014 is the leading candidate because no PDF pipeline, library,
-  dependency, font, or visual-regression decision exists. Verify this
-  critically against CTC-008, CTC-020, and CTC-019 before selection.
+- CTC-014 is in final-audit preparation. Do not adopt direct jsPDF as a
+  production dependency or ship PDF export until Claude accepts the evaluation
+  and a separate reviewed production-adoption scope is approved.
 - Do not ship CTC-008 PDF behavior without CTC-020 raw GIS source availability
   in the same release. Resolve CTC-008's notes criterion without silently
   reopening the notes model that CTC-007 deferred.

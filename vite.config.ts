@@ -13,6 +13,14 @@ export default defineConfig({
     port: 4173,
     strictPort: false
   },
+  build: {
+    rollupOptions: {
+      input: {
+        app: "index.html",
+        ctc014: "ctc014.html"
+      }
+    }
+  },
   test: {
     environment: "node",
     globals: true,
