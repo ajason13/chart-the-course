@@ -8,14 +8,14 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button {
   border: 1px solid #2f6241; border-radius: 6px; background: #2f6241; color: white;
   cursor: pointer; font-weight: 750; min-height: 44px; padding: .7rem 1rem;
 }
 button.secondary { background: white; color: #2f6241; }
 button:disabled { cursor: not-allowed; opacity: .55; }
-button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #d18b38; outline-offset: 2px; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, .hole-map:focus-visible { outline: 3px solid #d18b38; outline-offset: 2px; }
 
 .shell { display: grid; gap: 1rem; margin: 0 auto; max-width: 78rem; min-height: 100vh; padding: clamp(1rem, 3vw, 2.5rem); }
 header, .search-panel, .status, .results {
@@ -30,7 +30,7 @@ h2 { margin: 0 0 1rem; }
 form { display: grid; gap: 1rem; }
 label { display: grid; font-weight: 750; gap: .35rem; }
 label span, .hint { color: #5b685d; font-size: .88rem; font-weight: 450; }
-input { border: 1px solid #748276; border-radius: 5px; min-height: 44px; padding: .65rem; width: 100%; }
+input, select { border: 1px solid #748276; border-radius: 5px; min-height: 44px; padding: .65rem; width: 100%; }
 input[aria-invalid="true"] { border-color: #a1261b; }
 fieldset { border: 1px solid #cbd5c5; border-radius: 6px; margin: 0; padding: 1rem; }
 legend { font-weight: 800; padding: 0 .35rem; }
@@ -56,9 +56,43 @@ summary { cursor: pointer; font-weight: 800; padding: .5rem 0; }
 pre { background: #18221c; border-radius: 5px; color: #eef4ed; font-size: .8rem; overflow: auto; padding: .75rem; white-space: pre-wrap; }
 .attribution { color: #4e5d50; font-size: .88rem; line-height: 1.5; margin: 0; }
 .attribution a { color: #245e39; }
+.map-workspace { border-top: 1px solid #dbe2d7; display: grid; gap: 1rem; padding-top: 1rem; }
+.map-selection, .map-heading { align-items: end; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
+.map-selection h3, .map-heading h3 { margin: 0; }
+.map-selection label { min-width: 12rem; }
+.hole-map-panel { display: grid; gap: .75rem; }
+.map-instructions, .measurement-result, .map-empty { margin: 0; }
+.hole-map {
+  background: #f8f7ef; border: 1px solid #748276; border-radius: 7px; display: block;
+  height: auto; touch-action: none; width: 100%;
+}
+.map-inner-boundary { fill: #eef1e8; stroke: #667268; stroke-dasharray: 7 5; stroke-width: 1; }
+.map-feature { stroke-linejoin: round; stroke-width: 2; }
+.layer-vegetation { fill: #a9c49b; stroke: #3d6540; stroke-dasharray: 4 3; }
+.layer-generic-water { fill: #a8d5e5; stroke: #245f78; stroke-dasharray: 6 3; }
+.layer-golf-water { fill: #70b6d2; stroke: #174f69; stroke-width: 3; }
+.layer-rough { fill: #c6d6ae; stroke: #667d4b; stroke-dasharray: 3 3; }
+.layer-fairway { fill: #b8d59f; stroke: #41653d; }
+.layer-bunker { fill: #ead9a0; stroke: #735e28; stroke-dasharray: 2 2; }
+.layer-green { fill: #82b980; stroke: #285c35; stroke-width: 3; }
+.layer-tee { fill: #d9e7bd; stroke: #244e30; stroke-width: 3; }
+.layer-route { fill: none; stroke: #6d351d; stroke-dasharray: 8 5; stroke-width: 4; }
+.measurement-line { stroke: #932b20; stroke-dasharray: 6 4; stroke-width: 4; }
+.measurement-anchor { fill: #fffdf8; stroke: #932b20; stroke-width: 4; }
+.keyboard-crosshair { fill: none; stroke: #111; stroke-width: 3; }
+.scale-bar line { stroke: #111; stroke-width: 5; }
+.scale-bar text { fill: #111; font-size: 16px; font-weight: 800; }
+.measurement-result { font-size: 1.1rem; font-weight: 800; }
+.map-warnings { border-left: 4px solid #a86619; padding-left: .75rem; }
+.map-warnings ul, .hole-map-panel details ul { margin-bottom: 0; }
+.sr-only {
+  clip: rect(0, 0, 0, 0); clip-path: inset(50%); height: 1px; overflow: hidden;
+  position: absolute; white-space: nowrap; width: 1px;
+}
 
 @media (max-width: 700px) {
   .coordinate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .candidate-list li { align-items: stretch; flex-direction: column; }
   .candidate-list button { width: 100%; }
+  .map-heading button, .map-selection label { width: 100%; }
 }

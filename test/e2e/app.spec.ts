@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import ctc006Detail from "../../fixtures/overpass/synthetic-golf-course-ctc006.json" with { type: "json" };
 
 const endpoint = "https://overpass-api.de/api/interpreter";
 const discovery = {
@@ -208,4 +209,43 @@ test("accessibility oracle detects a known injected violation", async ({ page })
   });
   const results = await new AxeBuilder({ page }).include("main").analyze();
   expect(results.violations.map((violation) => violation.id)).toContain("image-alt");
+});
+
+test("renders and measures the selected hole with pointer, keyboard, mobile, and attribution support", async ({ page }) => {
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? ctc006Detail : discovery });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+
+  const map = page.getByTestId("hole-vector-map");
+  await expect(map).toBeVisible();
+  await expect(page.getByText("Course data © OpenStreetMap contributors.")).toBeVisible();
+  for (const layer of ["vegetation", "generic-water", "golf-water", "rough", "fairway", "bunker", "green", "tee", "route", "measurement"]) {
+    await expect(map.locator(`[data-layer="${layer}"]`)).toHaveCount(1);
+  }
+  await expect(map.locator('[data-layer="vegetation"] circle')).toHaveCount(0);
+  expect(await map.evaluate((element) => element.getBoundingClientRect().right <= window.innerWidth)).toBe(true);
+
+  await map.click({ position: { x: 60, y: 60 } });
+  await expect(page.getByText("Select the second point.")).toBeVisible();
+  await map.click({ position: { x: 250, y: 180 } });
+  await expect(page.getByText(/^Distance: \d+ yd \/ \d+ m$/)).toBeVisible();
+  await map.click({ position: { x: 150, y: 120 } });
+  await expect(page.getByText("Select the second point.")).toBeVisible();
+
+  await map.focus();
+  await map.press("Escape");
+  await expect(page.getByText("No measurement selected.")).toBeVisible();
+  await map.press("ArrowRight");
+  await map.press("Enter");
+  await map.press("Shift+ArrowDown");
+  await map.press("Enter");
+  await expect(page.getByText(/^Distance: \d+ yd \/ \d+ m$/)).toBeVisible();
+  await expect(map).toBeFocused();
+  await assertAxe(page);
 });

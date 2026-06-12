@@ -1,8 +1,111 @@
 # Chart the Course Context
 
-Last updated: 2026-06-06
+Last updated: 2026-06-11
 
 ## Current Status
+
+CTC-006 is Done - 2026-06-11. Codex selected CTC-006
+after confirming `main` is clean and synchronized at `3449748`, the live
+CTC-006 and CTC-019 Notion tasks both remain Backlog with unchanged acceptance
+criteria, CTC-005 is Done and supplies the normalized WGS84 geometry contract,
+and CTC-018 selects blank/vector-only rendering with no third-party basemap
+tiles by default. CTC-006 is the correct next dependency because selected-hole
+rendering and two-point measurement now have normalized input and unlock later
+map workflows. CTC-019 remains independent Overpass cache/request-policy
+hardening and must not be absorbed into CTC-006. The self-contained Gemini
+specification prompt is at
+`docs/handoffs/ctc-006-gemini-specification-prompt.md`; its 13 embedded
+relevant repository files were verified byte-for-byte exact and its SHA-256 is
+`4b70fbda3decd646df805a36351e98f67a5020f3769b00fab485a1390e4eef2b`.
+Startup-gate verification passed: `npm run check` with scaffold policy, build,
+24 Vitest tests, and 12 Playwright tests; `git diff --check`; and the canonical
+compliance flow with 0 production vulnerabilities.
+
+Gemini's final CTC-006 revision was rejected on 2026-06-11. Despite the exact
+mandatory correction prompt, it abandoned the required React SVG architecture
+for layered Canvas/SVG/DOM rendering and reintroduced prohibited pan/zoom,
+pin dragging/snapping, multi-touch gestures, localStorage preferences,
+out-of-bounds styling, invented coordinate contracts, console logging,
+Jest/Cypress tooling, and unsupported accuracy/performance claims. It also
+failed to resolve the requested logical viewBox, minimum extent, warning
+matching, exact CTC-005 fixture contract, and deterministic keyboard behavior.
+No decisions from the final revision were accepted. The authoritative baseline
+remains `docs/handoffs/ctc-006-gemini-specification-review.md`. The
+self-contained Claude QA-planning bundle is at
+`docs/handoffs/ctc-006-claude-qa-planning-prompt.md`; its 12 embedded relevant
+repository files were verified byte-for-byte exact and its SHA-256 is
+`1d4d40adce5601c83c5d1cb1837b4c51d6a1456a3740d5f86a40d6f9e62d2cd0`.
+Do not create a feature branch or implement runtime code until Claude QA
+planning is critically reviewed.
+
+Claude QA planning returned `READY WITH REQUIRED SPEC CORRECTIONS` on
+2026-06-11. B-1 through B-7 were recorded in
+`docs/handoffs/ctc-006-gemini-specification-review.md`. Codex corrected two
+internally inconsistent recommendations before development: the circular
+minimum-extent algorithm was replaced with a fixed display-only 20-meter
+minimum per axis, and the finite nice-scale sequence with an overflowing
+fallback was replaced by a generated 1/2/5 sequence that always fits within
+40% of the inner logical viewport. Development is authorized on branch
+`ctc-006-selected-hole-map`; final Claude audit remains mandatory.
+Implementation adds dependency-free local equirectangular projection,
+Haversine yards/meters measurement, deterministic scale indication, a native
+React SVG selected-hole map, pointer and keyboard controls, structured warning
+display, a CTC-006 all-layers synthetic fixture, and focused Vitest/Playwright
+coverage. Unassociated features remain excluded, existing CTC-005 fixtures are
+unchanged, and no provider, basemap, persistence, export, cache policy, or new
+dependency was added.
+Pre-audit verification passed: `npm run check` with scaffold policy, build, 30
+Vitest tests, and 13 Playwright tests; `git diff --check`; and the canonical
+compliance flow with 0 production vulnerabilities.
+Implementation commit `ca1656b` is the final-audit target. The self-contained
+final Claude audit bundle is at
+`docs/handoffs/ctc-006-claude-final-audit-prompt.md`; all 13 changed files were
+generated from the audited commit with `git show`, verified byte-for-byte
+exact, and the bundle SHA-256 is
+`00fe0f0ade2bbb2d05d49976fc5c727492871913d92a4ab60e42b1e2d2efcaac`.
+Claude final audit returned `PASS WITH MINOR FIXES` with no blockers and
+authorized Done after confined fixes without re-audit. MF-1 was confirmed
+already satisfied: every area feature in the committed CTC-006 fixture has at
+least four coordinates and closes with its final coordinate equal to its
+first, matching `normalize.ts`. MF-2 changed the defensive scale-bar fallback
+to a one-meter nice value. MF-3 added the established contract, copyright,
+bbox, and query-purpose governance metadata to the CTC-006 fixture. Post-fix
+verification passed: `npm run check` with scaffold policy, build, 30 Vitest
+tests, and 13 Playwright tests; `git diff --check`; and the canonical
+compliance flow with 0 production vulnerabilities.
+
+Gemini's first CTC-006 response was rejected on 2026-06-10 because it ignored
+the supplied CTC-006 prompt and replaced the selected-hole rendering task with
+an unapproved Fastify/Redis geohash caching proxy and multi-quarter enterprise
+infrastructure roadmap. It did not resolve CTC-006 rendering, projection,
+measurement, scale-indicator, selected-hole interaction, responsive,
+accessibility, or geometry-tolerance decisions. It also proposed out-of-scope
+CTC-019 and unrelated work including Redis, geohash tiling, stale-while-
+revalidate, distributed locks, upstream aggregation/backoff/failover, XML
+normalization, PostGIS, MCP, OIDC/SPIRE, KG-TRACES/PyTorch, new dependencies,
+epics, agent workflows, and performance targets unsupported by the repository.
+The response is not a CTC-006 specification baseline and does not advance the
+gate. The exact replacement instruction is at
+`docs/handoffs/ctc-006-gemini-plan-correction.md`. Keep CTC-006 in
+`1. Spec Drafting (Gemini)` and resubmit the correction together with the
+original self-contained CTC-006 prompt.
+
+Gemini's corrected CTC-006 response was critically reviewed on 2026-06-11. It
+correctly selected dependency-free native React SVG, preserved geographic
+coordinates for measurement, proposed latitude-aware projection, chose
+geodesic two-point distance, and addressed pointer/touch/keyboard, responsive,
+attribution, and synthetic-test concerns. The response was not accepted as
+written because it invented normalized types and fixture shapes, rendered
+unassociated features as selected-hole fallbacks, proposed incorrect antipodal
+handling, and left projection, scale-bar, warning, interaction, and
+accessibility rules insufficiently precise. The corrected specification
+baseline is at `docs/handoffs/ctc-006-gemini-specification-review.md`. At the
+maintainer's direction, Gemini receives one final revision opportunity before
+Claude QA planning. The exact revision prompt is at
+`docs/handoffs/ctc-006-gemini-specification-revision-prompt.md`. CTC-006 must
+remain out of implementation until the final Gemini revision is critically
+reviewed and Claude adversarial QA planning is completed and critically
+reviewed.
 
 CTC-005 is Done - 2026-06-07. Codex selected CTC-005
 after confirming `main` is clean and synchronized at `918f801`, CTC-015 is
@@ -295,8 +398,15 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 
 ## Next Work
 
-- CTC-005 geometry normalization and CTC-019 durable cache/request policy remain
-  downstream; do not absorb them into CTC-004.
+- Merge the completed and audited `ctc-006-selected-hole-map` branch before
+  starting another task. The next-session startup prompt is
+  `docs/handoffs/next-codex-task-startup-prompt.md`.
+- After CTC-006 is merged and `main` is synchronized, critically compare
+  CTC-007 with CTC-019. CTC-007 is the leading next feature because it directly
+  depends on the selected-hole map and measurement engine; CTC-019 remains
+  independent pipeline hardening.
+- Keep CTC-019 durable cache/request policy separate from CTC-006 rendering and
+  measurement work.
 - CTC-019 should validate every cached source-metadata field and pre-check
   already-aborted request signals as accepted CTC-004 audit hardening notes.
 - Future test-harness hardening should evaluate Firefox/WebKit Playwright
