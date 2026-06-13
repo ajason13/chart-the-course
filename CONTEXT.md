@@ -4,6 +4,39 @@ Last updated: 2026-06-13
 
 ## Current Status
 
+CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
+confirmed clean synchronized `main` at
+`f9b3f4ff670cd370b3a48a5b6e5623dd93c84fcf`, with latest `main` CI
+successful. CTC-014 remains `5. Done`; PR #6 remains merged as
+`33ac3cc6afd533a7c05fd6d3403c20b37c6037ea` with required CI successful,
+and the isolated CTC-014 experiment remains outside the production app import
+path. Live Notion comparison confirmed CTC-019, CTC-020, and CTC-008 were
+Backlog before selection. CTC-019 is the highest-value independently
+deliverable task because the runtime still uses temporary session storage,
+validates only raw response plus `source.query` on cache reads, has no TTL
+enforcement, explicit refresh/cooldown, Retry-After/backoff policy, or
+already-aborted-signal pre-check. CTC-020 remains downstream because its
+accepted PDF-adjacency and acknowledgement criteria depend on production PDF
+behavior that does not exist. CTC-008 remains downstream because production
+jsPDF adoption, rendered-page regression, notes behavior, and same-release
+CTC-020 source availability remain unresolved reviewed gates. CTC-019 must
+preserve deterministic CTC-004 cache keys and exact raw response/source
+evidence, keep normalized geometry and user-authored project state separate,
+and must not implement CTC-020 source export, production PDF behavior,
+providers, endpoint failover, API keys, accounts, servers, analytics,
+telemetry, cloud sync, or unrelated persistence. CTC-019 moved to
+`1. Spec Drafting (Gemini)`. Stop at the Gemini specification gate until the
+response is critically reviewed and Claude adversarial QA planning is
+completed and critically reviewed. The self-contained Gemini specification
+prompt is at `docs/handoffs/ctc-019-gemini-specification-prompt.md`; its 18
+embedded relevant repository files were verified byte-for-byte exact and its
+SHA-256 is
+`1835861987cc2f26508f24b7272dcfbad467b1e436821ecfbe7abd50e045c536`.
+Startup-gate verification passed: `npm run check` with scaffold policy, build,
+44 Vitest tests, and 15 Playwright tests; `git diff --check`; and the canonical
+compliance flow with allowed production licenses and 0 production
+vulnerabilities.
+
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
 `b8536b7dafdd4d793d70ae26763523a1295305e2`, confirmed CTC-007 remains
