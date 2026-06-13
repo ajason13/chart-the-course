@@ -1,10 +1,10 @@
 # Chart the Course Context
 
-Last updated: 2026-06-12
+Last updated: 2026-06-13
 
 ## Current Status
 
-CTC-014 is in Final Audit (Claude) - 2026-06-12. After CTC-007 integration, Codex
+CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
 `b8536b7dafdd4d793d70ae26763523a1295305e2`, confirmed CTC-007 remains
 `5. Done`, and confirmed PR #5 remains merged as
@@ -121,6 +121,14 @@ dash contract: PDF.js confirms direct jsPDF emits the scaled four-element dash
 operator. MF-3 asserts the complete required attribution string including ©.
 Run the full verification and compliance gates, then integrate the branch and
 mark CTC-014 Done.
+Post-fix verification passed: `npm run check` with scaffold policy, build, 44
+Vitest tests, and 15 Playwright tests; `git diff --check`; and canonical
+compliance with allowed production licenses and 0 production vulnerabilities.
+PR #6 passed required CI and merged into `main` as
+`33ac3cc6afd533a7c05fd6d3403c20b37c6037ea`. Direct jsPDF drawing from the
+typed export scene is the accepted evidence-based recommendation for a later
+production-adoption review. No production PDF dependency or export UI is
+adopted by CTC-014, and CTC-008/CTC-020 release coupling remains mandatory.
 
 CTC-007 passed final Claude audit with minor fixes resolved - 2026-06-12.
 Codex selected CTC-007
@@ -624,9 +632,9 @@ exists. Do not publish `security@chartthecourse.app` until verified.
 - Start from clean synchronized `main` and use
   `docs/handoffs/next-codex-task-startup-prompt.md` to select the next task
   against live Notion evidence.
-- CTC-014 is in final-audit preparation. Do not adopt direct jsPDF as a
-  production dependency or ship PDF export until Claude accepts the evaluation
-  and a separate reviewed production-adoption scope is approved.
+- CTC-014 is Done and recommends direct jsPDF drawing for a later separate
+  production-adoption review. Do not adopt it as a production dependency or
+  ship PDF export without that reviewed scope and the CTC-020 release gate.
 - Do not ship CTC-008 PDF behavior without CTC-020 raw GIS source availability
   in the same release. Resolve CTC-008's notes criterion without silently
   reopening the notes model that CTC-007 deferred.
