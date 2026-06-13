@@ -36,6 +36,19 @@ Startup-gate verification passed: `npm run check` with scaffold policy, build,
 44 Vitest tests, and 15 Playwright tests; `git diff --check`; and the canonical
 compliance flow with allowed production licenses and 0 production
 vulnerabilities.
+Gemini's proposed CTC-019 Deep Research plan was rejected before research
+started because it replaced the concrete durable Overpass cache/request-policy
+specification with a generic open-source product-management playbook covering
+community alignment, roadmaps, vibe-coding translation, epics/user stories,
+AI-agent task formatting, generic architecture/compliance risks, and Notion
+templates/database layouts. It did not plan the required current-primary-source
+research or exact decisions for IndexedDB schema/upgrades, strict durable-entry
+validation, 7-day TTL/stale behavior, accessible refresh cooldown, bounded
+Retry-After/backoff, cancellation, request identity, ODbL evidence ownership,
+or deterministic tests. No decisions from that plan are accepted and CTC-019
+remains in Spec Drafting. Submit
+`docs/handoffs/ctc-019-gemini-plan-correction.md` as the pasted instruction
+together with the attached self-contained specification prompt.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
