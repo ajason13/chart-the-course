@@ -53,6 +53,12 @@ page count, page box, extracted text, path-operation count, and image-operation
 count were identical. The focused Playwright test blocks all non-localhost
 requests. PDF.js inspection uses a locally bundled worker.
 
+The direct jsPDF path preserves the four-element carry dash intent. The scene
+test fixes the logical pattern at `[12, 5, 3, 5]`, and PDF.js structural
+inspection confirms jsPDF emits the scaled four-element PDF dash operator
+`[8, 10/3, 2, 10/3]`. This is valid alternating on/off PDF dash syntax and is
+not silently simplified to a two-element pattern.
+
 The initial SVG experiment silently omitted the scale bar. The test caught the
 drop; the SVG scene was corrected and the final result includes searchable
 scale text plus a vector line. This demonstrates why export-scene fidelity and

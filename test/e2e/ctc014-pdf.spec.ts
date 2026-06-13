@@ -51,12 +51,15 @@ test("CTC-014 candidates produce independently attributable browser evidence", a
     expect(candidate.pages).toBe(1);
     expect(candidate.width).toBeCloseTo(612, 1);
     expect(candidate.height).toBeCloseTo(792, 1);
-    expect(candidate.text).toContain("Course geometry and map data");
+    expect(candidate.text).toContain("Course geometry and map data © OpenStreetMap contributors.");
     expect(candidate.text).toContain("https://www.openstreetmap.org/copyright");
     expect(candidate.text).toContain("219 yd / 200 m");
     expect(candidate.pathOperations).toBeGreaterThan(0);
     expect(candidate.imageOperations).toBe(0);
   }
+  const carryDash = evidence.direct.evidence!.dashPatterns.find((pattern) => pattern.length === 4);
+  expect(carryDash).toHaveLength(4);
+  [8, 10 / 3, 2, 10 / 3].forEach((value, index) => expect(carryDash![index]).toBeCloseTo(value, 10));
   for (const result of [evidence.pdfkitDirect, evidence.pdfkitSvg]) {
     expect(result.evidence).toBeNull();
     expect(result.error).toContain("global is not defined");
@@ -75,6 +78,7 @@ test("CTC-014 candidates produce independently attributable browser evidence", a
         text: evidence.text,
         pathOperations: evidence.pathOperations,
         imageOperations: evidence.imageOperations,
+        dashPatterns: evidence.dashPatterns,
       });
     }
     return runs;

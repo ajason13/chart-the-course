@@ -113,6 +113,14 @@ relevant repository files were verified byte-for-byte against `fc99982` and
 its SHA-256 is
 `aa48e21c06b9082cdb69b0f168f18addd2ab9563fccf232f95a3e1e385df14be`.
 Stop at the final-audit gate until Claude returns a verdict.
+Claude final audit returned `PASS WITH MINOR FIXES` with no blockers and no
+re-audit required for confined fixes. MF-1 passes the already-computed scene
+scale into direct-jsPDF style rendering instead of rebuilding the scene for
+each geometry. MF-2 retains and explicitly verifies the four-element carry
+dash contract: PDF.js confirms direct jsPDF emits the scaled four-element dash
+operator. MF-3 asserts the complete required attribution string including ©.
+Run the full verification and compliance gates, then integrate the branch and
+mark CTC-014 Done.
 
 CTC-007 passed final Claude audit with minor fixes resolved - 2026-06-12.
 Codex selected CTC-007

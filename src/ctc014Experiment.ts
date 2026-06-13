@@ -15,6 +15,7 @@ type PdfEvidence = {
   text: string;
   pathOperations: number;
   imageOperations: number;
+  dashPatterns: number[][];
 };
 
 function hex(value: string | null): [number, number, number] | null {
@@ -24,13 +25,13 @@ function hex(value: string | null): [number, number, number] | null {
   return [0, 2, 4].map((index) => Number.parseInt(match[1].slice(index, index + 2), 16)) as [number, number, number];
 }
 
-function setStyle(doc: jsPDF, style: ExportStyle) {
+function setStyle(doc: jsPDF, style: ExportStyle, scale: number) {
   const stroke = hex(style.stroke);
   const fill = hex(style.fill);
   if (stroke) doc.setDrawColor(...stroke);
   if (fill) doc.setFillColor(...fill);
-  doc.setLineWidth(Math.max(0.5, style.strokeWidth * createCtc014ExportScene().map.transform.scale));
-  doc.setLineDashPattern(style.dash.map((value) => value * createCtc014ExportScene().map.transform.scale), 0);
+  doc.setLineWidth(Math.max(0.5, style.strokeWidth * scale));
+  doc.setLineDashPattern(style.dash.map((value) => value * scale), 0);
 }
 
 function pagePoint(scene: Ctc014ExportScene, point: { x: number; y: number }) {
@@ -41,7 +42,7 @@ function pagePoint(scene: Ctc014ExportScene, point: { x: number; y: number }) {
 }
 
 function drawGeometry(doc: jsPDF, scene: Ctc014ExportScene, geometry: ExportGeometry) {
-  setStyle(doc, geometry.style);
+  setStyle(doc, geometry.style, scene.map.transform.scale);
   if (geometry.type === "point") {
     const point = pagePoint(scene, geometry.point);
     doc.circle(point.x, point.y, geometry.radius * scene.map.transform.scale, geometry.style.fill ? "FD" : "S");
@@ -204,6 +205,11 @@ export async function analyzePdf(data: Uint8Array): Promise<PdfEvidence> {
   const operators = await page.getOperatorList();
   const pathIds = new Set([OPS.constructPath, OPS.stroke, OPS.fill, OPS.eoFill, OPS.fillStroke, OPS.eoFillStroke]);
   const imageIds = new Set([OPS.paintImageXObject, OPS.paintInlineImageXObject, OPS.paintImageMaskXObject]);
+  const dashPatterns = operators.fnArray.flatMap((operation, index) => {
+    if (operation !== OPS.setDash) return [];
+    const pattern = operators.argsArray[index]?.[0];
+    return Array.isArray(pattern) ? [pattern.map(Number)] : [];
+  });
   return {
     bytes,
     pages: pdf.numPages,
@@ -212,5 +218,6 @@ export async function analyzePdf(data: Uint8Array): Promise<PdfEvidence> {
     text: text.items.map((item) => "str" in item ? item.str : "").join(" "),
     pathOperations: operators.fnArray.filter((operation) => pathIds.has(operation)).length,
     imageOperations: operators.fnArray.filter((operation) => imageIds.has(operation)).length,
+    dashPatterns,
   };
 }

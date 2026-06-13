@@ -29,6 +29,7 @@ describe("CTC-014 export scene", () => {
     expect(scene.map.geometry.every(({ style }) => style.strokeWidth > 0)).toBe(true);
     expect(scene.map.geometry.filter(({ kind }) => ["route", "carry-arc", "rough"].includes(kind))
       .every(({ style }) => style.dash.length > 0)).toBe(true);
+    expect(scene.map.geometry.find(({ kind }) => kind === "carry-arc")?.style.dash).toEqual([12, 5, 3, 5]);
   });
 
   it("keeps required static notes, disclaimer, and full attribution text", () => {
