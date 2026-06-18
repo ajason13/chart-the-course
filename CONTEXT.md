@@ -49,6 +49,16 @@ or deterministic tests. No decisions from that plan are accepted and CTC-019
 remains in Spec Drafting. Submit
 `docs/handoffs/ctc-019-gemini-plan-correction.md` as the pasted instruction
 together with the attached self-contained specification prompt.
+Gemini's corrected CTC-019 Deep Research plan was accepted on 2026-06-17
+because it now tracks the required durable Overpass cache/request-policy
+specification: native IndexedDB and storage behavior, strict versioned entry
+validation, 7-day TTL and stale-data policy, accessible refresh action,
+bounded 429/Retry-After backoff, request identity, security/privacy
+boundaries, ODbL evidence marking for later CTC-020, App/state-machine
+integration, repository doc updates, and deterministic Vitest/Playwright
+coverage. This accepts the research plan only; no implementation decisions are
+accepted until the full 12-section Gemini specification is returned and
+critically reviewed. CTC-019 remains in `1. Spec Drafting (Gemini)`.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
