@@ -91,6 +91,18 @@ implementation baseline. Do not send raw Antigravity output directly to Claude.
 Do not create a feature branch or implement runtime behavior until Gemini Chat
 Deep Research returns the corrected CTC-019 spec, Codex critically reviews it,
 and Claude adversarial QA planning is completed and critically reviewed.
+Prompting workflow update - 2026-06-18. Google Gemini documentation confirms
+that Deep Research works through a research-plan, source-selection, and report
+workflow, and Google warns that overly large file uploads can miss connections
+or details across the content. For CTC-019, prefer the lean Gemini Chat prompt
+at `docs/handoffs/ctc-019-gemini-chat-correction-prompt.md` plus file
+attachments over the older 302 KB prompt with 18 embedded files. Attach the
+listed source-of-truth files, require Gemini to show a CTC-019-specific
+research plan before starting, and reject generic product-management plans.
+`docs/governance-workflow.md` now records Gemini Chat and Claude Chat prompting
+rules. Claude handoffs should use clear success criteria, structured sections
+or XML-style delimiters, source-grounded claims, long documents before the
+final query, and explicit blocker/minor-fix verdict instructions.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at

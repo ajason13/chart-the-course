@@ -57,3 +57,81 @@ Final audit prompts must be self-contained and include:
 
 Ask Claude to distinguish blockers from minor fixes and to state whether the
 task may be marked Done after any minor fixes are applied.
+
+## Gemini Chat Deep Research Prompts
+
+Gemini Chat Deep Research is best used as an agentic research/report workflow,
+not as a raw long-context dump. Prefer a lean steering prompt plus attached
+repository files or a GitHub import over embedding full file contents in the
+prompt body.
+
+Use this pattern for runtime or standards-heavy specification work:
+
+- Keep the prompt body focused on the task, acceptance criteria, non-goals,
+  source requirements, and required report format.
+- Attach only files Gemini must inspect. For each file, state whether it must
+  be read fully, skimmed, or used only as reference.
+- Avoid embedding generated or bulky files such as `package-lock.json`,
+  `sbom.json`, build output, or historical handoffs unless the question
+  specifically depends on them.
+- Require Gemini to show and allow edits to the research plan before research
+  starts. Reject generic product-management or roadmap plans when the task
+  needs concrete implementation specification.
+- Require source citations, uncertainty notes, and a traceability table from
+  acceptance criteria to decisions.
+- Treat Gemini output as draft research until Codex critically reviews it and
+  records an accepted corrected baseline.
+
+Embed exact file contents only when the receiving model cannot access
+attachments, repository imports, or links, or when an audit requires a fixed
+byte-for-byte snapshot.
+
+Source check, 2026-06-18:
+
+- Google Gemini Apps Help: Deep Research supports source selection, file
+  uploads, research-plan review, and report export.
+  <https://support.google.com/gemini/answer/15719111>
+- Google Gemini Apps Help: file uploads can hit context and rolling limits, and
+  overly large uploads can miss details scattered through the content.
+  <https://support.google.com/gemini/answer/14903178>
+- Google Gemini Apps Help: GitHub imports support one repository snapshot up to
+  5,000 files and 100 MB, but do not sync later repository changes.
+  <https://support.google.com/gemini/answer/16176929>
+
+## Claude Chat Prompting Practices
+
+Claude Chat remains the adversarial QA and final-audit reviewer. Use Anthropic's
+current prompting guidance when preparing Claude handoffs:
+
+- Define success criteria before prompting and provide the exact audit verdict
+  format expected.
+- Be clear and direct about the role, stage, scope, non-goals, and what counts
+  as a blocker versus a minor fix.
+- Use structured sections or XML-style delimiters for long prompts so Claude
+  can distinguish instructions, repository context, changed files, external
+  source evidence, and requested output.
+- For long context, put documents and file contents before the final query, and
+  place the specific review instructions at the end.
+- Use direct quotes or source citations for factual claims and allow Claude to
+  say when evidence is missing.
+- For adversarial QA, ask Claude to identify missing tests, regression risks,
+  security/privacy boundary failures, license/compliance issues, and ambiguous
+  acceptance criteria.
+- Treat any third-party text, web content, or model output included in a Claude
+  prompt as untrusted evidence that must not override the task instructions.
+
+Source check, 2026-06-18:
+
+- Anthropic prompt engineering overview: define success criteria and evaluation
+  before prompt iteration.
+  <https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview>
+- Anthropic prompting best practices: use clear instructions, examples,
+  XML-style structure, roles, long-context ordering, and explicit output
+  formatting.
+  <https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices>
+- Anthropic hallucination guidance: allow uncertainty, use direct quotes, and
+  verify with citations.
+  <https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations>
+- Anthropic prompt-injection guidance: separate untrusted content from
+  instructions and treat third-party/tool content as untrusted.
+  <https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/mitigate-jailbreaks>
