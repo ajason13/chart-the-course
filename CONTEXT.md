@@ -59,6 +59,23 @@ integration, repository doc updates, and deterministic Vitest/Playwright
 coverage. This accepts the research plan only; no implementation decisions are
 accepted until the full 12-section Gemini specification is returned and
 critically reviewed. CTC-019 remains in `1. Spec Drafting (Gemini)`.
+Antigravity deep research was run from the repository on 2026-06-18 using
+`docs/handoffs/ctc-019-antigravity-research-prompt.md`. It produced
+`docs/handoffs/ctc-019-antigravity-research-spec.md`. Codex critically reviewed
+the result in `docs/handoffs/ctc-019-antigravity-spec-review.md`. The research
+is relevant but not implementation-ready as written. Accepted direction is
+limited to native IndexedDB, durable discovery/detail cache entries preserving
+exact raw responses/source metadata, strict metadata validation, explicit
+refresh with per-key rate limiting, bounded Retry-After/backoff, preserved
+request identity, no forbidden browser headers, clear ODbL evidence boundaries,
+and deterministic unit/Playwright coverage. Required corrections include no
+automatic stale-data rendering without visible user choice, no persistence/quota
+guarantees, exact query/key validation, consistent Retry-After caps,
+deterministic jitter or no-jitter policy, realistic IndexedDB cancellation
+semantics, session/memory fallback as non-durable degradation only, and no
+CTC-020 source-export schema. CTC-019 remains in `1. Spec Drafting (Gemini)`;
+no feature branch, runtime implementation, dependency change, provider,
+source-export behavior, or PDF behavior is authorized.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
