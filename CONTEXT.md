@@ -76,24 +76,21 @@ semantics, session/memory fallback as non-durable degradation only, and no
 CTC-020 source-export schema. CTC-019 remains in `1. Spec Drafting (Gemini)`;
 no feature branch, runtime implementation, dependency change, provider,
 source-export behavior, or PDF behavior is authorized.
-Project workflow update - 2026-06-18. The Multi-Agent SDLC Framework now
-allows Gemini / Antigravity to fulfill the deep-research-backed Spec Drafter
-role, with Codex retaining spec ownership and Notion coordination. For Chart
-the Course, existing Notion status text `1. Spec Drafting (Gemini)` should be
-read as `Spec Drafting (Deep Research)` until the task database vocabulary is
-updated. Antigravity may draft or revise repository research/spec artifacts
-under `docs/handoffs/`, but Codex must critically review and correct the
-output before any implementation baseline is accepted. Future complex
-Antigravity handoffs should prefer separate sourced-facts and recommendation
-artifacts, include a mandatory weak-claims/unknowns section, avoid runtime
-source/test/lockfile/SBOM writes during spec drafting, and go through the
-sequence `Codex prompt -> Antigravity draft -> Codex critical review ->
-corrected spec baseline -> Claude QA planning`. Do not send raw Antigravity
-output directly to Claude unless Codex has marked it implementation-ready.
-For CTC-019, the next gate remains a corrected specification baseline or an
-Antigravity revision addressing
-`docs/handoffs/ctc-019-antigravity-spec-review.md`; implementation remains
-gated.
+Project workflow update - 2026-06-18. Gemini Chat in Deep Research mode is the
+active Spec Drafter path for CTC-019. The task remains in
+`1. Spec Drafting (Gemini)`, and the next gate is a Gemini Chat corrected
+specification baseline that addresses
+`docs/handoffs/ctc-019-antigravity-spec-review.md` and the accepted Gemini
+plan-correction scope. Antigravity was diagnosed as unsuitable for the current
+CTC-019 correction loop because the local CLI requires unsandboxed log and
+localhost access, the previously used `gemini-3.1-pro` flag is not a valid
+local model label, Gemini model routes are quota-exhausted, and the CLI exits
+0 without surfacing the quota failure to stdout. The prior Antigravity research
+and Codex review remain useful research input, but they are not an accepted
+implementation baseline. Do not send raw Antigravity output directly to Claude.
+Do not create a feature branch or implement runtime behavior until Gemini Chat
+Deep Research returns the corrected CTC-019 spec, Codex critically reviews it,
+and Claude adversarial QA planning is completed and critically reviewed.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
