@@ -156,6 +156,23 @@ The embedded snapshots were verified against the current repository using
 SHA-256 markers in the prompt. CTC-019 may move to
 `2. QA Planning (Claude)`, but runtime implementation remains blocked until
 Claude returns an adversarial QA plan and Codex critically reviews it.
+Claude QA planning response - 2026-06-19. Claude returned `NEEDS SPEC FIXES`.
+Codex accepts the QA plan but not implementation authorization. Claude's six
+blockers are narrow missing decisions: numeric `schemaVersion` and mismatch
+policy, `sizeBytes` computation, oversized-record threshold, IndexedDB
+`versionchange`/`onblocked` policy, refresh cooldown scope, and explicit
+refresh behavior when a fresh cache entry exists. Claude also requested a hard
+retry-attempt cap. Codex recorded the response disposition in
+`docs/handoffs/ctc-019-claude-qa-plan-review.md` and resolved the gaps in
+`docs/handoffs/ctc-019-spec-addendum.md`: `schemaVersion: 1`, no v1 migration,
+full serialized-record UTF-8 `sizeBytes`, 1 MiB durable-record ceiling,
+close-on-`versionchange` with non-durable memory fallback, per-cache-key
+refresh cooldown with global one-active-live-request guard, explicit refresh as
+a cache bypass even for fresh entries, and at most three retries after the
+initial request. Claude addendum re-review prompt is at
+`docs/handoffs/ctc-019-claude-addendum-review-prompt.md`. CTC-019 remains in
+`2. QA Planning (Claude)`; do not implement runtime behavior until Claude
+accepts the addendum and Codex records the implementation gate.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
