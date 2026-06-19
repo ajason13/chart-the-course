@@ -1,8 +1,8 @@
 # CTC-019 Gemini Chat Deep Research correction prompt
 
 Use Gemini Chat in Deep Research mode. This is a lean steering prompt; attach
-the repository context ZIP instead of pasting large file contents into the
-prompt body.
+the listed repository files individually instead of pasting large file contents
+into the prompt body.
 
 ## Task
 
@@ -33,23 +33,11 @@ baseline must address every issue in
 - 429/Retry-After handling and exponential backoff are implemented.
 - Cached OSM geometry is clearly marked ODbL-covered in exported source files.
 
-## Required repository context ZIP
+## Required file attachments
 
-Attach this ZIP file to the Gemini Chat Deep Research request:
-
-```text
-docs/handoffs/ctc-019-gemini-chat-context.zip
-```
-
-ZIP evidence:
-
-- Size: 100 KB.
-- Files: 15.
-- SHA-256:
-  `4b37ccdff3a1105d2ea49aa4a1a9c18912b91c7d10bc8a35d67ad2bea6b42f2a`.
-
-The ZIP contains the repository source-of-truth files below. Use those files as
-the current project context:
+Gemini Chat did not accept the focused ZIP workflow for this task. Attach the
+files below individually to the Gemini Chat Deep Research request and use them
+as the repository source of truth:
 
 - Read fully: `CONTEXT.md`
 - Read fully: `docs/handoffs/ctc-019-gemini-plan-correction.md`
@@ -68,9 +56,9 @@ the current project context:
 - Skim/reference only: `docs/experiments/ctc-014-vector-pdf-evaluation.md`
 
 Do not ask for full pasted contents for generated or bulky files. If a needed
-detail is missing from the ZIP, state the missing detail instead of inventing
-it. Treat the ZIP as a fixed context snapshot; it may not include repository
-changes made after the ZIP was produced.
+detail is missing from the attachments, state the missing detail instead of
+inventing it. Treat the attachments as a fixed context snapshot; they may not
+include repository changes made after they were selected.
 
 ## Required source research
 

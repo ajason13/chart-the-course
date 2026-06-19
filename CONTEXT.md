@@ -103,13 +103,13 @@ research plan before starting, and reject generic product-management plans.
 rules. Claude handoffs should use clear success criteria, structured sections
 or XML-style delimiters, source-grounded claims, long documents before the
 final query, and explicit blocker/minor-fix verdict instructions.
-Gemini ZIP update - 2026-06-18. To reduce upload friction, CTC-019 now has a
-single focused Gemini Chat context ZIP at
-`docs/handoffs/ctc-019-gemini-chat-context.zip`. The ZIP contains 15 files,
-is 100 KB, and has SHA-256
-`4b37ccdff3a1105d2ea49aa4a1a9c18912b91c7d10bc8a35d67ad2bea6b42f2a`. The
-prompt at `docs/handoffs/ctc-019-gemini-chat-correction-prompt.md` instructs
-Gemini Chat Deep Research to use that ZIP as a fixed context snapshot.
+Gemini attachment update - 2026-06-18. Gemini Chat did not accept the focused
+CTC-019 ZIP workflow, so use normal individual file uploads for the next Deep
+Research attempt. The ZIP artifact from the trial is superseded and should not
+be uploaded. The prompt at
+`docs/handoffs/ctc-019-gemini-chat-correction-prompt.md` lists the files to
+attach individually and still avoids pasting full file contents into the prompt
+body.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
