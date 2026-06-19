@@ -1,6 +1,6 @@
 # Chart the Course Context
 
-Last updated: 2026-06-18
+Last updated: 2026-06-19
 
 ## Current Status
 
@@ -130,6 +130,27 @@ files per prompt, so attach only the prompt's required 10-file first batch at
 startup. Use the listed follow-up files only in a second upload batch if Gemini
 asks for more context. Do not advance to Claude QA planning until Codex accepts
 the returned baseline.
+Gemini Chat corrected CTC-019 baseline accepted for Claude QA planning -
+2026-06-19. Codex reviewed the corrected Gemini Chat response and accepted it
+for the next gate with mandatory corrections recorded in
+`docs/handoffs/ctc-019-gemini-chat-corrected-baseline-review.md`. The accepted
+direction includes dedicated `src/overpassCache.ts`, native IndexedDB
+`ChartTheCourse` v1 `courseGeometry` storage, non-durable memory fallback,
+existing discovery/detail cache keys, exact `rawResponse` and source metadata,
+7-day TTL, visible stale-data consent, native refresh button disabled during
+active fetch/cooldown, bounded Retry-After/backoff, realistic AbortSignal and
+IndexedDB semantics, normal browser origin/referrer behavior plus existing
+Overpass QL identity comments, and internal-only `license: "ODbL-1.0"`
+provenance. Codex corrections require strict validation of every required
+metadata field (`query`, `endpoint`, `completedAt`, `bbox`, `copyrightUrl`),
+final backoff delay capping after deterministic jitter, one consistent
+Retry-After cap/visible rate-limit policy, diagnostic-only StorageManager
+usage, no automatic stale rendering even when offline, soft handling of
+browser/private-mode storage variability, and no CTC-020/CTC-008 leakage.
+Claude QA planning prompt is at
+`docs/handoffs/ctc-019-claude-qa-planning-prompt.md`. CTC-019 may move to
+`2. QA Planning (Claude)`, but runtime implementation remains blocked until
+Claude returns an adversarial QA plan and Codex critically reviews it.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
