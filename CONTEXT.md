@@ -173,6 +173,21 @@ initial request. Claude addendum re-review prompt is at
 `docs/handoffs/ctc-019-claude-addendum-review-prompt.md`. CTC-019 remains in
 `2. QA Planning (Claude)`; do not implement runtime behavior until Claude
 accepts the addendum and Codex records the implementation gate.
+Claude addendum re-review - 2026-06-19. Claude returned
+`READY FOR IMPLEMENTATION AFTER QA PLAN` with no blockers. Minor
+implementation/audit checkpoints are recorded in
+`docs/handoffs/ctc-019-claude-addendum-review.md` and folded into
+`docs/handoffs/ctc-019-spec-addendum.md`: over-cap `Retry-After` is terminal
+for the user action and does not consume retry slots; hit-time `sizeBytes`
+recomputation must reset `sizeBytes: 0` before serializing/measuring; and
+already-consented stale data may remain visible after later refresh failure
+only with visible stale/rate-limit/error state, while newly rendering stale
+data still requires explicit consent. CTC-019 may move to
+`3. In Development (ChatGPT)`. Implementation must follow the accepted Gemini
+baseline, Codex corrections, Claude QA plan, and the addendum; no CTC-020
+source export, CTC-008 PDF behavior, provider expansion, dependency addition,
+endpoint failover, account/server/telemetry/cloud sync, or unrelated
+persistence is authorized.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at

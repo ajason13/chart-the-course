@@ -46,8 +46,10 @@ Implementation rule:
 Validation rule:
 
 - `sizeBytes` must be a finite non-negative integer.
-- A cache hit must recompute the current serialized record size and require it
-  to match stored `sizeBytes`.
+- A cache hit must recompute the current serialized record size using the same
+  zero-then-compute sequence as the write path: reconstruct the candidate
+  record with `sizeBytes: 0`, serialize it, compute the UTF-8 byte length, and
+  require that value to match stored `sizeBytes`.
 - A mismatch is treated as corrupt evidence and returns a miss with
   best-effort deletion.
 
@@ -135,6 +137,10 @@ Policy:
 - A fresh pre-existing record may remain rendered after refresh failure because
   it was already the current non-stale view; the failure must not silently
   replace it with stale data.
+- If stale data was already explicitly consented to and rendered earlier in the
+  same session, a later refresh failure may leave that already-consented stale
+  view in place with visible stale/rate-limit/error state. The implementation
+  must not newly render stale data without consent.
 
 ## 7. Retry attempt count
 
@@ -152,7 +158,8 @@ Retry rules remain:
 
 - `Retry-After` values requiring more than 60 seconds are not silently
   truncated into a retry; the attempt aborts and surfaces a visible
-  rate-limit state.
+  rate-limit state. This is terminal for that user action: it does not consume
+  a retry slot and then continue the retry sequence.
 - Deterministic backoff waits are capped after applying deterministic jitter,
   so actual wait never exceeds 30 seconds.
 - Aborting during backoff clears the scheduled timer and prevents further
