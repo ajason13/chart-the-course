@@ -440,7 +440,7 @@ export function App() {
         </form>
       </section>
 
-      <section className={`status ${errorState ? "error" : ""}`} role="status" aria-live="polite" aria-atomic="true">
+      <section className={`status ${errorState ? "error" : ""}`} role="status" aria-live={errorState ? "assertive" : "polite"} aria-atomic="true">
         <strong>Status</strong>
         <p>{stateMessage(state)}</p>
         <p>{refreshStatus}</p>

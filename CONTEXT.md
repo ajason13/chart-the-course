@@ -188,7 +188,7 @@ baseline, Codex corrections, Claude QA plan, and the addendum; no CTC-020
 source export, CTC-008 PDF behavior, provider expansion, dependency addition,
 endpoint failover, account/server/telemetry/cloud sync, or unrelated
 persistence is authorized.
-CTC-019 implementation in progress - 2026-06-19. Codex added native IndexedDB
+CTC-019 is Done - 2026-06-19. Codex added native IndexedDB
 durable Overpass caching in `src/overpassCache.ts`, removed the runtime
 session-storage cache path, preserved existing discovery/detail cache keys and
 exact raw response/source metadata, added strict versioned durable-record
@@ -198,15 +198,20 @@ global one-active-live-request behavior, stale-data consent, terminal
 over-cap `Retry-After`, deterministic capped backoff, and max three retries
 after the initial request. Documentation updates are in
 `docs/overpass-query-contract.md`, `ATTRIBUTION.md`, and `SECURITY.md`.
-Current local verification passed during development: `npm run build`,
+Local verification passed during development: `npm run build`,
 `npm run test:unit`, `npm run test:e2e`, `npm run check`, `git diff --check`,
 and `npm_config_cache=/private/tmp/chart-the-course-npm-cache
-scripts/compliance.sh` with 0 production vulnerabilities. CTC-019 still
-is now in PR #7 (`https://github.com/ajason13/chart-the-course/pull/7`) and
-Notion is `4. Final Audit (Claude)`. The self-contained Claude final-audit
-prompt is `docs/handoffs/ctc-019-claude-final-audit-prompt.md`. Do not mark
-CTC-019 Done until Claude final audit findings are resolved or explicitly
-accepted.
+scripts/compliance.sh` with 0 production vulnerabilities. Claude final audit
+returned `PASS WITH MINOR FIXES` with no blockers and no re-audit required.
+The only required fix, MF-1, restored conditional assertive error-state
+announcements on the status live region and restored the Playwright assertion
+that catches 429 error states. Post-fix verification passed:
+`npm run build && node_modules/.bin/playwright test test/e2e/app.spec.ts
+--grep "rate limit"`, `npm run check`, `git diff --check`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache
+scripts/compliance.sh` with 0 production vulnerabilities. PR #7:
+`https://github.com/ajason13/chart-the-course/pull/7`. The final Claude
+audit prompt is `docs/handoffs/ctc-019-claude-final-audit-prompt.md`.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
