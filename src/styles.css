@@ -18,7 +18,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, .hole-map:focus-visible { outline: 3px solid #d18b38; outline-offset: 2px; }
 
 .shell { display: grid; gap: 1rem; margin: 0 auto; max-width: 78rem; min-height: 100vh; padding: clamp(1rem, 3vw, 2.5rem); }
-header, .search-panel, .status, .results {
+header, .search-panel, .status, .results, .stale-consent {
   background: #fffdf8; border: 1px solid #cbd5c5; border-radius: 8px; padding: clamp(1rem, 3vw, 2rem);
 }
 header { background: #1f3a2a; color: white; }
@@ -41,6 +41,8 @@ legend { font-weight: 800; padding: 0 .35rem; }
 .status p { margin: .25rem 0 0; }
 .status.error { border-color: #b85d52; }
 .warning { color: #7a4b0e; font-weight: 700; }
+.stale-consent { border-color: #d18b38; }
+.stale-consent h2 { margin-top: 0; }
 .results { display: grid; gap: 1rem; }
 .entity-summary { display: grid; gap: .75rem; grid-template-columns: repeat(3, 1fr); margin: 0; }
 .entity-summary div { background: #edf2e9; border-radius: 6px; padding: .75rem; }

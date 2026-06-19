@@ -42,8 +42,14 @@ export type CachedResponse = {
 export type RequestFailure =
   | { kind: "cancelled" }
   | { kind: "timeout" }
+  | { kind: "rate-limit"; retryAfterMs?: number }
   | { kind: "network"; message: string }
   | { kind: "http"; status: number };
+
+export const MAX_RETRY_AFTER_MS = 60_000;
+export const MAX_BACKOFF_DELAY_MS = 30_000;
+export const MAX_OVERPASS_RETRY_ATTEMPTS = 3;
+export const BASE_BACKOFF_DELAY_MS = 1_500;
 
 const DECIMAL_PATTERN = /^-?\d+(?:\.\d{1,7})?$/;
 const ASCII_CONTROL_PATTERN = /[\u0000-\u001f\u007f]/;
@@ -187,6 +193,20 @@ export function classifyHttpStatus(status: number): "rate-limit" | "timeout" | "
   return "http";
 }
 
+export function parseRetryAfter(value: string | null, now = Date.now()): number | null {
+  if (value === null || value.trim() === "") return null;
+  const trimmed = value.trim();
+  if (/^[0-9]+$/.test(trimmed)) return Number(trimmed) * 1000;
+  if (/^-[0-9]+$/.test(trimmed)) return null;
+  const parsed = Date.parse(trimmed);
+  return Number.isFinite(parsed) ? Math.max(0, parsed - now) : null;
+}
+
+export function backoffDelay(attempt: number): number {
+  const base = BASE_BACKOFF_DELAY_MS * (2 ** attempt);
+  return Math.min(MAX_BACKOFF_DELAY_MS, Math.round(base + (base * 0.1)));
+}
+
 export function discoveryCacheKey(bbox: Bbox, courseName: string): string {
   return `ctc:overpass:v1:discovery:${serializeBbox(bbox)}:${encodeCourseName(courseName).toLocaleLowerCase("en-US")}`;
 }
@@ -195,36 +215,57 @@ export function detailCacheKey(bbox: Bbox): string {
   return `ctc:overpass:v1:detail:${serializeBbox(bbox)}`;
 }
 
-export function readCache(storage: Storage, key: string):
-  | { kind: "miss" }
-  | { kind: "hit"; cached: CachedResponse; response: OverpassResponse }
-  | { kind: "warning"; message: string } {
-  try {
-    const value = storage.getItem(key);
-    if (value === null) return { kind: "miss" };
-    const cached = JSON.parse(value) as CachedResponse;
-    if (!cached || typeof cached.rawResponse !== "string" || !cached.source || typeof cached.source.query !== "string") {
-      return { kind: "warning", message: "Session cache entry was invalid and was ignored." };
-    }
-    const response = validateResponse(JSON.parse(cached.rawResponse));
-    return response
-      ? { kind: "hit", cached, response }
-      : { kind: "warning", message: "Session cache entry was invalid and was ignored." };
-  } catch {
-    return { kind: "warning", message: "Session cache is unavailable or contains invalid data." };
-  }
-}
-
-export function writeCache(storage: Storage, key: string, cached: CachedResponse): string | null {
-  try {
-    storage.setItem(key, JSON.stringify(cached));
-    return null;
-  } catch {
-    return "Result displayed, but session cache could not be updated.";
-  }
-}
-
 export async function fetchOverpass(
+  query: string,
+  timeoutSeconds: number,
+  signal: AbortSignal,
+): Promise<{ ok: true; rawResponse: string } | { ok: false; failure: RequestFailure }> {
+  if (signal.aborted) return { ok: false, failure: { kind: "cancelled" } };
+  for (let attempt = 0; attempt <= MAX_OVERPASS_RETRY_ATTEMPTS; attempt += 1) {
+    const result = await fetchOverpassAttempt(query, timeoutSeconds, signal);
+    if (result.ok) return result;
+    if (signal.aborted || result.failure.kind === "cancelled" || result.failure.kind === "timeout") return result;
+
+    if (result.failure.kind === "rate-limit") {
+      if (result.failure.retryAfterMs !== undefined && result.failure.retryAfterMs > MAX_RETRY_AFTER_MS) {
+        return { ok: false, failure: result.failure };
+      }
+      if (attempt === MAX_OVERPASS_RETRY_ATTEMPTS) return result;
+      const waitMs = result.failure.retryAfterMs ?? backoffDelay(attempt);
+      const waited = await waitForRetry(waitMs, signal);
+      if (!waited) return { ok: false, failure: { kind: "cancelled" } };
+      continue;
+    }
+
+    if (result.failure.kind === "network" && attempt < MAX_OVERPASS_RETRY_ATTEMPTS) {
+      const waited = await waitForRetry(backoffDelay(attempt), signal);
+      if (!waited) return { ok: false, failure: { kind: "cancelled" } };
+      continue;
+    }
+
+    return result;
+  }
+  return { ok: false, failure: { kind: "network", message: "Retry budget exhausted." } };
+}
+
+function waitForRetry(ms: number, signal: AbortSignal): Promise<boolean> {
+  if (signal.aborted) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    let timeout: ReturnType<typeof setTimeout>;
+    const abort = () => {
+      signal.removeEventListener("abort", abort);
+      clearTimeout(timeout);
+      resolve(false);
+    };
+    timeout = setTimeout(() => {
+      signal.removeEventListener("abort", abort);
+      resolve(true);
+    }, ms);
+    signal.addEventListener("abort", abort, { once: true });
+  });
+}
+
+async function fetchOverpassAttempt(
   query: string,
   timeoutSeconds: number,
   signal: AbortSignal,
@@ -245,7 +286,15 @@ export async function fetchOverpass(
       body: new URLSearchParams({ data: query }),
       signal: controller.signal,
     });
-    if (!response.ok) return { ok: false, failure: { kind: "http", status: response.status } };
+    if (!response.ok) {
+      if (response.status === 429) {
+        return {
+          ok: false,
+          failure: { kind: "rate-limit", retryAfterMs: parseRetryAfter(response.headers.get("Retry-After")) ?? undefined },
+        };
+      }
+      return { ok: false, failure: { kind: "http", status: response.status } };
+    }
     return { ok: true, rawResponse: await response.text() };
   } catch (error) {
     if (timedOut) return { ok: false, failure: { kind: "timeout" } };

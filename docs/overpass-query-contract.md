@@ -1,11 +1,12 @@
 # Overpass Query Contract
 
-Status: Implemented as a bounded CTC-004 browser spike on 2026-06-06.
+Status: Implemented as a bounded CTC-004 browser spike on 2026-06-06 and
+durable-cache/request-policy hardened by CTC-019 on 2026-06-19.
 
-This contract defines the first Chart the Course Overpass API request shape for
-course discovery and course-detail loading. CTC-004 implements the bounded
-session-only browser spike; later durable cache and geometry work remain
-separate tasks.
+This contract defines the Chart the Course Overpass API request shape for
+course discovery and course-detail loading. CTC-004 implemented the bounded
+browser spike; CTC-019 adds durable browser caching, explicit refresh, and
+bounded retry behavior without adding source-export or PDF behavior.
 
 ## Goals
 
@@ -132,17 +133,19 @@ The public Overpass instances are shared infrastructure. Chart the Course must
 treat them as a constrained public service, not a guaranteed production backend.
 
 - Submit at most one active Overpass request per browser session.
-- Cache successful public Overpass responses locally. The durable public
-  Overpass cache target remains the 7-day TTL in `ATTRIBUTION.md`; if CTC-004
-  ships before durable local persistence exists, session storage is acceptable
-  only as a temporary CTC-004 exploration-spike constraint before CTC-019
-  establishes durable local persistence.
+- Cache successful public Overpass responses locally in IndexedDB where
+  available. Non-durable memory fallback is allowed only as graceful
+  degradation when IndexedDB is unavailable, blocked, or fails.
 - CTC-004 cache keys are
   `ctc:overpass:v1:discovery:{bbox}:{encoded-lowercase-name}` and
   `ctc:overpass:v1:detail:{bbox}`.
 - Never query on keystrokes; require an explicit search action.
-- On HTTP `429`, show a rate-limit state and back off before retrying. Do not
-  retry automatically in a tight loop.
+- On HTTP `429`, parse `Retry-After` delta-seconds or HTTP-date values when the
+  browser exposes the header. Wait only up to 60 seconds; a longer value is a
+  terminal visible rate-limit state for that user action. Missing, malformed,
+  or unexposed `Retry-After` falls back to deterministic capped backoff.
+- Bounded backoff uses deterministic timing capped after jitter at 30 seconds
+  and at most three retries after the initial request.
 - On HTTP `504` or timeout, show a scoped-search prompt asking the user to
   narrow the area or try again later.
 - On empty results, preserve the searched bbox and query text in diagnostics so
@@ -162,9 +165,40 @@ absent.
 Every successful detail response must be retained with enough source metadata
 to support later ODbL source availability for PDFs and other generated outputs.
 
-CTC-004 stores the exact response text plus source metadata in `sessionStorage`
-and parses a separate in-memory representation for display. This session cache
-does not satisfy later ODbL source-export obligations.
+CTC-019 stores successful discovery and detail responses in browser IndexedDB
+when available. The database name is `ChartTheCourse`, schema version is `1`,
+the object store is `courseGeometry`, and the inline key path is `key`.
+Records preserve exact raw Overpass response text as `rawResponse` and keep
+source metadata separate from normalized geometry and user-authored project
+state.
+
+Durable records include:
+
+- `schemaVersion: 1`.
+- `key`: existing discovery/detail cache key.
+- `mode`: `discovery` or `detail`.
+- `storedAt` and `expiresAt`, where `expiresAt = storedAt + 604800000`.
+- `rawResponse`: exact response text.
+- `source.query`, `source.endpoint`, `source.completedAt`, `source.bbox`, and
+  `source.copyrightUrl`.
+- `license: "ODbL-1.0"` as an internal provenance marker only.
+- `sizeBytes`: UTF-8 byte length of the normalized serialized record with
+  `sizeBytes: 0`.
+
+Fresh cache hits validate every required field, exact query, endpoint, bbox,
+copyright URL, TTL, response shape, size, and ODbL marker. Invalid,
+incompatible, corrupt, oversized, or expired entries are not fresh hits.
+Deletion is best-effort and deletion failure still returns a miss. Entries over
+1 MiB are not written durably.
+
+Expired OSM data is never rendered automatically. If a live refresh fails and
+stale data exists, the user must make an explicit visible choice before stale
+data is rendered. `navigator.onLine` may inform copy only and must not bypass
+consent.
+
+The durable cache is internal provenance only. It does not implement CTC-020
+raw GIS source export, exported file schemas, download UI, or CTC-008 PDF
+behavior.
 
 Persist or export alongside normalized geometry:
 
