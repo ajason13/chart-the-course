@@ -125,8 +125,11 @@ Gemini Chat baseline revision prompt - 2026-06-19. Use
 Gemini Chat Deep Research attempt. This prompt is revision-only: it requires a
 single corrected baseline, explicitly forbids the prior Gemini mistakes, and
 requires traceability to both the 17 Antigravity review corrections and the 15
-Gemini Chat review blockers. Attach the listed files individually. Do not
-advance to Claude QA planning until Codex accepts the returned baseline.
+Gemini Chat review blockers. Gemini Chat currently accepts at most 10 uploaded
+files per prompt, so attach only the prompt's required 10-file first batch at
+startup. Use the listed follow-up files only in a second upload batch if Gemini
+asks for more context. Do not advance to Claude QA planning until Codex accepts
+the returned baseline.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at

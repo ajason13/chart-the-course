@@ -15,7 +15,9 @@ critically review for possible advancement to Claude QA planning.
 
 ## Required attachments
 
-Attach these files individually and use them as source-of-truth context:
+Gemini Chat currently accepts at most 10 file uploads per prompt. Attach only
+this required first batch before starting Deep Research, and use these files as
+source-of-truth context:
 
 - `CONTEXT.md`
 - `docs/handoffs/ctc-019-gemini-chat-spec-review.md`
@@ -27,18 +29,21 @@ Attach these files individually and use them as source-of-truth context:
 - `src/overpass.ts`
 - `src/overpass.test.ts`
 - `src/App.tsx`
+
+Do not upload more than 10 files in the initial prompt. If Gemini asks for
+additional repository context, use a second upload batch with only the specific
+files it requests. Preferred follow-up references are:
+
 - `test/e2e/app.spec.ts`
 - `package.json`
-
-Optional reference attachments only if Gemini asks for them:
-
 - `docs/handoffs/ctc-019-antigravity-research-spec.md`
 - `docs/experiments/ctc-014-vector-pdf-evaluation.md`
 - `package-lock.json`
 - `sbom.json`
 
-Do not ask for pasted full-file contents. If a needed detail is missing, state
-the missing detail and choose the conservative repository-compatible default.
+Do not ask for pasted full-file contents. If a needed detail is missing from
+the initial 10-file batch and a follow-up upload is not available, state the
+missing detail and choose the conservative repository-compatible default.
 
 ## Non-negotiable repository contracts
 

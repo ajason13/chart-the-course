@@ -71,6 +71,9 @@ Use this pattern for runtime or standards-heavy specification work:
   source requirements, and required report format.
 - Attach only files Gemini must inspect. For each file, state whether it must
   be read fully, skimmed, or used only as reference.
+- Limit each Gemini Chat upload batch to 10 files. Put the minimum
+  source-of-truth files in the first batch, and list lower-priority follow-up
+  files separately so Gemini can request them only if needed.
 - Avoid embedding generated or bulky files such as `package-lock.json`,
   `sbom.json`, build output, or historical handoffs unless the question
   specifically depends on them.
