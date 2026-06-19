@@ -110,6 +110,16 @@ be uploaded. The prompt at
 `docs/handoffs/ctc-019-gemini-chat-correction-prompt.md` lists the files to
 attach individually and still avoids pasting full file contents into the prompt
 body.
+Gemini Chat CTC-019 response review - 2026-06-19. The returned specification is
+not implementation-ready and is rejected as the corrected baseline. Review is
+recorded in `docs/handoffs/ctc-019-gemini-chat-spec-review.md`. Blocking issues
+include a wrong record `mode` contract, missing exact raw response/source
+metadata, new incompatible cache-key/query-normalization behavior, invented
+request identity headers/contact text, unrealistic IndexedDB cancellation and
+upgrade semantics, ungoverned `fake-indexeddb`/JSDOM/browser-matrix proposals,
+product-management scope creep, and CTC-020 export leakage. Do not advance to
+Claude QA planning from this response. CTC-019 remains in
+`1. Spec Drafting (Gemini)` until a corrected baseline is accepted.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
