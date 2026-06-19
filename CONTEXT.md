@@ -120,6 +120,13 @@ upgrade semantics, ungoverned `fake-indexeddb`/JSDOM/browser-matrix proposals,
 product-management scope creep, and CTC-020 export leakage. Do not advance to
 Claude QA planning from this response. CTC-019 remains in
 `1. Spec Drafting (Gemini)` until a corrected baseline is accepted.
+Gemini Chat baseline revision prompt - 2026-06-19. Use
+`docs/handoffs/ctc-019-gemini-chat-baseline-revision-prompt.md` for the next
+Gemini Chat Deep Research attempt. This prompt is revision-only: it requires a
+single corrected baseline, explicitly forbids the prior Gemini mistakes, and
+requires traceability to both the 17 Antigravity review corrections and the 15
+Gemini Chat review blockers. Attach the listed files individually. Do not
+advance to Claude QA planning until Codex accepts the returned baseline.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
