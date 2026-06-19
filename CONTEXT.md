@@ -34,6 +34,22 @@ individually. Prompt SHA-256:
 the specification gate until Gemini returns a report that Codex critically
 reviews.
 
+Gemini CTC-020 response review - 2026-06-19. Codex rejected the response as an
+implementation baseline and recorded the review in
+`docs/handoffs/ctc-020-gemini-specification-review.md`. Accepted direction is
+limited to no fake PDF controls, Phase 1 source-export core as a possible
+partial deliverable, JSON as a likely export format, and preserving the CTC-008
+same-release source-export/PDF attribution gate. Blocking issues include the
+wrong CTC-019 IndexedDB contract, non-exact `rawResponse` object instead of raw
+text, malformed schema, false AGPL text in the example OSM payload, unapproved
+Ajv/Jest/Web Worker/XML scope, vague PDF release gate, unsupported size limits,
+oversimplified prototype-pollution handling, unresolved stale/empty export
+behavior, and legal overstatement. CTC-020 remains in
+`1. Spec Drafting (Gemini)`. Use
+`docs/handoffs/ctc-020-gemini-revision-prompt.md` for the next Gemini revision;
+do not advance to Claude QA planning or runtime implementation until Codex
+accepts a corrected baseline.
+
 CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
 confirmed clean synchronized `main` at
 `f9b3f4ff670cd370b3a48a5b6e5623dd93c84fcf`, with latest `main` CI
