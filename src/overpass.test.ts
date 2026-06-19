@@ -5,28 +5,18 @@ import {
   detailCacheKey,
   discoveryCacheKey,
   encodeCourseName,
+  backoffDelay,
+  MAX_BACKOFF_DELAY_MS,
   parseBbox,
   parseCandidateBounds,
-  readCache,
+  parseRetryAfter,
   serializeBbox,
-  sourceMetadata,
   validateResponse,
   validateTrustedIdentity,
-  writeCache,
   type Bbox,
 } from "./overpass";
 
 const bbox: Bbox = { south: 37.3, west: -122.1, north: 37.5, east: -121.9 };
-
-class MemoryStorage implements Storage {
-  private values = new Map<string, string>();
-  length = 0;
-  clear() { this.values.clear(); this.length = 0; }
-  getItem(key: string) { return this.values.get(key) ?? null; }
-  key(index: number) { return [...this.values.keys()][index] ?? null; }
-  removeItem(key: string) { this.values.delete(key); this.length = this.values.size; }
-  setItem(key: string, value: string) { this.values.set(key, value); this.length = this.values.size; }
-}
 
 describe("Overpass query construction", () => {
   it("builds the exact reviewed discovery query", () => {
@@ -112,25 +102,21 @@ describe("response, cache, and HTTP classification", () => {
     expect(detailCacheKey(bbox)).toBe("ctc:overpass:v1:detail:37.3,-122.1,37.5,-121.9");
   });
 
-  it("round-trips exact raw text and reports corrupt or failed storage without eviction", () => {
-    const storage = new MemoryStorage();
-    const cached = { rawResponse, source: sourceMetadata("query", bbox) };
-    expect(writeCache(storage, "key", cached)).toBeNull();
-    expect(readCache(storage, "key")).toMatchObject({ kind: "hit", cached: { rawResponse } });
-    storage.setItem("corrupt", "{");
-    expect(readCache(storage, "corrupt").kind).toBe("warning");
-    expect(storage.getItem("corrupt")).toBe("{");
-
-    const failed = new MemoryStorage();
-    failed.setItem = () => { throw new Error("quota"); };
-    expect(writeCache(failed, "key", cached)).toMatch(/could not/);
-    failed.getItem = () => { throw new Error("unavailable"); };
-    expect(readCache(failed, "key").kind).toBe("warning");
-  });
-
   it("classifies HTTP status without retry policy", () => {
     expect(classifyHttpStatus(429)).toBe("rate-limit");
     expect(classifyHttpStatus(504)).toBe("timeout");
     expect(classifyHttpStatus(500)).toBe("http");
+  });
+
+  it("parses Retry-After values and uses deterministic capped backoff", () => {
+    const now = Date.parse("2026-06-19T00:00:00.000Z");
+    expect(parseRetryAfter("5", now)).toBe(5000);
+    expect(parseRetryAfter("Fri, 19 Jun 2026 00:00:10 GMT", now)).toBe(10000);
+    expect(parseRetryAfter("Fri, 19 Jun 2026 00:00:00 GMT", now)).toBe(0);
+    expect(parseRetryAfter("-5", now)).toBeNull();
+    expect(parseRetryAfter("not a date", now)).toBeNull();
+    expect(backoffDelay(0)).toBe(1650);
+    expect(backoffDelay(1)).toBe(3300);
+    expect(backoffDelay(20)).toBe(MAX_BACKOFF_DELAY_MS);
   });
 });

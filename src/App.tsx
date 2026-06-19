@@ -10,16 +10,15 @@ import {
   OSM_COPYRIGHT_URL,
   parseBbox,
   parseCandidateBounds,
-  readCache,
   sourceMetadata,
   validateResponse,
-  writeCache,
   type Bbox,
   type CachedResponse,
   type OverpassElement,
   type OverpassResponse,
   type RequestFailure,
 } from "./overpass";
+import { overpassCache, type CacheLookup, type OverpassCacheMode } from "./overpassCache";
 import {
   PROJECT_FILENAME,
   PROJECT_MAX_BYTES,
@@ -40,7 +39,7 @@ type ViewState =
   | { kind: "cancelled" }
   | { kind: "empty"; mode: "discovery" | "detail"; cached: boolean; source: CachedResponse["source"] }
   | { kind: "success"; mode: "discovery" | "detail"; cached: boolean; response: OverpassResponse; source: CachedResponse["source"] }
-  | { kind: "rate-limit" }
+  | { kind: "rate-limit"; retryAfterMs?: number }
   | { kind: "timeout" }
   | { kind: "network"; message: string }
   | { kind: "http"; status: number }
@@ -48,6 +47,27 @@ type ViewState =
   | { kind: "shape" };
 
 const INITIAL_FIELDS = { south: "", west: "", north: "", east: "" };
+const REFRESH_COOLDOWN_MS = 5_000;
+
+type RequestOptions = {
+  bypassCache?: boolean;
+  manualRefresh?: boolean;
+};
+
+type RequestContext = {
+  mode: OverpassCacheMode;
+  bbox: Bbox;
+  query: string;
+  cacheKey: string;
+  timeout: number;
+};
+
+type StaleCandidate = {
+  context: RequestContext;
+  cached: CachedResponse;
+  response: OverpassResponse;
+  recordDate: string;
+};
 
 function stateMessage(state: ViewState): string {
   switch (state.kind) {
@@ -55,9 +75,11 @@ function stateMessage(state: ViewState): string {
     case "invalid": return state.message;
     case "loading": return `Loading ${state.mode} results.`;
     case "cancelled": return "Request cancelled.";
-    case "empty": return `No ${state.mode} results were returned${state.cached ? " from session cache" : ""}.`;
-    case "success": return `${state.response.elements.length} raw ${state.mode} entities loaded${state.cached ? " from session cache" : ""}.`;
-    case "rate-limit": return "Overpass rate-limited this request. Try again later.";
+    case "empty": return `No ${state.mode} results were returned${state.cached ? " from durable cache" : ""}.`;
+    case "success": return `${state.response.elements.length} raw ${state.mode} entities loaded${state.cached ? " from durable cache" : ""}.`;
+    case "rate-limit": return state.retryAfterMs && state.retryAfterMs > 60_000
+      ? "Overpass requested a longer rate-limit wait than this app will hold. Try again later."
+      : "Overpass rate-limited this request. Try again later.";
     case "timeout": return "The request timed out. Narrow the area or try again later.";
     case "network": return `Network request failed: ${state.message}`;
     case "http": return `Overpass returned HTTP ${state.status}.`;
@@ -90,6 +112,10 @@ export function App() {
   const [courseName, setCourseName] = useState("");
   const [state, setState] = useState<ViewState>({ kind: "idle" });
   const [warning, setWarning] = useState("");
+  const [refreshStatus, setRefreshStatus] = useState("Refresh course data is available after loading results.");
+  const [staleCandidate, setStaleCandidate] = useState<StaleCandidate | null>(null);
+  const [activeContext, setActiveContext] = useState<RequestContext | null>(null);
+  const refreshCooldowns = useRef(new Map<string, number>());
   const [invalidField, setInvalidField] = useState<keyof Bbox | "courseName" | null>(null);
   const [selectedHoleKey, setSelectedHoleKey] = useState("");
   const [projectHoles, setProjectHoles] = useState<Partial<Record<SourceKey, HoleStateV1>>>({});
@@ -203,37 +229,86 @@ export function App() {
   function classifyFailure(failure: RequestFailure) {
     if (failure.kind === "cancelled") setState({ kind: "cancelled" });
     else if (failure.kind === "timeout" || (failure.kind === "http" && failure.status === 504)) setState({ kind: "timeout" });
-    else if (failure.kind === "http" && failure.status === 429) setState({ kind: "rate-limit" });
+    else if (failure.kind === "rate-limit") setState({ kind: "rate-limit", retryAfterMs: failure.retryAfterMs });
     else if (failure.kind === "http") setState({ kind: "http", status: failure.status });
     else setState({ kind: "network", message: failure.message });
   }
 
-  async function runRequest(mode: "discovery" | "detail", bbox: Bbox, query: string, cacheKey: string, timeout: number) {
+  function displayResult(
+    mode: "discovery" | "detail",
+    cached: boolean,
+    response: OverpassResponse,
+    source: CachedResponse["source"],
+    context: RequestContext,
+  ) {
+    setActiveContext(context);
+    setState(response.elements.length
+      ? { kind: "success", mode, cached, response, source }
+      : { kind: "empty", mode, cached, source });
+  }
+
+  function cacheKeyForCurrentResult(): string | null {
+    return state.kind === "success" || state.kind === "empty" ? activeContext?.cacheKey ?? null : null;
+  }
+
+  function cooldownRemaining(cacheKey: string): number {
+    return Math.max(0, (refreshCooldowns.current.get(cacheKey) ?? 0) - Date.now());
+  }
+
+  function startRefreshCooldown(cacheKey: string) {
+    refreshCooldowns.current.set(cacheKey, Date.now() + REFRESH_COOLDOWN_MS);
+    setRefreshStatus("Refresh cooldown active. Please wait 5 seconds.");
+    window.setTimeout(() => {
+      if (cooldownRemaining(cacheKey) === 0) setRefreshStatus("Refresh course data is available.");
+    }, REFRESH_COOLDOWN_MS);
+  }
+
+  async function runRequest(
+    mode: "discovery" | "detail",
+    bbox: Bbox,
+    query: string,
+    cacheKey: string,
+    timeout: number,
+    options: RequestOptions = {},
+  ) {
     setWarning("");
-    let cache;
-    try {
-      cache = readCache(window.sessionStorage, cacheKey);
-    } catch {
-      cache = { kind: "warning" as const, message: "Session cache is unavailable." };
+    setStaleCandidate(null);
+
+    let stale: Extract<CacheLookup, { kind: "stale" }> | null = null;
+    if (!options.bypassCache) {
+      const cache = await overpassCache.read({ key: cacheKey, mode, query, bbox });
+      if (cache.kind === "hit") {
+        displayResult(mode, true, cache.response, cache.cached.source, { mode, bbox, query, cacheKey, timeout });
+        setRefreshStatus("Course data loaded from durable cache.");
+        return;
+      }
+      if (cache.kind === "stale") stale = cache;
+      if (cache.kind === "warning") setWarning(cache.message);
     }
-    if (cache.kind === "hit") {
-      setState(cache.response.elements.length
-        ? { kind: "success", mode, cached: true, response: cache.response, source: cache.cached.source }
-        : { kind: "empty", mode, cached: true, source: cache.cached.source });
-      return;
-    }
-    if (cache.kind === "warning") setWarning(cache.message);
 
     const id = ++requestIdentity.current;
     const activeController = new AbortController();
     controller.current = activeController;
     setState({ kind: "loading", mode });
+    if (options.manualRefresh) {
+      startRefreshCooldown(cacheKey);
+      setRefreshStatus("Refreshing course data from OpenStreetMap.");
+    }
     const result = await fetchOverpass(query, timeout, activeController.signal);
     if (requestIdentity.current !== id) return;
     controller.current = null;
 
     if (!result.ok) {
       classifyFailure(result.failure);
+      if (stale) {
+        setStaleCandidate({
+          context: { mode, bbox, query, cacheKey, timeout },
+          cached: stale.cached,
+          response: stale.response,
+          recordDate: stale.cached.source.completedAt,
+        });
+      }
+      if (options.manualRefresh) setRefreshStatus("Refresh failed. Existing course view was left unchanged.");
       return;
     }
     let parsed: unknown;
@@ -249,16 +324,21 @@ export function App() {
       return;
     }
     const source = sourceMetadata(query, bbox);
-    let cacheWarning: string | null;
     try {
-      cacheWarning = writeCache(window.sessionStorage, cacheKey, { rawResponse: result.rawResponse, source });
-    } catch {
-      cacheWarning = "Result displayed, but session cache is unavailable.";
+      const cacheResult = await overpassCache.write({
+        key: cacheKey,
+        mode,
+        cached: { rawResponse: result.rawResponse, source },
+        signal: activeController.signal,
+      });
+      if (cacheResult.kind === "warning") setWarning(cacheResult.message);
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        setWarning("Result displayed, but durable cache could not be updated.");
+      }
     }
-    if (cacheWarning) setWarning(cacheWarning);
-    setState(response.elements.length
-      ? { kind: "success", mode, cached: false, response, source }
-      : { kind: "empty", mode, cached: false, source });
+    displayResult(mode, false, response, source, { mode, bbox, query, cacheKey, timeout });
+    if (options.manualRefresh) setRefreshStatus("Refresh complete.");
   }
 
   function submitDiscovery(event: FormEvent) {
@@ -290,6 +370,26 @@ export function App() {
     void runRequest("detail", bbox, buildDetailQuery(bbox), detailCacheKey(bbox), 45);
   }
 
+  function refreshCourseData() {
+    if (loading) return;
+    let context: RequestContext | null = null;
+    if (state.kind === "success" || state.kind === "empty") context = activeContext;
+    if (!context) return;
+    const remaining = cooldownRemaining(context.cacheKey);
+    if (remaining > 0) {
+      setRefreshStatus(`Refresh cooldown active. Please wait ${Math.ceil(remaining / 1000)} seconds.`);
+      return;
+    }
+    void runRequest(context.mode, context.bbox, context.query, context.cacheKey, context.timeout, { bypassCache: true, manualRefresh: true });
+  }
+
+  function renderStaleData() {
+    if (!staleCandidate) return;
+    displayResult(staleCandidate.context.mode, true, staleCandidate.response, staleCandidate.cached.source, staleCandidate.context);
+    setWarning(`Showing stale OpenStreetMap data from ${staleCandidate.recordDate}. Refresh when Overpass is available.`);
+    setStaleCandidate(null);
+  }
+
   function cancel() {
     requestIdentity.current += 1;
     controller.current?.abort();
@@ -300,6 +400,7 @@ export function App() {
 
   const showsOsmResult = state.kind === "success" || state.kind === "empty";
   const errorState = ["invalid", "rate-limit", "timeout", "network", "http", "parse", "shape"].includes(state.kind);
+  const canRefresh = showsOsmResult && !loading;
 
   return (
     <main className="shell">
@@ -332,15 +433,30 @@ export function App() {
           <div className="actions">
             <button ref={submitButton} type="submit" disabled={loading}>Search courses</button>
             <button className="secondary" type="button" onClick={cancel} disabled={!loading}>Cancel request</button>
+            <button className="secondary" type="button" onClick={refreshCourseData} disabled={!canRefresh || (cacheKeyForCurrentResult() ? cooldownRemaining(cacheKeyForCurrentResult()!) > 0 : false)}>
+              Refresh course data
+            </button>
           </div>
         </form>
       </section>
 
-      <section className={`status ${errorState ? "error" : ""}`} aria-live={errorState ? "assertive" : "polite"} aria-atomic="true">
+      <section className={`status ${errorState ? "error" : ""}`} role="status" aria-live="polite" aria-atomic="true">
         <strong>Status</strong>
         <p>{stateMessage(state)}</p>
+        <p>{refreshStatus}</p>
         {warning && <p className="warning">{warning}</p>}
       </section>
+
+      {staleCandidate && (
+        <section className="stale-consent" aria-labelledby="stale-consent-title">
+          <h2 id="stale-consent-title">Stored course data available</h2>
+          <p>Current course data could not be retrieved. Stored OpenStreetMap data from {staleCandidate.recordDate} is available but may be stale.</p>
+          <div className="actions">
+            <button type="button" onClick={renderStaleData}>Render stored course data</button>
+            <button className="secondary" type="button" onClick={() => setStaleCandidate(null)}>Cancel</button>
+          </div>
+        </section>
+      )}
 
       {state.kind === "success" && (
         <section className="results" aria-labelledby="results-title">
@@ -422,7 +538,7 @@ export function App() {
       )}
 
       {showsOsmResult && (
-        <p className="attribution">Data © OpenStreetMap contributors, available under ODbL. <a href={OSM_COPYRIGHT_URL}>OpenStreetMap copyright and license</a>. Session cache does not satisfy later source-export obligations.</p>
+        <p className="attribution">Data © OpenStreetMap contributors, available under ODbL. <a href={OSM_COPYRIGHT_URL}>OpenStreetMap copyright and license</a>. Durable cache marks OSM geometry as ODbL-covered for internal provenance only and does not satisfy later source-export obligations.</p>
       )}
     </main>
   );

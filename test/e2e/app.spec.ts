@@ -88,7 +88,7 @@ test("discovers candidates, loads detail explicitly, caches it, and shows attrib
   await fillBounds(page);
   await page.getByLabel(/Course name/).fill("Synthetic.*");
   await page.getByRole("button", { name: "Search courses" }).click();
-  await expect(page.getByText(/raw discovery entities loaded from session cache/)).toBeVisible();
+  await expect(page.getByText(/raw discovery entities loaded from durable cache/)).toBeVisible();
   expect(discoveryRequests).toBe(1);
 });
 
@@ -127,7 +127,7 @@ test("validates input before requests and focuses the first invalid field", asyn
 });
 
 for (const scenario of [
-  { name: "rate limit", status: 429, expected: /rate-limited/ },
+  { name: "rate limit", status: 429, expected: /longer rate-limit wait/ },
   { name: "gateway timeout", status: 504, expected: /timed out/ },
   { name: "generic HTTP", status: 500, expected: /HTTP 500/ },
 ]) {
@@ -135,14 +135,22 @@ for (const scenario of [
     let requests = 0;
     await isolateNetwork(page, async (route) => {
       requests += 1;
-      await route.fulfill({ status: scenario.status, body: "error" });
+      await route.fulfill({
+        status: scenario.status,
+        headers: scenario.status === 429 ? {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Expose-Headers": "Retry-After",
+          "Retry-After": "120",
+        } : {},
+        body: "error",
+      });
     });
     await page.goto("/");
     await fillBounds(page);
     await page.getByRole("button", { name: "Search courses" }).click();
     await expect(page.getByText(scenario.expected)).toBeVisible();
     if (scenario.status === 429) {
-      await expect(page.locator(".status")).toHaveAttribute("aria-live", "assertive");
+      await expect(page.locator(".status")).toHaveAttribute("aria-live", "polite");
     }
     expect(requests).toBe(1);
   });
@@ -162,17 +170,50 @@ for (const scenario of [
   });
 }
 
-test("shows a network failure without retry", async ({ page }) => {
+test("retries one transient network failure without endpoint failover", async ({ page }) => {
   let requests = 0;
   await isolateNetwork(page, async (route) => {
     requests += 1;
-    await route.abort("internetdisconnected");
+    if (requests === 1) await route.abort("internetdisconnected");
+    else await route.fulfill({ json: discovery });
   });
   await page.goto("/");
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await expect(page.getByText(/Network request failed/)).toBeVisible();
-  expect(requests).toBe(1);
+  await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible({ timeout: 5000 });
+  expect(requests).toBe(2);
+});
+
+test("refreshes loaded course data with cooldown and durable cache replacement", async ({ page }) => {
+  let detailRequests = 0;
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    if (query.includes("purpose:golf-course-detail")) {
+      detailRequests += 1;
+      await route.fulfill({ json: { elements: [{ type: "way", id: 9000000100 + detailRequests, tags: { leisure: "golf_course" } }] } });
+    } else {
+      await route.fulfill({ json: discovery });
+    }
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await expect(page.getByText("way/9000000101")).toBeVisible();
+
+  const refresh = page.getByRole("button", { name: "Refresh course data" });
+  await refresh.click();
+  await expect(refresh).toBeDisabled();
+  await expect(page.getByText("way/9000000102")).toBeVisible();
+  await expect(page.getByText(/Refresh complete/)).toBeVisible();
+  expect(detailRequests).toBe(2);
+
+  await page.reload();
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await expect(page.getByText("way/9000000102")).toBeVisible();
+  expect(detailRequests).toBe(2);
 });
 
 test("supports keyboard flow, mobile layout, and axe scans across states", async ({ page }) => {

@@ -188,6 +188,21 @@ baseline, Codex corrections, Claude QA plan, and the addendum; no CTC-020
 source export, CTC-008 PDF behavior, provider expansion, dependency addition,
 endpoint failover, account/server/telemetry/cloud sync, or unrelated
 persistence is authorized.
+CTC-019 implementation in progress - 2026-06-19. Codex added native IndexedDB
+durable Overpass caching in `src/overpassCache.ts`, removed the runtime
+session-storage cache path, preserved existing discovery/detail cache keys and
+exact raw response/source metadata, added strict versioned durable-record
+validation with internal `license: "ODbL-1.0"`, implemented 7-day TTL,
+non-durable memory fallback, explicit `Refresh course data`, per-key cooldown,
+global one-active-live-request behavior, stale-data consent, terminal
+over-cap `Retry-After`, deterministic capped backoff, and max three retries
+after the initial request. Documentation updates are in
+`docs/overpass-query-contract.md`, `ATTRIBUTION.md`, and `SECURITY.md`.
+Current local verification passed during development: `npm run build`,
+`npm run test:unit`, `npm run test:e2e`, `npm run check`, `git diff --check`,
+and `npm_config_cache=/private/tmp/chart-the-course-npm-cache
+scripts/compliance.sh` with 0 production vulnerabilities. CTC-019 still
+requires final Claude audit handoff and Notion sync before Done.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at

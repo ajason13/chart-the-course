@@ -97,6 +97,14 @@ must provide an explicit "Refresh course data" action, rate-limited to prevent
 repeated refetches. Operators using self-hosted or commercial providers may
 configure a different TTL, with a minimum guardrail to prevent abuse.
 
+CTC-019 implements browser-durable Overpass response caching in IndexedDB when
+available. Cached records preserve exact raw Overpass response text, exact query
+text, endpoint, completion timestamp, bbox, and the OpenStreetMap copyright URL.
+Each durable record includes the internal marker `license: "ODbL-1.0"` to
+identify OSM-derived cache content as ODbL-covered provenance. This marker is
+not a user-facing export schema and does not satisfy the later CTC-020 raw GIS
+source export requirement.
+
 Detailed tile-provider comparison and source notes are in
 `docs/tile-provider-strategy.md`.
 
