@@ -2,19 +2,22 @@
 
 Role: You are Claude performing final adversarial audit for Chart the Course task CTC-019, after Codex implementation.
 
-Stage: Final Audit (Claude). Do not assume repository or GitHub access. This prompt embeds the relevant implementation files exactly as they exist at the implementation commit plus the current repository-memory update.
+Stage: Final Audit (Claude). Do not assume repository or GitHub access. This prompt embeds the relevant implementation files exactly as they exist on the PR branch plus the current repository-memory update.
 
 Task: CTC-019 Implement Overpass cache and request identity policy.
 
 Notion page: 375834a0-c8a6-811c-97bb-cf5682718468
 
-Implementation commit: 5489512149cc8abd7f9f22560b04301a27b0e353
+Pull request: https://github.com/ajason13/chart-the-course/pull/7
+
+Implementation commit: 5489512
+
+Current branch HEAD while regenerating prompt: a8995513961741c9db8af42f03a1644b484e9b01
 
 Current branch/status at prompt generation:
 
-## ctc-019-overpass-cache
+## ctc-019-overpass-cache...origin/ctc-019-overpass-cache
  M CONTEXT.md
-?? docs/handoffs/ctc-019-claude-final-audit-prompt.md
 
 ## Required Verdict Format
 
@@ -2673,9 +2676,11 @@ Current local verification passed during development: `npm run build`,
 `npm run test:unit`, `npm run test:e2e`, `npm run check`, `git diff --check`,
 and `npm_config_cache=/private/tmp/chart-the-course-npm-cache
 scripts/compliance.sh` with 0 production vulnerabilities. CTC-019 still
-requires final Claude audit handoff and Notion sync before Done. The
-self-contained Claude final-audit prompt is
-`docs/handoffs/ctc-019-claude-final-audit-prompt.md`.
+is now in PR #7 (`https://github.com/ajason13/chart-the-course/pull/7`) and
+Notion is `4. Final Audit (Claude)`. The self-contained Claude final-audit
+prompt is `docs/handoffs/ctc-019-claude-final-audit-prompt.md`. Do not mark
+CTC-019 Done until Claude final audit findings are resolved or explicitly
+accepted.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at

@@ -202,9 +202,11 @@ Current local verification passed during development: `npm run build`,
 `npm run test:unit`, `npm run test:e2e`, `npm run check`, `git diff --check`,
 and `npm_config_cache=/private/tmp/chart-the-course-npm-cache
 scripts/compliance.sh` with 0 production vulnerabilities. CTC-019 still
-requires final Claude audit handoff and Notion sync before Done. The
-self-contained Claude final-audit prompt is
-`docs/handoffs/ctc-019-claude-final-audit-prompt.md`.
+is now in PR #7 (`https://github.com/ajason13/chart-the-course/pull/7`) and
+Notion is `4. Final Audit (Claude)`. The self-contained Claude final-audit
+prompt is `docs/handoffs/ctc-019-claude-final-audit-prompt.md`. Do not mark
+CTC-019 Done until Claude final audit findings are resolved or explicitly
+accepted.
 
 CTC-014 is Done - 2026-06-13. After CTC-007 integration, Codex
 confirmed clean synchronized `main` at
