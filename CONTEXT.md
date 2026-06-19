@@ -148,7 +148,12 @@ Retry-After cap/visible rate-limit policy, diagnostic-only StorageManager
 usage, no automatic stale rendering even when offline, soft handling of
 browser/private-mode storage variability, and no CTC-020/CTC-008 leakage.
 Claude QA planning prompt is at
-`docs/handoffs/ctc-019-claude-qa-planning-prompt.md`. CTC-019 may move to
+`docs/handoffs/ctc-019-claude-qa-planning-prompt.md`. On 2026-06-19 this
+prompt was rewritten as a self-contained Claude Chat prompt with embedded
+contents from the 10 relevant repository files, because Claude Chat handles
+long pasted file content reliably and this avoids upload/context ambiguity.
+The embedded snapshots were verified against the current repository using
+SHA-256 markers in the prompt. CTC-019 may move to
 `2. QA Planning (Claude)`, but runtime implementation remains blocked until
 Claude returns an adversarial QA plan and Codex critically reviews it.
 
