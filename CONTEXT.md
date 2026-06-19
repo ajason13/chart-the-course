@@ -4,6 +4,36 @@ Last updated: 2026-06-19
 
 ## Current Status
 
+CTC-020 selected for Gemini specification drafting - 2026-06-19. Codex
+confirmed clean synchronized `main` at
+`fd901f07228396f128af36c4fbb28b62ed46088e`, confirmed PR #7 is merged with
+CI `verify` successful, and confirmed CTC-019 remains `5. Done` in Notion.
+Live Notion comparison confirmed CTC-020 and CTC-008 are still Backlog and
+CTC-014 remains `5. Done`. CTC-020 is now the highest-value unblocked next
+task because CTC-019 created durable exact raw Overpass response/source
+evidence that can support source availability, while CTC-008 production PDF
+export remains higher risk and still depends on same-release CTC-020 raw GIS
+source availability, reviewed production PDF dependency adoption, a notes
+decision, and rendered-page visual regression coverage. CTC-020 is selected
+for specification only: do not create fake or inert `Download PDF` UI, do not
+combine CTC-020 with CTC-008, and do not claim the full task Done unless the
+PDF-adjacent and acknowledgement criteria are truthfully satisfied or a
+recorded task decision changes the acceptance boundary. The specification must
+resolve raw-source export schema, filename, MIME type, validation, dangerous-key
+handling, size limits, Blob/object URL lifecycle, stale/missing/corrupt evidence
+behavior, separation from user-authored project export and normalized geometry,
+and the same-release PDF/source-export gate. Current OSM and ODbL primary
+sources were checked on 2026-06-19:
+`https://www.openstreetmap.org/copyright`,
+`https://www.openstreetmap.org/copyright/attribution-guide/`, and
+`https://opendatacommons.org/licenses/odbl/1-0/`. CTC-020 moved to
+`1. Spec Drafting (Gemini)`. The Gemini prompt is
+`docs/handoffs/ctc-020-gemini-specification-prompt.md`; attach the listed files
+individually. Prompt SHA-256:
+`6e220e520da0a7e1a5354bdd0f7004487950d9567981dbd7b949b4b5a193ec38`. Stop at
+the specification gate until Gemini returns a report that Codex critically
+reviews.
+
 CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
 confirmed clean synchronized `main` at
 `f9b3f4ff670cd370b3a48a5b6e5623dd93c84fcf`, with latest `main` CI
