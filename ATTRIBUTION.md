@@ -33,10 +33,19 @@ Course must make the source OSM geometry or the means to recreate it available.
 The MVP mechanism is a `Download Raw GIS Source (ODbL)` action adjacent to PDF
 export.
 
+CTC-020 Phase 1 adds a browser-local `Download Raw GIS Source (ODbL)` action
+for loaded course-detail data. This source package supports the ODbL Section
+4.6 source-availability mechanism described above by exporting the exact raw
+Overpass JSON response text, exact query, endpoint, completion timestamp, bbox,
+OSM element type/ID summaries, and the OpenStreetMap copyright URL. It is a
+partial source-export capability only; final PDF adjacency and PDF
+acknowledgements remain gated on real CTC-008 PDF export behavior.
+
 The raw GIS source export must include:
 
 - Raw GeoJSON or OSM XML response.
-- OSM IDs.
+- OSM IDs. Phase 1 exposes these through `osmElementsSummary` type/ID entries
+  and the exact raw Overpass JSON response.
 - Bounding box.
 - Exact Overpass QL query.
 - Source URL.
@@ -45,14 +54,6 @@ The raw GIS source export must include:
 Raw GIS export must ship in the same release as PDF export. This requirement
 does not apply to purely private local previews that are not distributed or
 shared.
-
-CTC-020 Phase 1 adds a browser-local `Download Raw GIS Source (ODbL)` action
-for loaded course-detail data. This source package supports the ODbL Section
-4.6 source-availability mechanism described above by exporting the exact raw
-Overpass JSON response text, exact query, endpoint, completion timestamp, bbox,
-OSM element type/ID summaries, and the OpenStreetMap copyright URL. It is a
-partial source-export capability only; final PDF adjacency and PDF
-acknowledgements remain gated on real CTC-008 PDF export behavior.
 
 ## Tile Provider and Basemap Attribution
 

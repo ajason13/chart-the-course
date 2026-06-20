@@ -155,6 +155,18 @@ production compliance. GitHub emitted a non-blocking Node.js 20 deprecation
 annotation for pinned actions forced onto Node 24, but the required check
 completed successfully.
 
+Claude final audit for CTC-020 - 2026-06-20. Claude returned `PASS WITH MINOR
+FIXES` with no blockers and no re-audit required. Minor fixes applied on PR #8:
+documented the intentional source evidence/context mismatch double-check in
+`src/gisSourceExport.ts`; added a deterministic invalid-timestamp filename
+fallback plus unit coverage; clarified `ATTRIBUTION.md` so Phase 1
+`osmElementsSummary` framing appears before the final source-export requirement
+list; and tightened the dangerous-tag-name unit test wording/assertions.
+Verification after fixes passed: `npm run test:unit -- gisSourceExport`,
+`npm run check`, `git diff --check`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`
+with production audit reporting 0 vulnerabilities.
+
 CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
 confirmed clean synchronized `main` at
 `f9b3f4ff670cd370b3a48a5b6e5623dd93c84fcf`, with latest `main` CI

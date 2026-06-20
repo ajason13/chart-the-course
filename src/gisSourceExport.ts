@@ -76,7 +76,10 @@ function validDate(value: string): boolean {
 }
 
 export function formatGisSourceExportFilename(exportedAt: string): string {
-  const compact = exportedAt.replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  const match = exportedAt.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.\d{3}Z$/);
+  if (!match) return "ctc-gis-source-invalid-timestamp.json";
+  const [, year, month, day, hour, minute, second] = match;
+  const compact = `${year}${month}${day}T${hour}${minute}${second}Z`;
   return `ctc-gis-source-${compact}.json`;
 }
 
@@ -142,6 +145,7 @@ export function buildGisSourceExport(
   if (evidence.mode !== "detail") {
     return { ok: false, code: "WRONG_MODE", message: "Raw GIS source export is available only for loaded course detail data." };
   }
+  // App display code sets evidence and context together; this guards future call sites that might pass them separately.
   if (
     evidence.source.query !== context.query
     || evidence.source.bbox !== serializeBbox(context.bbox)

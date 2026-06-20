@@ -1,6 +1,7 @@
 import {
   buildGisSourceExport,
   extractOsmElementSummary,
+  formatGisSourceExportFilename,
   GIS_SOURCE_EXPORT_MAX_BYTES,
   GIS_SOURCE_EXPORT_MIME,
   serializeGisSourceEnvelope,
@@ -44,6 +45,10 @@ describe("GIS source export", () => {
     expect(summaryText).not.toContain("members");
   });
 
+  it("uses a sentinel filename component for unexpected timestamp shapes", () => {
+    expect(formatGisSourceExportFilename("2026-06-20T01:02:03+00:00")).toBe("ctc-gis-source-invalid-timestamp.json");
+  });
+
   it("exports valid empty responses with an empty summary", () => {
     const result = buildGisSourceExport(evidence({ rawResponse: '{"elements":[]}' }), { query, bbox }, "2026-06-20T01:02:03.000Z");
     expect(result.ok).toBe(true);
@@ -76,10 +81,12 @@ describe("GIS source export", () => {
       .toMatchObject({ ok: false, code: "SOURCE_MISMATCH" });
   });
 
-  it("rejects invalid Overpass JSON without mutating Object prototype", () => {
+  it("treats dangerous tag names as inert summary strings", () => {
     expect(extractOsmElementSummary("{")).toBeNull();
     expect(buildGisSourceExport(evidence({ rawResponse: '{"elements":[{"type":"area","id":1}]}' }), { query, bbox }))
       .toMatchObject({ ok: false, code: "INVALID_RESPONSE" });
+    expect(extractOsmElementSummary(rawResponse)?.[0].tagKeys).toContain("__proto__");
+    expect(extractOsmElementSummary(rawResponse)?.[0]).not.toHaveProperty("tags");
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
   });
 
