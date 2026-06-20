@@ -4,6 +4,36 @@ Last updated: 2026-06-20
 
 ## Current Status
 
+CTC-008 selected for Gemini specification drafting - 2026-06-20. Codex
+confirmed clean synchronized `main` at
+`186a14e3d3c78b7cff5d641c9591e9891fe40f74`, which is after the CTC-020 merge
+baseline `16fd9051610d1149e79680257f7dda232ed99745` and includes the
+post-CTC-020 startup handoff commit. PR #8 remains merged at
+`2026-06-20T06:44:25Z` with merge commit
+`16fd9051610d1149e79680257f7dda232ed99745`; main CI run `27863255281`
+completed successfully. Notion auth worked on retry, and CTC-020 was marked
+`5. Done` with the merge closeout note. Live Notion comparison confirmed
+CTC-020, CTC-019, and CTC-014 are `5. Done`, while CTC-008 remains
+`0. Backlog`. The broader backlog search did not surface a more valuable
+unblocked candidate than CTC-008; direct Notion database querying was
+unavailable on this workspace plan. CTC-008 is now the highest-value next task
+because CTC-014 provides the reviewed PDF pipeline experiment and CTC-020
+provides the raw GIS source availability foundation. Selection is for
+specification only: do not add production PDF behavior, a `Download PDF` UI,
+production dependency movement, persistent notes, providers, basemap tiles,
+API keys, accounts, server components, telemetry, cloud sync, remote assets, or
+external user-data flows until the specification and QA gates are reviewed.
+The specification must resolve whether CTC-008 ships as a production PDF
+feature, a gated fixture-backed prototype, or a smaller production-adoption
+task; it must explicitly handle direct `jspdf@4.2.1` adoption from research
+status, visible/searchable full-URL OSM attribution, same-release PDF/source
+export adjacency, static versus persistent notes, and rendered PDF visual
+regression coverage. CTC-008 moved to `1. Spec Drafting (Gemini)`. Gemini
+prompt: `docs/handoffs/ctc-008-gemini-specification-prompt.md`. Prompt
+SHA-256:
+`f7c071423c49235dc14ad1e4387652d9ac025a658f9175c868082a712ad77e7b`. Stop at
+this gate until Gemini returns a report that Codex critically reviews.
+
 CTC-020 selected for Gemini specification drafting - 2026-06-19. Codex
 confirmed clean synchronized `main` at
 `fd901f07228396f128af36c4fbb28b62ed46088e`, confirmed PR #7 is merged with
