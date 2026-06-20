@@ -83,6 +83,24 @@ instead of attachment instructions. It embeds 15 snapshots: `AGENTS.md`,
 `fixtures/overpass/synthetic-golf-course-ctc006.json`, each with SHA-256
 markers. Prompt SHA-256:
 `780917835128b94c084866674dd1578e88716ed2d16bccf8c862060788bf03f4`.
+Claude QA planning response - 2026-06-19. Claude returned `NEEDS SPEC FIXES`;
+Codex accepts the verdict and recorded the disposition in
+`docs/handoffs/ctc-020-claude-qa-plan-review.md`. The six blockers require
+explicit active source evidence state, detail-mode-only Phase 1 scope, a
+concrete deterministic `osmElementsSummary` shape, full pretty-printed export
+size-cap semantics, stale-consent capture in `renderStaleData()`, and atomic
+source-evidence replacement/clearing across request and display transitions.
+Codex resolved the blockers and minor corrections in
+`docs/handoffs/ctc-020-spec-addendum.md`: Phase 1 is detail-only and partial;
+active evidence shape is `{ mode: "detail", cacheKey, rawResponse, source,
+consentState }`; discovery export is out of scope; stale export requires
+explicit consent state; `osmElementsSummary` is sorted `{ type, id, tagKeys }`
+without tag values/geometry/nodes/members; the `1_048_576` byte cap applies to
+the final pretty-printed JSON file; filename timestamps come from `exportedAt`;
+and required Vitest/Playwright/doc coverage is enumerated. Re-review prompt:
+`docs/handoffs/ctc-020-claude-addendum-review-prompt.md`. CTC-020 remains in
+`2. QA Planning (Claude)` and runtime implementation remains blocked until
+Claude accepts the addendum and Codex records the implementation gate.
 
 CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
 confirmed clean synchronized `main` at
