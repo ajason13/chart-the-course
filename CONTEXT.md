@@ -69,6 +69,20 @@ from `src/project.ts` user-authored export and normalized geometry. Claude QA
 planning prompt: `docs/handoffs/ctc-020-claude-qa-planning-prompt.md`.
 CTC-020 may move to `2. QA Planning (Claude)`, but runtime implementation
 remains blocked until Claude returns a QA plan and Codex critically reviews it.
+Claude prompt packaging update - 2026-06-19. Per maintainer request,
+`docs/handoffs/ctc-020-claude-qa-planning-prompt.md` was rewritten as a
+self-contained Claude Chat prompt with embedded repository file contents
+instead of attachment instructions. It embeds 15 snapshots: `AGENTS.md`,
+`CONTEXT.md`, `ATTRIBUTION.md`, `SECURITY.md`,
+`docs/overpass-query-contract.md`,
+`docs/experiments/ctc-014-vector-pdf-evaluation.md`,
+`docs/handoffs/ctc-020-gemini-specification-review.md`,
+`docs/handoffs/ctc-020-gemini-revised-baseline-review.md`, `src/App.tsx`,
+`src/overpass.ts`, `src/overpassCache.ts`, `src/project.ts`,
+`src/normalize.ts`, `test/e2e/app.spec.ts`, and
+`fixtures/overpass/synthetic-golf-course-ctc006.json`, each with SHA-256
+markers. Prompt SHA-256:
+`780917835128b94c084866674dd1578e88716ed2d16bccf8c862060788bf03f4`.
 
 CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
 confirmed clean synchronized `main` at
