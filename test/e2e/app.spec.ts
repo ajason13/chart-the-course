@@ -216,6 +216,62 @@ test("refreshes loaded course data with cooldown and durable cache replacement",
   expect(detailRequests).toBe(2);
 });
 
+test("exports raw GIS source only for loaded detail data", async ({ page }) => {
+  const rawDetailText = JSON.stringify(ctc006Detail);
+  await page.addInitScript(() => {
+    const original = URL.createObjectURL.bind(URL);
+    (window as typeof window & { __ctcBlobTexts?: string[]; __ctcBlobTypes?: string[] }).__ctcBlobTexts = [];
+    (window as typeof window & { __ctcBlobTexts?: string[]; __ctcBlobTypes?: string[] }).__ctcBlobTypes = [];
+    URL.createObjectURL = (blob) => {
+      if (blob instanceof Blob) {
+        (window as typeof window & { __ctcBlobTexts: string[]; __ctcBlobTypes: string[] }).__ctcBlobTypes.push(blob.type);
+        void blob.text().then((text) => {
+          (window as typeof window & { __ctcBlobTexts: string[]; __ctcBlobTypes: string[] }).__ctcBlobTexts.push(text);
+        });
+      }
+      return original(blob);
+    };
+  });
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    if (query.includes("purpose:golf-course-detail")) {
+      await route.fulfill({ body: rawDetailText, contentType: "application/json" });
+    } else {
+      await route.fulfill({ json: discovery });
+    }
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+  const sourceButton = page.getByRole("button", { name: "Download Raw GIS Source (ODbL)" });
+  await expect(sourceButton).toBeVisible();
+  await expect(sourceButton).toBeEnabled();
+
+  const downloadPromise = page.waitForEvent("download");
+  await sourceButton.click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^ctc-gis-source-\d{8}T\d{6}Z\.json$/);
+  expect(await page.evaluate(() => (window as typeof window & { __ctcBlobTypes: string[] }).__ctcBlobTypes.at(-1)))
+    .toBe("application/json;charset=utf-8");
+
+  await page.waitForFunction(() => (window as typeof window & { __ctcBlobTexts: string[] }).__ctcBlobTexts.length > 0);
+  const text = await page.evaluate(() => (window as typeof window & { __ctcBlobTexts: string[] }).__ctcBlobTexts.at(-1) ?? "");
+  const exported = JSON.parse(text);
+  expect(exported.rawResponse).toBe(rawDetailText);
+  expect(exported.license).toBe("ODbL-1.0");
+  expect(exported.copyrightUrl).toBe("https://www.openstreetmap.org/copyright");
+  expect(exported.consentState).toBe("fresh");
+  expect(exported.isStaleSource).toBe(false);
+  expect(exported.osmElementsSummary[0]).toEqual({ type: "node", id: 9000060999, tagKeys: ["natural"] });
+  expect(exported.osmElementsSummary).toContainEqual({ type: "way", id: 9000060001, tagKeys: ["leisure", "name"] });
+  expect(text).not.toContain("targets");
+  expect(text).not.toContain("carries");
+  await expect(page.getByText("Raw GIS source export started.")).toBeVisible();
+});
+
 test("supports keyboard flow, mobile layout, and axe scans across states", async ({ page }) => {
   let resolveRequest: (() => void) | undefined;
   await isolateNetwork(page, async (route) => {

@@ -200,6 +200,58 @@ The durable cache is internal provenance only. It does not implement CTC-020
 raw GIS source export, exported file schemas, download UI, or CTC-008 PDF
 behavior.
 
+CTC-020 Phase 1 exports loaded detail-mode source evidence through a browser
+download action. Discovery-mode export is out of scope. The app tracks explicit
+active source evidence for detail results instead of re-reading private cache
+internals at download time. Active source evidence contains:
+
+- detail cache key;
+- exact `rawResponse` text;
+- exact `source.query`, `source.endpoint`, `source.completedAt`,
+  `source.bbox`, and `source.copyrightUrl`;
+- consent state: `fresh` or `stale-consented`.
+
+The export envelope is versioned JSON with MIME type
+`application/json;charset=utf-8`, filename pattern
+`ctc-gis-source-YYYYMMDDTHHmmssZ.json`, 2-space formatting, deterministic root
+field ordering, and a 1,048,576 byte cap measured against the final
+pretty-printed UTF-8 file. This cap includes envelope metadata, summary fields,
+and exact raw response text; a rendered cache record near the durable-cache
+ceiling may therefore be too large to export and must produce a visible error.
+
+Exported root fields are:
+
+- `bbox`;
+- `completedAt`;
+- `consentState`;
+- `copyrightUrl`;
+- `endpoint`;
+- `exportVersion`;
+- `exportedAt`;
+- `isStaleSource`;
+- `license`;
+- `osmElementsSummary`;
+- `query`;
+- `rawResponse`;
+- `sourceAgeDays` for stale-consented exports only.
+
+`osmElementsSummary` contains deterministic primitive entries sorted by type
+order `node`, `relation`, `way` and numeric ID:
+
+```json
+{
+  "type": "way",
+  "id": 123,
+  "tagKeys": ["golf", "ref"]
+}
+```
+
+The summary excludes tag values, geometry, nodes, members, bounds, center, and
+all other raw element fields. Exact source evidence remains in `rawResponse`.
+Valid empty Overpass responses are exportable with `osmElementsSummary: []`.
+Stale source is exportable only when the currently visible detail result was
+rendered through explicit stale-data consent.
+
 Persist or export alongside normalized geometry:
 
 - Raw Overpass JSON response.

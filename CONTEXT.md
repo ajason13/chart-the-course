@@ -1,6 +1,6 @@
 # Chart the Course Context
 
-Last updated: 2026-06-19
+Last updated: 2026-06-20
 
 ## Current Status
 
@@ -111,6 +111,61 @@ test `isStaleSource`/`consentState` consistency, test `osmElementsSummary`
 type order `node`, `relation`, `way`, keep source-context comparison atomic,
 and make discovery-mode source export absent from the DOM. Final Claude audit
 remains mandatory before CTC-020 can close.
+
+CTC-020 Phase 1 implementation - 2026-06-20. Branch
+`ctc-020-odbl-source-export` implements detail-mode-only raw GIS source export
+without PDF behavior, fake PDF controls, new dependencies, providers, endpoint
+failover, API keys, accounts, telemetry, cloud sync, or external user-data
+flows. The app now tracks explicit active detail source evidence with exact
+raw Overpass response text, source metadata, cache key, and consent state;
+discovery-mode export is absent from the DOM; stale exports require
+stale-render consent captured by `renderStaleData()`; hole-selector changes do
+not invalidate source evidence; new request/cancel/error transitions clear or
+replace it. `src/gisSourceExport.ts` produces deterministic
+`application/json;charset=utf-8` downloads named
+`ctc-gis-source-YYYYMMDDTHHmmssZ.json`, preserves `rawResponse` exactly as a
+string, emits sorted `{ type, id, tagKeys }` summaries in type order `node`,
+`relation`, `way`, excludes tag values and normalized/user-authored data,
+computes stale `sourceAgeDays` from source completion to export time, and
+enforces the 1,048,576 byte cap against the final pretty-printed UTF-8 JSON
+file. Docs updated: `ATTRIBUTION.md`, `SECURITY.md`, and
+`docs/overpass-query-contract.md`. Verification passed: `npm run check`
+(scaffold verification, build, 67 Vitest tests, 17 Playwright tests),
+`node_modules/.bin/playwright test test/e2e/app.spec.ts` (16 tests),
+`git diff --check`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`
+with production audit reporting 0 vulnerabilities. CTC-020 remains in
+`3. In Development (ChatGPT)` until final Claude audit is prepared and resolved.
+
+CTC-020 final audit handoff - 2026-06-20. Implementation commit
+`ceb6f807da8a68df0378d85da8b3e903ddfcd4ad` was pushed on branch
+`ctc-020-odbl-source-export`. PR #8 is
+`https://github.com/ajason13/chart-the-course/pull/8`. The self-contained
+Claude final-audit prompt is
+`docs/handoffs/ctc-020-claude-final-audit-prompt.md`; it embeds the changed
+implementation and documentation files from the audited commit and instructs
+Claude to verify the accepted Phase 1 scope plus MC-1 through MC-5 from the
+addendum review. Prompt SHA-256:
+`036e2eff64d2a0912fb8d6d15b36bb44be0c481a841d603090f255483a150b59`.
+Move CTC-020 to `4. Final Audit (Claude)` and do not mark Done until Claude
+findings are resolved or explicitly accepted.
+PR #8 CI `verify` passed on GitHub Actions run `27862930301` for head commit
+`2312bc7bd66e1d6295d4f682a2b6a569638c710b`, including app checks and
+production compliance. GitHub emitted a non-blocking Node.js 20 deprecation
+annotation for pinned actions forced onto Node 24, but the required check
+completed successfully.
+
+Claude final audit for CTC-020 - 2026-06-20. Claude returned `PASS WITH MINOR
+FIXES` with no blockers and no re-audit required. Minor fixes applied on PR #8:
+documented the intentional source evidence/context mismatch double-check in
+`src/gisSourceExport.ts`; added a deterministic invalid-timestamp filename
+fallback plus unit coverage; clarified `ATTRIBUTION.md` so Phase 1
+`osmElementsSummary` framing appears before the final source-export requirement
+list; and tightened the dangerous-tag-name unit test wording/assertions.
+Verification after fixes passed: `npm run test:unit -- gisSourceExport`,
+`npm run check`, `git diff --check`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`
+with production audit reporting 0 vulnerabilities.
 
 CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
 confirmed clean synchronized `main` at

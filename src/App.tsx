@@ -20,6 +20,12 @@ import {
 } from "./overpass";
 import { overpassCache, type CacheLookup, type OverpassCacheMode } from "./overpassCache";
 import {
+  buildGisSourceExport,
+  GIS_SOURCE_EXPORT_MIME,
+  type ActiveSourceEvidence,
+  type SourceConsentState,
+} from "./gisSourceExport";
+import {
   PROJECT_FILENAME,
   PROJECT_MAX_BYTES,
   PROJECT_MIME,
@@ -37,7 +43,7 @@ type ViewState =
   | { kind: "invalid"; message: string }
   | { kind: "loading"; mode: "discovery" | "detail" }
   | { kind: "cancelled" }
-  | { kind: "empty"; mode: "discovery" | "detail"; cached: boolean; source: CachedResponse["source"] }
+  | { kind: "empty"; mode: "discovery" | "detail"; cached: boolean; response: OverpassResponse; source: CachedResponse["source"] }
   | { kind: "success"; mode: "discovery" | "detail"; cached: boolean; response: OverpassResponse; source: CachedResponse["source"] }
   | { kind: "rate-limit"; retryAfterMs?: number }
   | { kind: "timeout" }
@@ -115,12 +121,14 @@ export function App() {
   const [refreshStatus, setRefreshStatus] = useState("Refresh course data is available after loading results.");
   const [staleCandidate, setStaleCandidate] = useState<StaleCandidate | null>(null);
   const [activeContext, setActiveContext] = useState<RequestContext | null>(null);
+  const [activeSourceEvidence, setActiveSourceEvidence] = useState<ActiveSourceEvidence | null>(null);
   const refreshCooldowns = useRef(new Map<string, number>());
   const [invalidField, setInvalidField] = useState<keyof Bbox | "courseName" | null>(null);
   const [selectedHoleKey, setSelectedHoleKey] = useState("");
   const [projectHoles, setProjectHoles] = useState<Partial<Record<SourceKey, HoleStateV1>>>({});
   const [projectErrors, setProjectErrors] = useState<ValidationError[]>([]);
   const [projectMessage, setProjectMessage] = useState("");
+  const [sourceExportMessage, setSourceExportMessage] = useState("");
   const requestIdentity = useRef(0);
   const controller = useRef<AbortController | null>(null);
   const submitButton = useRef<HTMLButtonElement>(null);
@@ -180,6 +188,28 @@ export function App() {
     setProjectMessage("Project export started.");
   }
 
+  function exportGisSource() {
+    const result = buildGisSourceExport(activeSourceEvidence, activeContext);
+    if (!result.ok) {
+      setSourceExportMessage(result.message);
+      return;
+    }
+    const blob = new Blob([result.text], { type: GIS_SOURCE_EXPORT_MIME });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = result.filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    requestAnimationFrame(() => {
+      URL.revokeObjectURL(url);
+      anchor.remove();
+    });
+    setSourceExportMessage(result.envelope.isStaleSource
+      ? `Raw GIS source export started with stale OpenStreetMap data from ${result.envelope.completedAt}.`
+      : "Raw GIS source export started.");
+  }
+
   async function importProject(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file || !courseSourceKey) return;
@@ -227,6 +257,7 @@ export function App() {
   }
 
   function classifyFailure(failure: RequestFailure) {
+    setActiveSourceEvidence(null);
     if (failure.kind === "cancelled") setState({ kind: "cancelled" });
     else if (failure.kind === "timeout" || (failure.kind === "http" && failure.status === 504)) setState({ kind: "timeout" });
     else if (failure.kind === "rate-limit") setState({ kind: "rate-limit", retryAfterMs: failure.retryAfterMs });
@@ -240,11 +271,17 @@ export function App() {
     response: OverpassResponse,
     source: CachedResponse["source"],
     context: RequestContext,
+    rawResponse?: string,
+    consentState: SourceConsentState = "fresh",
   ) {
     setActiveContext(context);
+    setActiveSourceEvidence(mode === "detail" && rawResponse
+      ? { mode, cacheKey: context.cacheKey, rawResponse, source, consentState }
+      : null);
+    setSourceExportMessage("");
     setState(response.elements.length
       ? { kind: "success", mode, cached, response, source }
-      : { kind: "empty", mode, cached, source });
+      : { kind: "empty", mode, cached, response, source });
   }
 
   function cacheKeyForCurrentResult(): string | null {
@@ -273,12 +310,14 @@ export function App() {
   ) {
     setWarning("");
     setStaleCandidate(null);
+    setActiveSourceEvidence(null);
+    setSourceExportMessage("");
 
     let stale: Extract<CacheLookup, { kind: "stale" }> | null = null;
     if (!options.bypassCache) {
       const cache = await overpassCache.read({ key: cacheKey, mode, query, bbox });
       if (cache.kind === "hit") {
-        displayResult(mode, true, cache.response, cache.cached.source, { mode, bbox, query, cacheKey, timeout });
+        displayResult(mode, true, cache.response, cache.cached.source, { mode, bbox, query, cacheKey, timeout }, cache.cached.rawResponse);
         setRefreshStatus("Course data loaded from durable cache.");
         return;
       }
@@ -315,11 +354,13 @@ export function App() {
     try {
       parsed = JSON.parse(result.rawResponse);
     } catch {
+      setActiveSourceEvidence(null);
       setState({ kind: "parse" });
       return;
     }
     const response = validateResponse(parsed);
     if (!response) {
+      setActiveSourceEvidence(null);
       setState({ kind: "shape" });
       return;
     }
@@ -337,7 +378,7 @@ export function App() {
         setWarning("Result displayed, but durable cache could not be updated.");
       }
     }
-    displayResult(mode, false, response, source, { mode, bbox, query, cacheKey, timeout });
+    displayResult(mode, false, response, source, { mode, bbox, query, cacheKey, timeout }, result.rawResponse);
     if (options.manualRefresh) setRefreshStatus("Refresh complete.");
   }
 
@@ -385,7 +426,15 @@ export function App() {
 
   function renderStaleData() {
     if (!staleCandidate) return;
-    displayResult(staleCandidate.context.mode, true, staleCandidate.response, staleCandidate.cached.source, staleCandidate.context);
+    displayResult(
+      staleCandidate.context.mode,
+      true,
+      staleCandidate.response,
+      staleCandidate.cached.source,
+      staleCandidate.context,
+      staleCandidate.cached.rawResponse,
+      "stale-consented",
+    );
     setWarning(`Showing stale OpenStreetMap data from ${staleCandidate.recordDate}. Refresh when Overpass is available.`);
     setStaleCandidate(null);
   }
@@ -394,6 +443,8 @@ export function App() {
     requestIdentity.current += 1;
     controller.current?.abort();
     controller.current = null;
+    setActiveSourceEvidence(null);
+    setSourceExportMessage("");
     setState({ kind: "cancelled" });
     requestAnimationFrame(() => submitButton.current?.focus());
   }
@@ -401,6 +452,9 @@ export function App() {
   const showsOsmResult = state.kind === "success" || state.kind === "empty";
   const errorState = ["invalid", "rate-limit", "timeout", "network", "http", "parse", "shape"].includes(state.kind);
   const canRefresh = showsOsmResult && !loading;
+  const canExportGisSource = (state.kind === "success" || state.kind === "empty")
+    && state.mode === "detail"
+    && activeSourceEvidence?.mode === "detail";
 
   return (
     <main className="shell">
@@ -458,7 +512,7 @@ export function App() {
         </section>
       )}
 
-      {state.kind === "success" && (
+      {(state.kind === "success" || state.kind === "empty") && (
         <section className="results" aria-labelledby="results-title">
           <div>
             <p className="eyebrow">{state.mode} response</p>
@@ -485,10 +539,10 @@ export function App() {
               <ul className="raw-list">
                 {state.response.elements.map((element) => <li key={`${element.type}-${element.id}`}><code>{element.type}/{element.id}</code> {elementName(element)}</li>)}
               </ul>
-              {normalized && normalized.holes.length > 0 ? (
-                <section className="map-workspace" aria-labelledby="map-workspace-title">
-                  <div className="map-selection">
-                    <h3 id="map-workspace-title">Selected-hole map</h3>
+              <section className="map-workspace" aria-labelledby="map-workspace-title">
+                <div className="map-selection">
+                  <h3 id="map-workspace-title">Selected-hole map</h3>
+                  {normalized && normalized.holes.length > 0 && (
                     <label>Hole
                       <select value={selectedHoleKey} onChange={(event) => setSelectedHoleKey(event.target.value)}>
                         {normalized.holes.map((hole) => (
@@ -498,12 +552,18 @@ export function App() {
                         ))}
                       </select>
                     </label>
-                  </div>
-                  {normalized.holes.filter((hole) => hole.source.sourceKey === selectedHoleKey).map((hole) => (
-                    <HoleMap key={hole.source.sourceKey} hole={hole} warnings={normalized.warnings} source={normalized.source}
-                      project={holeProject(hole.source.sourceKey)}
-                      onProjectChange={(project) => setHoleProject(hole.source.sourceKey, project)} />
-                  ))}
+                  )}
+                </div>
+                {normalized && normalized.holes.length > 0 ? (
+                  <>
+                    {normalized.holes.filter((hole) => hole.source.sourceKey === selectedHoleKey).map((hole) => (
+                      <HoleMap key={hole.source.sourceKey} hole={hole} warnings={normalized.warnings} source={normalized.source}
+                        project={holeProject(hole.source.sourceKey)}
+                        onProjectChange={(project) => setHoleProject(hole.source.sourceKey, project)} />
+                    ))}
+                  </>
+                ) : <p className="map-empty" role="status">No normalized holes are available to render.</p>}
+                {normalized && normalized.holes.length > 0 && (
                   <section className="project-io" aria-labelledby="project-io-title">
                     <h3 id="project-io-title">Local project file</h3>
                     <p className="hint">Project files contain user-authored targets and carry settings only. Import replaces current project state when valid.</p>
@@ -521,8 +581,19 @@ export function App() {
                       </li>)}</ul>
                     </div>}
                   </section>
+                )}
+                <section className="source-export" aria-labelledby="source-export-title">
+                  <h3 id="source-export-title">OpenStreetMap source data</h3>
+                  <p className="hint">Raw GIS source exports contain exact OpenStreetMap response evidence only. They do not include project targets, carries, notes, or normalized map geometry.</p>
+                  {activeSourceEvidence?.consentState === "stale-consented" && (
+                    <p className="warning">This export will contain stale OpenStreetMap data rendered with your consent.</p>
+                  )}
+                  <div className="actions">
+                    <button type="button" onClick={exportGisSource} disabled={!canExportGisSource}>Download Raw GIS Source (ODbL)</button>
+                  </div>
+                  {sourceExportMessage && <p aria-live="polite">{sourceExportMessage}</p>}
                 </section>
-              ) : <p className="map-empty" role="status">No normalized holes are available to render.</p>}
+              </section>
             </>
           )}
           <details>
