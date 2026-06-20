@@ -50,6 +50,26 @@ behavior, and legal overstatement. CTC-020 remains in
 do not advance to Claude QA planning or runtime implementation until Codex
 accepts a corrected baseline.
 
+Gemini CTC-020 revised baseline accepted for Claude QA planning - 2026-06-19.
+Codex accepted Gemini's revised response as the corrected baseline with
+mandatory corrections recorded in
+`docs/handoffs/ctc-020-gemini-revised-baseline-review.md`. Accepted direction:
+CTC-020 cannot be fully Done until real CTC-008 PDF UI exists; no fake PDF
+controls; Phase 1 may implement a partial browser-local raw GIS source export
+core; source export should be deterministic versioned JSON preserving exact
+`rawResponse` text; valid empty responses are exportable; stale source is
+exportable only when current visible data was rendered through explicit
+CTC-019 stale consent; and CTC-008 must later prove same-release source export,
+PDF attribution, and adjacency gates. Codex corrections require no private
+`overpassCache.memory` access, explicit active source evidence state or a
+reviewed public cache read API, a leading `1_048_576` byte serialized export
+cap aligned with CTC-019 unless Claude recommends otherwise, existing
+Vitest/Playwright tooling, exact source metadata validation, and separation
+from `src/project.ts` user-authored export and normalized geometry. Claude QA
+planning prompt: `docs/handoffs/ctc-020-claude-qa-planning-prompt.md`.
+CTC-020 may move to `2. QA Planning (Claude)`, but runtime implementation
+remains blocked until Claude returns a QA plan and Codex critically reviews it.
+
 CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
 confirmed clean synchronized `main` at
 `f9b3f4ff670cd370b3a48a5b6e5623dd93c84fcf`, with latest `main` CI
