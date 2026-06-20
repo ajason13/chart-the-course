@@ -101,6 +101,16 @@ and required Vitest/Playwright/doc coverage is enumerated. Re-review prompt:
 `docs/handoffs/ctc-020-claude-addendum-review-prompt.md`. CTC-020 remains in
 `2. QA Planning (Claude)` and runtime implementation remains blocked until
 Claude accepts the addendum and Codex records the implementation gate.
+Claude addendum review - 2026-06-20. Claude returned
+`READY FOR IMPLEMENTATION AFTER QA PLAN`; Codex accepts the verdict and recorded
+it in `docs/handoffs/ctc-020-claude-addendum-review.md`. CTC-020 may move to
+`3. In Development (ChatGPT)`. Implementation must follow
+`docs/handoffs/ctc-020-spec-addendum.md` and the minor implementation/audit
+checkpoints: compute `sourceAgeDays` from `source.completedAt` to `exportedAt`,
+test `isStaleSource`/`consentState` consistency, test `osmElementsSummary`
+type order `node`, `relation`, `way`, keep source-context comparison atomic,
+and make discovery-mode source export absent from the DOM. Final Claude audit
+remains mandatory before CTC-020 can close.
 
 CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
 confirmed clean synchronized `main` at
