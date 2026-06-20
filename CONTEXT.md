@@ -149,6 +149,11 @@ addendum review. Prompt SHA-256:
 `036e2eff64d2a0912fb8d6d15b36bb44be0c481a841d603090f255483a150b59`.
 Move CTC-020 to `4. Final Audit (Claude)` and do not mark Done until Claude
 findings are resolved or explicitly accepted.
+PR #8 CI `verify` passed on GitHub Actions run `27862930301` for head commit
+`2312bc7bd66e1d6295d4f682a2b6a569638c710b`, including app checks and
+production compliance. GitHub emitted a non-blocking Node.js 20 deprecation
+annotation for pinned actions forced onto Node 24, but the required check
+completed successfully.
 
 CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
 confirmed clean synchronized `main` at
