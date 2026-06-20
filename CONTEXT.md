@@ -137,6 +137,17 @@ file. Docs updated: `ATTRIBUTION.md`, `SECURITY.md`, and
 with production audit reporting 0 vulnerabilities. CTC-020 remains in
 `3. In Development (ChatGPT)` until final Claude audit is prepared and resolved.
 
+CTC-020 final audit handoff - 2026-06-20. Implementation commit
+`ceb6f807da8a68df0378d85da8b3e903ddfcd4ad` was pushed on branch
+`ctc-020-odbl-source-export`. The self-contained Claude final-audit prompt is
+`docs/handoffs/ctc-020-claude-final-audit-prompt.md`; it embeds the changed
+implementation and documentation files from the audited commit and instructs
+Claude to verify the accepted Phase 1 scope plus MC-1 through MC-5 from the
+addendum review. Prompt SHA-256:
+`036e2eff64d2a0912fb8d6d15b36bb44be0c481a841d603090f255483a150b59`.
+Move CTC-020 to `4. Final Audit (Claude)` and do not mark Done until Claude
+findings are resolved or explicitly accepted.
+
 CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
 confirmed clean synchronized `main` at
 `f9b3f4ff670cd370b3a48a5b6e5623dd93c84fcf`, with latest `main` CI
