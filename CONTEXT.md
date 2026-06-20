@@ -139,7 +139,9 @@ with production audit reporting 0 vulnerabilities. CTC-020 remains in
 
 CTC-020 final audit handoff - 2026-06-20. Implementation commit
 `ceb6f807da8a68df0378d85da8b3e903ddfcd4ad` was pushed on branch
-`ctc-020-odbl-source-export`. The self-contained Claude final-audit prompt is
+`ctc-020-odbl-source-export`. PR #8 is
+`https://github.com/ajason13/chart-the-course/pull/8`. The self-contained
+Claude final-audit prompt is
 `docs/handoffs/ctc-020-claude-final-audit-prompt.md`; it embeds the changed
 implementation and documentation files from the audited commit and instructs
 Claude to verify the accepted Phase 1 scope plus MC-1 through MC-5 from the
