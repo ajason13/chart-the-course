@@ -167,6 +167,14 @@ Verification after fixes passed: `npm run test:unit -- gisSourceExport`,
 `npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`
 with production audit reporting 0 vulnerabilities.
 
+CTC-020 merged - 2026-06-20. PR #8 merged at `2026-06-20T06:44:25Z` with
+merge commit `16fd9051610d1149e79680257f7dda232ed99745`. Local `main` was
+fast-forwarded to `origin/main` at that commit. Main CI `verify` passed on run
+`27863255281` for the merge commit. CTC-020 should be marked `5. Done` in
+Notion with PR `https://github.com/ajason13/chart-the-course/pull/8`, but the
+Notion update failed in this session due to OAuth authorization required. Retry
+the Notion status update at next startup before selecting new work.
+
 CTC-019 selected for Gemini specification drafting - 2026-06-13. Codex
 confirmed clean synchronized `main` at
 `f9b3f4ff670cd370b3a48a5b6e5623dd93c84fcf`, with latest `main` CI
