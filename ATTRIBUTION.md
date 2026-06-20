@@ -46,6 +46,14 @@ Raw GIS export must ship in the same release as PDF export. This requirement
 does not apply to purely private local previews that are not distributed or
 shared.
 
+CTC-020 Phase 1 adds a browser-local `Download Raw GIS Source (ODbL)` action
+for loaded course-detail data. This source package supports the ODbL Section
+4.6 source-availability mechanism described above by exporting the exact raw
+Overpass JSON response text, exact query, endpoint, completion timestamp, bbox,
+OSM element type/ID summaries, and the OpenStreetMap copyright URL. It is a
+partial source-export capability only; final PDF adjacency and PDF
+acknowledgements remain gated on real CTC-008 PDF export behavior.
+
 ## Tile Provider and Basemap Attribution
 
 CTC-018 selects a blank/vector-only MVP. The deployed MVP must not load

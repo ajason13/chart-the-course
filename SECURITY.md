@@ -37,3 +37,10 @@ Use app origin/referrer where available plus Overpass QL identifying comments.
 If durable cache storage fails, the app may degrade to non-durable in-memory
 storage for the active session only; this fallback must not be treated as
 persistent source availability.
+
+Raw GIS source export must preserve exact Overpass response text while deriving
+only a primitive OSM element summary. The Phase 1 summary records element type,
+ID, and sorted tag keys only; it does not copy tag values, geometry, node lists,
+relation members, user-authored project data, or normalized geometry. Dangerous
+property names from OSM tags are treated as inert strings only and must not be
+assigned into application objects.

@@ -95,8 +95,9 @@ pre { background: #18221c; border-radius: 5px; color: #eef4ed; font-size: .8rem;
 .layer-measurement.inactive { opacity: .4; }
 .map-warnings { border-left: 4px solid #a86619; padding-left: .75rem; }
 .map-warnings ul, .hole-map-panel details ul { margin-bottom: 0; }
-.project-panel, .project-io { background: #f5f7f1; border: 1px solid #cbd5c5; border-radius: 6px; display: grid; gap: .75rem; padding: 1rem; }
-.project-panel h4, .project-io h3, .project-errors h4, .project-panel p { margin: 0; }
+.project-panel, .project-io, .source-export { background: #f5f7f1; border: 1px solid #cbd5c5; border-radius: 6px; display: grid; gap: .75rem; padding: 1rem; }
+.source-export { background: #fffdf8; border-color: #d3c48d; }
+.project-panel h4, .project-io h3, .source-export h3, .project-errors h4, .project-panel p { margin: 0; }
 .target-list, .carry-list { display: grid; gap: .75rem; list-style: none; margin: 0; padding: 0; }
 .target-list li, .carry-list li { background: #fffdf8; border: 1px solid #dbe2d7; border-radius: 5px; display: grid; gap: .75rem; padding: .75rem; }
 .danger { border-color: #8b3028; color: #8b3028; }
