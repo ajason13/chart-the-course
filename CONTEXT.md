@@ -4,6 +4,52 @@ Last updated: 2026-06-20
 
 ## Current Status
 
+Gemini CTC-008 revision rejected - 2026-06-25. Codex reviewed Gemini's revised
+gated fixture-backed prototype response and rejected it as an implementation
+baseline. Accepted research input: gated fixture-backed prototype direction,
+browser-local/network-isolated generation, continued `jspdf@4.2.1` low-level
+vector candidate status, explicit bans on high-risk jsPDF APIs, static fixture
+notes only, visible/searchable full-URL OSM attribution, PDF/raw source
+adjacency when real PDF behavior ships, and deferred Blob URL cleanup. Source
+check on 2026-06-25 confirmed NVD `CVE-2026-25755` and `CVE-2026-25940` jsPDF
+records, npm `jspdf@4.2.1` metadata, and current OSM copyright source.
+Blockers remain: production dependency movement is unjustified while UI is
+hidden/prototype-gated; hidden/query-flag PDF UI conflicts with the accepted
+task boundary; typed boundaries reference nonexistent `NormalizedCourse` and
+`CustomTarget` contracts and misstate `project.ts`; bundle optimization is an
+incomplete placeholder; text sanitization remains ambiguous around required
+`©`; fixture content fields are assumed rather than mapped; Playwright snippets
+use nonexistent test IDs/routes; raw PDF byte scans are over-weighted; fixed
+page/layout constants are premature; and the response still does not choose one
+coherent implementation-ready acceptance boundary. Review artifact:
+`docs/handoffs/ctc-008-gemini-revision-review.md`. CTC-008 remains in
+`1. Spec Drafting (Gemini)`. Next recommended action is a Codex-owned spec
+addendum choosing either a dev-only fixture-backed PDF prototype that keeps
+jsPDF in devDependencies and avoids production PDF UI, or a fully reviewed
+production PDF feature with production dependency movement and real
+same-release source-export adjacency. Do not advance to Claude QA planning or
+runtime implementation until that corrected baseline exists.
+Gemini revision review artifact:
+`docs/handoffs/ctc-008-gemini-revision-review.md`; SHA-256:
+`c2e9599a0c77f6d667f96a86bd4c7a942db2edec5e90f4fe9cbc78a943c214f0`.
+
+Codex CTC-008 spec addendum ready for Claude QA planning - 2026-06-25. Codex
+resolved the repeated Gemini baseline blockers in
+`docs/handoffs/ctc-008-spec-addendum.md`; SHA-256:
+`e8fc3384eae27e57cd03adcc72ea4759c7edefceb871101d0e6626cb14391391`.
+Corrected direction: CTC-008 should implement a dev-only, fixture-backed
+yardage book PDF prototype, not production PDF export behavior. The addendum
+keeps `jspdf@4.2.1` as a devDependency, forbids production `Download PDF` UI
+or hidden/query-flagged controls in the main app, uses the existing synthetic
+fixture and current normalized/project types, preserves static fixture notes
+only, blocks high-risk jsPDF APIs, and defers final PDF/raw-source adjacency
+to a later real production PDF task. Claude QA planning prompt:
+`docs/handoffs/ctc-008-claude-qa-planning-prompt.md`; SHA-256:
+`f845af19406fbd550dff374a0aba0bcfa58da4b3e7ade4d96f08802170f47724`.
+CTC-008 may move to `2. QA Planning (Claude)`, but runtime implementation
+remains blocked until Claude reviews the addendum and Codex records accepted
+corrections.
+
 Gemini CTC-008 response rejected - 2026-06-24. Codex reviewed the Gemini
 specification response and rejected it as an implementation baseline. Accepted
 research input is limited to browser-local PDF generation, continued direct
