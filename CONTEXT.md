@@ -4,6 +4,29 @@ Last updated: 2026-06-20
 
 ## Current Status
 
+Gemini CTC-008 response rejected - 2026-06-24. Codex reviewed the Gemini
+specification response and rejected it as an implementation baseline. Accepted
+research input is limited to browser-local PDF generation, continued direct
+`jspdf@4.2.1` production-adoption consideration, relevant current jsPDF
+vulnerability context, visible/searchable full-URL OSM attribution, PDF/raw
+source UI adjacency when real PDF behavior ships, static fixture notes only,
+and deferred Blob/object URL cleanup. Source check on 2026-06-24 confirmed
+NVD records for `CVE-2026-31898`, `CVE-2026-31938`, and `CVE-2026-25535`;
+`npm view jspdf@4.2.1` reports MIT license, unpacked size 30,192,058 bytes,
+and direct dependencies `@babel/runtime`, `fflate`, and `fast-png`. Blocking
+issues: no explicit delivery path, incomplete dependency/tree-shaking claims,
+blanket non-ASCII sanitization that conflicts with `©` attribution, loose
+visual-regression thresholds, architecture not grounded in current modules,
+irrelevant coordinate edge cases, under-specified same-release PDF/source gate,
+overstated legal wording, security scope drift into blocked PDF APIs, and
+wrong AGPL `ace` wording. Review artifact:
+`docs/handoffs/ctc-008-gemini-specification-review.md`; SHA-256:
+`1962d09cf5e59a26be47ef86d16145cb7976f955d44cb167caf88215bdba4296`.
+Revision prompt: `docs/handoffs/ctc-008-gemini-revision-prompt.md`;
+SHA-256: `9b319f443213f31e50afb7bb5e3574eda3afc59657890408fc342917f2176fda`.
+CTC-008 remains in `1. Spec Drafting (Gemini)`; do not advance to Claude QA
+planning or runtime implementation until Codex accepts a corrected baseline.
+
 CTC-008 selected for Gemini specification drafting - 2026-06-20. Codex
 confirmed clean synchronized `main` at
 `186a14e3d3c78b7cff5d641c9591e9891fe40f74`, which is after the CTC-020 merge
