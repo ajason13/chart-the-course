@@ -2,7 +2,7 @@
 
 ## Role
 
-You are Claude performing the final adversarial audit for Chart the Course task CTC-008. Review the implementation committed on branch `ctc-008-pdf-prototype`. Focus on correctness, security, licensing/attribution, governance compliance, test adequacy, and whether the task can move from `4. Final Audit (Claude)` to Done after any minor fixes.
+You are Claude performing the final adversarial audit for Chart the Course task CTC-008. Review the implementation on branch `ctc-008-pdf-prototype`. Focus on correctness, security, licensing/attribution, governance compliance, test adequacy, and whether the task can move from `4. Final Audit (Claude)` to Done after any minor fixes.
 
 ## Verdict Format
 
@@ -20,10 +20,16 @@ CTC-008 implements a dev-only, fixture-backed browser-local PDF yardage book pro
 
 Claude QA planning previously returned `READY FOR IMPLEMENTATION AFTER QA PLAN` with no blockers. Codex recorded RC-1 through RC-8 and MC-1 through MC-4 before implementation. Final Claude audit remains mandatory.
 
-## Implementation Commit
+## Implementation Commits
 
 Branch: `ctc-008-pdf-prototype`
-Implementation commit: `75d8e12` (`Implement CTC-008 PDF prototype`)
+Current behavior head before this prompt/context refresh: `f3f46591c44ffe5d75c635b3aa2c5a3254274321`
+
+Relevant commits:
+
+- `75d8e12` - `Implement CTC-008 PDF prototype`
+- `57e29b3` - `Prepare CTC-008 final audit prompt`
+- `f3f4659` - `Fix CTC-008 snapshot path`
 
 ## Verification Evidence
 
@@ -31,17 +37,19 @@ Passed locally on 2026-06-25:
 
 - `npm run test:unit -- ctc008` -> 1 file, 6 tests passed.
 - `npm run build` -> passed. Build output included isolated `dist/ctc008.html` and `dist/assets/ctc008-BbpsE5uR.js`; main app output remained `dist/assets/app-jUx2FHFt.js`.
-- `node_modules/.bin/playwright test test/e2e/ctc008-pdf.spec.ts` -> 2 tests passed.
-- `npm run check` -> scaffold verification, build, 74 Vitest tests, 19 Playwright tests passed.
-- `git diff --check` -> passed.
-- `git diff -- package.json package-lock.json` -> empty.
-- `npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh` -> passed; production audit found 0 vulnerabilities.
+- `node_modules/.bin/playwright test test/e2e/ctc008-pdf.spec.ts` -> 2 tests passed after the snapshot path was made platform-neutral.
+- `npm run check` -> scaffold verification, build, 74 Vitest tests, 19 Playwright tests passed after the platform-neutral snapshot path fix.
+- `git diff --check` -> passed after the platform-neutral snapshot path fix.
+- `git diff -- package.json package-lock.json` -> empty after the platform-neutral snapshot path fix.
+- `npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh` -> passed after the platform-neutral snapshot path fix; production audit found 0 vulnerabilities.
+
+PR #9 CI initially failed because Playwright looked for the Linux-named snapshot while local generation committed a Darwin-named snapshot. Commit `f3f4659` fixes this by setting `snapshotPathTemplate` to omit platform suffixes and renaming the baseline to `ctc008-hole-page.png`.
 
 The CTC-008 Playwright evidence reported: 11,484 PDF bytes, 3 pages, 612x792 page size, searchable text containing the synthetic course, course summary, hole page, static note, target, carry arc, OSM attribution, and copyright URL; 18 vector/path operations; 0 image operations; no `/JS`, `/JavaScript`, `/Launch`, or `/AcroForm`; and a four-element carry dash pattern `[7.8, 3.25, 1.95, 3.25]`.
 
 Visual baseline snapshot:
 
-- Path: `test/e2e/ctc008-pdf.spec.ts-snapshots/ctc008-hole-page-chromium-darwin.png`
+- Path: `test/e2e/ctc008-pdf.spec.ts-snapshots/ctc008-hole-page.png`
 - SHA-256: `5c8efdc6ed8d4201f8694434bc31917ce43617d4261684f63aaa347e7a79df7a`
 
 ## Changed File Contents
@@ -106,6 +114,36 @@ export default defineConfig({
     globals: true,
     include: ["src/**/*.test.ts"]
   }
+});
+
+```
+
+### playwright.config.ts
+
+SHA-256: `19865aba99fb2ef98e964872e5acf214207d9dd59db5c1fce1c49609f72a24d4`
+
+```ts
+import { defineConfig, devices } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "test/e2e",
+  fullyParallel: true,
+  reporter: "list",
+  snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}{ext}",
+  use: {
+    baseURL: "http://127.0.0.1:4173",
+    trace: "on-first-retry"
+  },
+  webServer: {
+    command: "npm run preview -- --port 4173",
+    url: "http://127.0.0.1:4173"
+  },
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] }
+    }
+  ]
 });
 
 ```
@@ -798,14 +836,14 @@ test("CTC-008 does not add production PDF UI to the main app", async ({ page }) 
 ```
 
 
-## CONTEXT.md Update Diff
+## CONTEXT.md Branch Diff
 
 ```diff
 diff --git a/CONTEXT.md b/CONTEXT.md
-index 14b6650..60432f1 100644
+index 14b6650..49e9c5e 100644
 --- a/CONTEXT.md
 +++ b/CONTEXT.md
-@@ -1,66 +1,96 @@
+@@ -1,9 +1,45 @@
  # Chart the Course Context
  
 -Last updated: 2026-06-20
@@ -830,8 +868,8 @@ index 14b6650..60432f1 100644
 +`https://www.openstreetmap.org/copyright`, three-page PDF structure, vector
 +path evidence, zero image operators, absence of `/JS`, `/JavaScript`,
 +`/Launch`, and `/AcroForm`, the scaled four-element carry dash operator
-+`[7.8, 3.25, 1.95, 3.25]`, rendered-page visual baseline, Blob URL cleanup,
-+and absence of production app PDF UI. Build evidence from `npm run check`
++`[7.8, 3.25, 1.95, 3.25]`, platform-neutral rendered-page visual baseline,
++Blob URL cleanup, and absence of production app PDF UI. Build evidence from `npm run check`
 +showed isolated outputs including `dist/ctc008.html` and
 +`dist/assets/ctc008-BbpsE5uR.js` while the main app output remained
 +`dist/assets/app-jUx2FHFt.js`; `git diff -- package.json package-lock.json`
@@ -840,68 +878,17 @@ index 14b6650..60432f1 100644
 +test/e2e/ctc008-pdf.spec.ts`, `npm run check` (scaffold verification, build,
 +74 Vitest tests, 19 Playwright tests), `git diff --check`, and
 +`npm_config_cache=/private/tmp/chart-the-course-npm-cache
-+scripts/compliance.sh` (production audit: 0 vulnerabilities). Final Claude
-+audit remains mandatory before CTC-008 may move to Done.
++scripts/compliance.sh` (production audit: 0 vulnerabilities). PR #9 CI
++initially failed because Playwright expected a Linux-named snapshot while local
++snapshot generation committed a Darwin-named snapshot; commit `f3f4659` made
++the snapshot path platform-neutral via `snapshotPathTemplate` and renamed the
++baseline to `ctc008-hole-page.png`. Local `npm run check`, `git diff --check`,
++empty `git diff -- package.json package-lock.json`, and compliance all passed
++again after that fix. Final Claude audit remains mandatory before CTC-008 may
++move to Done.
 +
  Claude QA planning for CTC-008 - 2026-06-25. Claude returned
  `READY FOR IMPLEMENTATION AFTER QA PLAN` with no blockers and no second Claude
  QA-planning round required after Codex records the required corrections. Codex
- accepts the verdict and recorded the disposition in
- `docs/handoffs/ctc-008-claude-qa-plan-review.md`; SHA-256:
- `1efce8795476a79fd937ae22cc78445e557db4af790c2954aa23b9b7d97b5117`.
- Required corrections RC-1 through RC-8 and minor corrections MC-1 through MC-4
- were folded into `docs/handoffs/ctc-008-spec-addendum.md`; updated SHA-256:
- `e4bf2c88e483e45d5004a411fbadf5135cec2c84df779aa45bcfbafc3a3ec84a`.
- Implementation is authorized on a feature branch for a dev-only,
- fixture-backed PDF prototype. Mandatory boundaries: no production dependency
- movement; no new devDependencies; no production `Download PDF` UI in
- `src/App.tsx`; use only
- `fixtures/overpass/synthetic-golf-course-ctc006.json`; render exactly the
- single fixture hole `way/9000060101`; use literal static prototype notes only;
- validate course-title tag text with fallback; avoid live Overpass/query/cache
- helpers; do not import or exercise `pdfkit`, `svg-to-pdfkit`, or
- `blob-stream`; block high-risk jsPDF APIs; keep production app bundle isolated;
- use existing Blob URL cleanup pattern; add deterministic PDF filename fallback;
- and include network isolation, source-level API blocklist, attribution,
- carry-dash, PDF.js structural, rendered visual, bundle-isolation, and
- compliance evidence. CTC-008 may move to `3. In Development (ChatGPT)`.
- Final Claude audit remains mandatory before Done.
- 
- Gemini CTC-008 revision rejected - 2026-06-25. Codex reviewed Gemini's revised
- gated fixture-backed prototype response and rejected it as an implementation
- baseline. Accepted research input: gated fixture-backed prototype direction,
- browser-local/network-isolated generation, continued `jspdf@4.2.1` low-level
- vector candidate status, explicit bans on high-risk jsPDF APIs, static fixture
- notes only, visible/searchable full-URL OSM attribution, PDF/raw source
- adjacency when real PDF behavior ships, and deferred Blob URL cleanup. Source
- check on 2026-06-25 confirmed NVD `CVE-2026-25755` and `CVE-2026-25940` jsPDF
- records, npm `jspdf@4.2.1` metadata, and current OSM copyright source.
- Blockers remain: production dependency movement is unjustified while UI is
- hidden/prototype-gated; hidden/query-flag PDF UI conflicts with the accepted
- task boundary; typed boundaries reference nonexistent `NormalizedCourse` and
- `CustomTarget` contracts and misstate `project.ts`; bundle optimization is an
- incomplete placeholder; text sanitization remains ambiguous around required
- `©`; fixture content fields are assumed rather than mapped; Playwright snippets
- use nonexistent test IDs/routes; raw PDF byte scans are over-weighted; fixed
- page/layout constants are premature; and the response still does not choose one
- coherent implementation-ready acceptance boundary. Review artifact:
- `docs/handoffs/ctc-008-gemini-revision-review.md`. CTC-008 remains in
- `1. Spec Drafting (Gemini)`. Next recommended action is a Codex-owned spec
- addendum choosing either a dev-only fixture-backed PDF prototype that keeps
- jsPDF in devDependencies and avoids production PDF UI, or a fully reviewed
- production PDF feature with production dependency movement and real
- same-release source-export adjacency. Do not advance to Claude QA planning or
- runtime implementation until that corrected baseline exists.
- Gemini revision review artifact:
- `docs/handoffs/ctc-008-gemini-revision-review.md`; SHA-256:
- `c2e9599a0c77f6d667f96a86bd4c7a942db2edec5e90f4fe9cbc78a943c214f0`.
- 
- Codex CTC-008 spec addendum ready for Claude QA planning - 2026-06-25. Codex
- resolved the repeated Gemini baseline blockers in
- `docs/handoffs/ctc-008-spec-addendum.md`; SHA-256:
- `e8fc3384eae27e57cd03adcc72ea4759c7edefceb871101d0e6626cb14391391`.
- Corrected direction: CTC-008 should implement a dev-only, fixture-backed
- yardage book PDF prototype, not production PDF export behavior. The addendum
- keeps `jspdf@4.2.1` as a devDependency, forbids production `Download PDF` UI
 
 ```

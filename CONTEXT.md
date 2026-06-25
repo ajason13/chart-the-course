@@ -21,8 +21,8 @@ network isolation, searchable OSM attribution plus
 `https://www.openstreetmap.org/copyright`, three-page PDF structure, vector
 path evidence, zero image operators, absence of `/JS`, `/JavaScript`,
 `/Launch`, and `/AcroForm`, the scaled four-element carry dash operator
-`[7.8, 3.25, 1.95, 3.25]`, rendered-page visual baseline, Blob URL cleanup,
-and absence of production app PDF UI. Build evidence from `npm run check`
+`[7.8, 3.25, 1.95, 3.25]`, platform-neutral rendered-page visual baseline,
+Blob URL cleanup, and absence of production app PDF UI. Build evidence from `npm run check`
 showed isolated outputs including `dist/ctc008.html` and
 `dist/assets/ctc008-BbpsE5uR.js` while the main app output remained
 `dist/assets/app-jUx2FHFt.js`; `git diff -- package.json package-lock.json`
@@ -31,8 +31,14 @@ was empty. Verification passed: `npm run test:unit -- ctc008`,
 test/e2e/ctc008-pdf.spec.ts`, `npm run check` (scaffold verification, build,
 74 Vitest tests, 19 Playwright tests), `git diff --check`, and
 `npm_config_cache=/private/tmp/chart-the-course-npm-cache
-scripts/compliance.sh` (production audit: 0 vulnerabilities). Final Claude
-audit remains mandatory before CTC-008 may move to Done.
+scripts/compliance.sh` (production audit: 0 vulnerabilities). PR #9 CI
+initially failed because Playwright expected a Linux-named snapshot while local
+snapshot generation committed a Darwin-named snapshot; commit `f3f4659` made
+the snapshot path platform-neutral via `snapshotPathTemplate` and renamed the
+baseline to `ctc008-hole-page.png`. Local `npm run check`, `git diff --check`,
+empty `git diff -- package.json package-lock.json`, and compliance all passed
+again after that fix. Final Claude audit remains mandatory before CTC-008 may
+move to Done.
 
 Claude QA planning for CTC-008 - 2026-06-25. Claude returned
 `READY FOR IMPLEMENTATION AFTER QA PLAN` with no blockers and no second Claude
