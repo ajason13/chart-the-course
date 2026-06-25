@@ -1,8 +1,38 @@
 # Chart the Course Context
 
-Last updated: 2026-06-20
+Last updated: 2026-06-25
 
 ## Current Status
+
+CTC-008 implementation ready for final Claude audit - 2026-06-25. Branch
+`ctc-008-pdf-prototype` implements the approved dev-only, fixture-backed PDF
+prototype behind isolated `ctc008.html` and does not add production PDF UI to
+`src/App.tsx`. The prototype pins itself to
+`fixtures/overpass/synthetic-golf-course-ctc006.json`, renders exactly the
+single fixture hole `way/9000060101`, uses the literal static note
+`Synthetic fixture - not a real course.`, validates course-title text with a
+fallback, generates deterministic fallback-safe PDF filenames, and uses the
+existing `requestAnimationFrame` Blob URL cleanup pattern. PDF generation uses
+`jspdf@4.2.1` only as an existing devDependency and low-level vector/text APIs;
+no dependencies or devDependencies changed. Source-level tests block high-risk
+jsPDF APIs, rejected CTC-014 candidates (`pdfkit`, `svg-to-pdfkit`,
+`blob-stream`), and live Overpass/query/cache helpers. Browser tests verify
+network isolation, searchable OSM attribution plus
+`https://www.openstreetmap.org/copyright`, three-page PDF structure, vector
+path evidence, zero image operators, absence of `/JS`, `/JavaScript`,
+`/Launch`, and `/AcroForm`, the scaled four-element carry dash operator
+`[7.8, 3.25, 1.95, 3.25]`, rendered-page visual baseline, Blob URL cleanup,
+and absence of production app PDF UI. Build evidence from `npm run check`
+showed isolated outputs including `dist/ctc008.html` and
+`dist/assets/ctc008-BbpsE5uR.js` while the main app output remained
+`dist/assets/app-jUx2FHFt.js`; `git diff -- package.json package-lock.json`
+was empty. Verification passed: `npm run test:unit -- ctc008`,
+`npm run build`, `node_modules/.bin/playwright test
+test/e2e/ctc008-pdf.spec.ts`, `npm run check` (scaffold verification, build,
+74 Vitest tests, 19 Playwright tests), `git diff --check`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache
+scripts/compliance.sh` (production audit: 0 vulnerabilities). Final Claude
+audit remains mandatory before CTC-008 may move to Done.
 
 Claude QA planning for CTC-008 - 2026-06-25. Claude returned
 `READY FOR IMPLEMENTATION AFTER QA PLAN` with no blockers and no second Claude

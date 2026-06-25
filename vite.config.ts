@@ -17,7 +17,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         app: "index.html",
-        ctc014: "ctc014.html"
+        ctc014: "ctc014.html",
+        ctc008: "ctc008.html"
       }
     }
   },
