@@ -4,6 +4,30 @@ Last updated: 2026-06-20
 
 ## Current Status
 
+Claude QA planning for CTC-008 - 2026-06-25. Claude returned
+`READY FOR IMPLEMENTATION AFTER QA PLAN` with no blockers and no second Claude
+QA-planning round required after Codex records the required corrections. Codex
+accepts the verdict and recorded the disposition in
+`docs/handoffs/ctc-008-claude-qa-plan-review.md`; SHA-256:
+`1efce8795476a79fd937ae22cc78445e557db4af790c2954aa23b9b7d97b5117`.
+Required corrections RC-1 through RC-8 and minor corrections MC-1 through MC-4
+were folded into `docs/handoffs/ctc-008-spec-addendum.md`; updated SHA-256:
+`e4bf2c88e483e45d5004a411fbadf5135cec2c84df779aa45bcfbafc3a3ec84a`.
+Implementation is authorized on a feature branch for a dev-only,
+fixture-backed PDF prototype. Mandatory boundaries: no production dependency
+movement; no new devDependencies; no production `Download PDF` UI in
+`src/App.tsx`; use only
+`fixtures/overpass/synthetic-golf-course-ctc006.json`; render exactly the
+single fixture hole `way/9000060101`; use literal static prototype notes only;
+validate course-title tag text with fallback; avoid live Overpass/query/cache
+helpers; do not import or exercise `pdfkit`, `svg-to-pdfkit`, or
+`blob-stream`; block high-risk jsPDF APIs; keep production app bundle isolated;
+use existing Blob URL cleanup pattern; add deterministic PDF filename fallback;
+and include network isolation, source-level API blocklist, attribution,
+carry-dash, PDF.js structural, rendered visual, bundle-isolation, and
+compliance evidence. CTC-008 may move to `3. In Development (ChatGPT)`.
+Final Claude audit remains mandatory before Done.
+
 Gemini CTC-008 revision rejected - 2026-06-25. Codex reviewed Gemini's revised
 gated fixture-backed prototype response and rejected it as an implementation
 baseline. Accepted research input: gated fixture-backed prototype direction,
