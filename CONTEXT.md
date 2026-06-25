@@ -48,7 +48,10 @@ to a later real production PDF task. Claude QA planning prompt:
 `f845af19406fbd550dff374a0aba0bcfa58da4b3e7ade4d96f08802170f47724`.
 CTC-008 may move to `2. QA Planning (Claude)`, but runtime implementation
 remains blocked until Claude reviews the addendum and Codex records accepted
-corrections.
+corrections. Per maintainer request, the Claude QA prompt was rewritten on
+2026-06-25 as a self-contained Claude Chat bundle with embedded repository file
+contents. Updated prompt SHA-256:
+`5d0b3c342a4be5acff3f6958b21d1c5a0084c6762297b9639fc9a674924831fd`.
 
 Gemini CTC-008 response rejected - 2026-06-24. Codex reviewed the Gemini
 specification response and rejected it as an implementation baseline. Accepted
