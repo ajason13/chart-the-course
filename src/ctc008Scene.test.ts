@@ -8,6 +8,7 @@ import {
   CTC008_FILENAME_FALLBACK,
   CTC008_HOLE_SOURCE_KEY,
   CTC008_NOTE,
+  CTC008_STYLES,
   CTC008_TITLE_FALLBACK,
   courseTitleFromTags,
   createCtc008ExportScene,
@@ -34,6 +35,26 @@ describe("CTC-008 export scene", () => {
     expect(scene.holeText.map(({ text }) => text)).toContain(CTC008_ATTRIBUTION);
     expect(scene.holeText.map(({ text }) => text)).toContain(CTC008_ATTRIBUTION_URL);
     expect(scene.coverText.map(({ text }) => text).join(" ")).toContain(CTC008_NOTE);
+  });
+
+  it("keeps static style colors parseable as six-digit hex", () => {
+    for (const style of Object.values(CTC008_STYLES)) {
+      for (const color of [style.fill, style.stroke]) {
+        if (color !== null) expect(color).toMatch(/^#[0-9a-f]{6}$/i);
+      }
+    }
+  });
+
+  it("keeps area features closed and route overlays open", () => {
+    const scene = createCtc008ExportScene();
+    for (const geometry of scene.map.geometry) {
+      if (geometry.kind === "route" || geometry.kind === "carry-arc") {
+        expect(geometry.type).toBe("line");
+      }
+      if (["vegetation", "generic-water", "golf-water", "rough", "fairway", "bunker", "green", "tee"].includes(geometry.kind)) {
+        expect(geometry.type).toBe("polygon");
+      }
+    }
   });
 
   it("formats deterministic filenames with an invalid timestamp fallback", () => {

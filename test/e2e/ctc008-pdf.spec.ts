@@ -88,6 +88,8 @@ test("CTC-008 prototype generates isolated attributable PDF evidence", async ({ 
   expect(carryDash).toHaveLength(4);
   [7.8, 3.25, 1.95, 3.25].forEach((value, index) => expect(carryDash![index]).toBeCloseTo(value, 10));
 
+  // 0.2% was stable across two local runs and the PR CI rerun after the
+  // platform-neutral baseline fix; keep this tight unless new evidence says otherwise.
   await expect(page.getByTestId("ctc008-rendered-page")).toHaveScreenshot("ctc008-hole-page.png", {
     maxDiffPixelRatio: 0.002,
   });

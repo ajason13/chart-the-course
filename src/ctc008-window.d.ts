@@ -3,6 +3,7 @@ import type * as scene from "./ctc008Scene";
 
 declare global {
   interface Window {
+    // Test-only hook for ctc008.html; do not wire this into the production app entry.
     ctc008Experiment: {
       analyzeCtc008Pdf: typeof pdf.analyzeCtc008Pdf;
       createCtc008ExportScene: typeof scene.createCtc008ExportScene;

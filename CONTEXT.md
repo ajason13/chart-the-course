@@ -4,6 +4,25 @@ Last updated: 2026-06-25
 
 ## Current Status
 
+CTC-008 Claude final audit minor fixes resolved - 2026-06-25. Claude returned
+`PASS WITH MINOR FIXES`, with no blockers, no re-audit required, and permission
+to mark CTC-008 Done after confined fixes. Codex addressed MF-1 through MF-4:
+`safeText()` now documents that throwing is acceptable only for static fixture
+text and future dynamic text must normalize or reject before rendering;
+`ctc008-window.d.ts` documents that the `window.ctc008Experiment` hook is
+test-only and must not be wired into the production app entry; `CTC008_STYLES`
+is exported for static integrity checks; unit tests assert all style colors are
+six-digit hex values; unit tests assert route/carry overlays remain open lines
+while area features remain polygons; and the Playwright visual assertion
+documents the `0.002` tolerance evidence from two local runs plus PR CI after
+the platform-neutral baseline fix. Verification after fixes passed:
+`npm run test:unit -- ctc008` (8 tests), `npm run check` (scaffold
+verification, build, 76 Vitest tests, 19 Playwright tests), `git diff
+--check`, empty `git diff -- package.json package-lock.json`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`
+(production audit: 0 vulnerabilities). CTC-008 may move to Done after the
+audit-fix commit is pushed and PR CI passes.
+
 CTC-008 implementation ready for final Claude audit - 2026-06-25. Branch
 `ctc-008-pdf-prototype` implements the approved dev-only, fixture-backed PDF
 prototype behind isolated `ctc008.html` and does not add production PDF UI to

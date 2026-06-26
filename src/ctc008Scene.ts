@@ -96,7 +96,7 @@ const PROJECT: HoleStateV1 = {
   carries: [{ id: "ctc008-carry-1", origin: { kind: "tee", sourceKey: CTC008_TEE_SOURCE_KEY }, distances: [150] }],
 };
 
-const STYLES: Record<FeatureKind | "route" | "carry-arc" | "target", PdfStyle> = {
+export const CTC008_STYLES: Record<FeatureKind | "route" | "carry-arc" | "target", PdfStyle> = {
   vegetation: { fill: "#a9c49b", stroke: "#3d6540", strokeWidth: 2, dash: [4, 3] },
   "generic-water": { fill: "#a8d5e5", stroke: "#245f78", strokeWidth: 2, dash: [6, 3] },
   "golf-water": { fill: "#70b6d2", stroke: "#174f69", strokeWidth: 3, dash: [] },
@@ -121,12 +121,12 @@ function titleFromCandidate(candidate: CourseCandidate | undefined): string {
 
 function projectGeometry(geometry: Geometry, projection: Projection, sourceKey: SourceKey, kind: FeatureKind): PdfGeometry {
   if (geometry.type === "point") {
-    return { type: "point", sourceKey, kind, point: projectCoordinate(projection, geometry.coordinate), radius: 4, style: STYLES[kind] };
+    return { type: "point", sourceKey, kind, point: projectCoordinate(projection, geometry.coordinate), radius: 4, style: CTC008_STYLES[kind] };
   }
   const points = geometryCoordinates(geometry).map((coordinate) => projectCoordinate(projection, coordinate));
   return geometry.type === "line"
-    ? { type: "line", sourceKey, kind, points, style: STYLES[kind] }
-    : { type: "polygon", sourceKey, kind, points, style: STYLES[kind] };
+    ? { type: "line", sourceKey, kind, points, style: CTC008_STYLES[kind] }
+    : { type: "polygon", sourceKey, kind, points, style: CTC008_STYLES[kind] };
 }
 
 function selectedFixture(): { result: NormalizationResult; hole: NormalizedHole; projection: Projection } {
@@ -170,7 +170,7 @@ export function createCtc008ExportScene(): Ctc008ExportScene {
       sourceKey: hole.source.sourceKey,
       kind: "route",
       points: geometryCoordinates(hole.route).map((coordinate) => projectCoordinate(projection, coordinate)),
-      style: STYLES.route,
+      style: CTC008_STYLES.route,
     });
   }
   const rings = carryRings(PROJECT.carries[0], hole, PROJECT.targets, projection);
@@ -181,7 +181,7 @@ export function createCtc008ExportScene(): Ctc008ExportScene {
       sourceKey: `${ring.carryId}/${index}`,
       kind: "carry-arc",
       points,
-      style: STYLES["carry-arc"],
+      style: CTC008_STYLES["carry-arc"],
     }));
   }
   for (const target of PROJECT.targets) {
@@ -191,7 +191,7 @@ export function createCtc008ExportScene(): Ctc008ExportScene {
       kind: "target",
       point: projectCoordinate(projection, target),
       radius: 8,
-      style: STYLES.target,
+      style: CTC008_STYLES.target,
     });
   }
   const bar = scaleBar(projection);

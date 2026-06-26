@@ -48,6 +48,8 @@ function pagePoint(scene: Ctc008ExportScene, point: { x: number; y: number }) {
 }
 
 function safeText(text: string): string {
+  // The prototype scene is static fixture text only. Future dynamic text must
+  // normalize or reject before reaching this renderer instead of crashing export.
   if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(text)) {
     throw new Error("PDF prototype text contains unsupported control characters.");
   }
