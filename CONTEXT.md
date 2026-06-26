@@ -4,6 +4,21 @@ Last updated: 2026-06-25
 
 ## Current Status
 
+CTC-008 Done - 2026-06-25/26. PR #9
+(`https://github.com/ajason13/chart-the-course/pull/9`) merged at
+`2026-06-26T03:20:13Z` with merge commit
+`f5b7d2f01ec0ebd0390cbd8cb03da609d9228106`. Claude final audit returned
+`PASS WITH MINOR FIXES`; minor fixes were applied in commit
+`30fed92a74dde380b8b403ad7bd4067487401643`; no re-audit was required. PR CI
+`verify` passed at head `30fed92a74dde380b8b403ad7bd4067487401643` in run
+`28214918893`. Main CI `verify` passed for merge commit
+`f5b7d2f01ec0ebd0390cbd8cb03da609d9228106` in run `28214966424`. CTC-008
+shipped a dev-only, fixture-backed PDF prototype isolated behind `ctc008.html`;
+it did not add production PDF UI to `src/App.tsx`, production dependencies,
+new devDependencies, providers, API keys, server components, telemetry, cloud
+sync, persistent notes, or external user-data flows. Notion may be marked
+`5. Done`.
+
 CTC-008 Claude final audit minor fixes resolved - 2026-06-25. Claude returned
 `PASS WITH MINOR FIXES`, with no blockers, no re-audit required, and permission
 to mark CTC-008 Done after confined fixes. Codex addressed MF-1 through MF-4:
