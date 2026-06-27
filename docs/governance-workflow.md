@@ -1,6 +1,6 @@
 # Governance Workflow
 
-Status: Updated on 2026-06-05 after CTC-018.
+Status: Updated on 2026-06-26 after Gemini reliability review.
 
 Chart the Course uses a document-first workflow. Notion is long-term project
 memory, and `CONTEXT.md` is active repository memory for the next agent or
@@ -41,6 +41,33 @@ Do not use this exception for app scaffolds, provider integrations, security
 controls, PDF export behavior, data ingestion code, dependency adoption, or
 changes that affect deployed behavior.
 
+## Codex Specification/Research Fallback
+
+Gemini Chat/Deep Research is optional, not a hard dependency. When Gemini is
+degraded, unavailable, or returning unreliable deep-research output, Codex may
+own the specification/research role that earlier workflow notes assigned to
+Gemini.
+
+When acting in this role, Codex must:
+
+- State in `CONTEXT.md` and the task handoff that Codex is acting as the
+  spec/research owner.
+- Fetch live Notion task and project context before selecting scope.
+- Read relevant repository docs, source, tests, fixtures, and prior handoffs
+  before proposing acceptance criteria.
+- Browse or otherwise verify current primary sources when facts may have
+  changed, including dependency metadata, security advisories, provider terms,
+  legal/standards references, and GitHub/CI state.
+- Record source URLs, source-check dates, rejected alternatives, uncertainty,
+  dependency/license/security rationale, blocked scope, and QA expectations.
+- Produce a self-contained specification, addendum, or Claude QA/final-audit
+  prompt as appropriate for the task stage.
+
+This fallback does not weaken separation of duties. Claude remains the
+independent adversarial QA/final-audit reviewer, and runtime work or
+governance-significant changes still require Claude final audit before Done
+unless a documented docs-only exception explicitly applies.
+
 ## Claude Chat Audit Prompts
 
 Claude Chat does not have access to the local filesystem or GitHub by default.
@@ -59,6 +86,10 @@ Ask Claude to distinguish blockers from minor fixes and to state whether the
 task may be marked Done after any minor fixes are applied.
 
 ## Gemini Chat Deep Research Prompts
+
+Use this section only when Gemini is intentionally part of a task. If Gemini is
+degraded or its output is unreliable, use the Codex specification/research
+fallback above and record that decision in `CONTEXT.md` and Notion.
 
 Gemini Chat Deep Research is best used as an agentic research/report workflow,
 not as a raw long-context dump. Prefer a lean steering prompt plus attached

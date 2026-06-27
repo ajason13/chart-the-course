@@ -38,6 +38,15 @@ Claude findings are resolved or explicitly accepted. For docs-only governance
 tasks, the Gemini/Claude planning handoff may be skipped only under
 `docs/governance-workflow.md`; final Claude audit is still required.
 
+Codex may also take over the former Gemini specification/research role when
+Gemini is degraded, unavailable, or producing unreliable deep-research output.
+When doing so, Codex must document that it is acting as the spec/research owner,
+fetch live Notion context, read relevant repo files before selecting scope,
+check current primary sources for changeable facts, record source URLs and
+check dates, identify rejected alternatives and uncertainty, and produce a
+self-contained spec or addendum before implementation. This role substitution
+does not remove the independent Claude final-audit requirement.
+
 ## Coding Style & Naming Conventions
 
 Keep Markdown concise, source-linked where policy depends on external terms, and specific to Chart the Course. Use sentence-case prose, fenced command examples, and relative paths such as `docs/tile-provider-strategy.md`. Shell scripts should use POSIX `sh` unless a stronger shell is required; keep `set -eu` for fail-fast behavior. Package scripts should remain explicit and composable.

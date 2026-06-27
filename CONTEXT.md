@@ -1,8 +1,23 @@
 # Chart the Course Context
 
-Last updated: 2026-06-25
+Last updated: 2026-06-26
 
 ## Current Status
+
+Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
+treated as degraded or unreliable for deep implementation research. Codex may
+take over the former Gemini specification/research role for Chart the Course
+when requested or when live evidence shows Gemini output is not dependable.
+In that role, Codex must fetch live Notion context, read the repository
+contracts and relevant source before proposing scope, browse current primary
+sources when facts can change, record source URLs and check dates, state
+uncertainty and rejected alternatives, and produce a self-contained specification
+or addendum with acceptance criteria, dependency/license/security rationale,
+blocked scope, and QA expectations. This does not weaken the independent audit
+gate: runtime work and governance-significant changes still require Claude final
+audit before Done unless a documented workflow exception explicitly applies.
+Repo docs updated in `AGENTS.md` and `docs/governance-workflow.md`; Notion
+central project page updated with the same role note.
 
 CTC-008 Done - 2026-06-25/26. PR #9
 (`https://github.com/ajason13/chart-the-course/pull/9`) merged at
