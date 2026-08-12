@@ -43,6 +43,15 @@ Claude check is mechanical only, via
 Notion at `2. QA Planning (Claude)` and do not begin runtime work until Claude
 returns `READY FOR IMPLEMENTATION`.
 
+CTC-009 QA artifact remote access resolved - 2026-08-11. Claude correctly
+blocked verification because the requested CTC-009 documentation commits were
+local only. Branch `ctc-009-fairway-width` is now pushed and tracks
+`origin/ctc-009-fairway-width` at
+`https://github.com/ajason13/chart-the-course/tree/ctc-009-fairway-width`.
+Claude must inspect the committed specification and QA addendum on that remote
+branch and return the requested mechanical artifact confirmation before runtime
+implementation is authorized.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
