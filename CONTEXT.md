@@ -80,6 +80,15 @@ new external request. `npm run check` passed (82 Vitest tests, 19 Playwright
 tests), as did `git diff --check` and compliance (production audit: 0
 vulnerabilities). Final Claude audit remains required before Done.
 
+CTC-009 final audit pending - 2026-08-11. Verified implementation commit
+`ce1cb84ed44fc0f59ce610e202f9417ae2a0b21d` is pushed to
+`ctc-009-fairway-width`; Notion is `4. Final Audit (Claude)`. The
+self-contained final-audit prompt, including the exact relevant diff,
+acceptance criteria, guardrails, and verification evidence, is
+`docs/handoffs/ctc-009-claude-final-audit-prompt.md`. Do not mark CTC-009 Done
+until Claude returns a verdict and any findings are resolved or explicitly
+accepted.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
