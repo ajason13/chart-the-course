@@ -52,6 +52,16 @@ Claude must inspect the committed specification and QA addendum on that remote
 branch and return the requested mechanical artifact confirmation before runtime
 implementation is authorized.
 
+CTC-009 warning-copy consistency correction - 2026-08-11. Claude found that
+the committed base spec's algorithm and acceptance matrix retained the rejected
+`narrow-fairway` label even though the UI copy and addendum correctly separated
+legitimate narrow widths from degenerate crossings. Commit `523e4a6`
+(`Correct CTC-009 narrow width specification`) changes the sub-1 cm result to
+`unstable-degenerate-width` and adds the required legitimate ~15 yd
+narrow-success row. Claude requested only a diff-level confirmation of that
+commit; do not move from `2. QA Planning (Claude)` or begin runtime work until
+it returns ready.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
