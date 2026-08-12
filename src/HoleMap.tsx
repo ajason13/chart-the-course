@@ -8,6 +8,7 @@ import type {
 } from "./normalize";
 import type { SourceMetadata } from "./overpass";
 import { carryRings, teeOrigins } from "./carry";
+import { estimateFairwayWidth, roundHalfUpNonnegative } from "./fairwayWidth";
 import { generateProjectId, type CarryOriginV1, type HoleStateV1, type TargetV1 } from "./project";
 import {
   INNER_MAX_X,
@@ -17,6 +18,7 @@ import {
   LAYER_ORDER,
   VIEWBOX_HEIGHT,
   VIEWBOX_WIDTH,
+  YARDS_PER_METER,
   clampPoint,
   createProjection,
   distanceMeters,
@@ -73,6 +75,7 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
   const [lastDeleted, setLastDeleted] = useState<{ target: TargetV1; index: number } | null>(null);
   const [carryErrors, setCarryErrors] = useState<Record<string, string>>({});
   const [targetErrors, setTargetErrors] = useState<Record<string, string>>({});
+  const [fairwayYards, setFairwayYards] = useState(250);
   const undoButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -81,6 +84,7 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
     setMode("measure");
     setRepositionId(null);
     setLastDeleted(null);
+    setFairwayYards(250);
     setAnnouncement("Selected hole changed. Measurement cleared.");
   }, [hole.source.sourceKey]);
 
@@ -209,6 +213,22 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
   const carryModels = project.carries.map((carry) => ({ carry, rings: carryRings(carry, hole, project.targets, projection) }));
   const clipId = `map-inner-clip-${hole.source.sourceKey.replace("/", "-")}`;
   const availableTees = teeOrigins(hole);
+  const fairwayWidth = estimateFairwayWidth(hole, fairwayYards);
+  const fairwayOverlay = fairwayWidth.start && fairwayWidth.end ? {
+    start: projectCoordinate(projection, fairwayWidth.start), end: projectCoordinate(projection, fairwayWidth.end),
+  } : null;
+  const fairwayWarningCopy: Record<string, string> = {
+    "missing-fairway": "No usable fairway polygon is mapped for this hole.",
+    "invalid-target-line": "The mapped target line is not usable for a fairway-width estimate.",
+    "carry-beyond-target-line": "This carry is beyond the mapped target line.",
+    "target-line-outside-fairway": "The target line at this carry does not fall inside a mapped fairway.",
+    "irregular-fairway-polygon": "Some mapped fairway outlines are irregular; their width was not used.",
+    "irregular-fairway-intersections": "Some mapped fairway outlines are irregular; their width was not used.",
+    "tangent-fairway-boundary": "The fairway boundary only touches or overlaps this width line; the estimate may be unavailable.",
+    "unstable-line-fairway-overlap": "The fairway boundary only touches or overlaps this width line; the estimate may be unavailable.",
+    "unstable-degenerate-width": "The mapped fairway crossing is too small to estimate reliably at this carry.",
+    "split-fairway": "Multiple fairway sections cross this line; only the section containing the target line is measured.",
+  };
 
   function changeTargetLabel(id: string, label: string): boolean {
     const trimmed = label.trim();
@@ -316,6 +336,13 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
             ];
           }) : [])}
         </g>
+        <g data-layer="fairway-width" className="map-layer layer-fairway-width" clipPath={`url(#${clipId})`}>
+          {fairwayOverlay && <>
+            <line className="fairway-width-line" x1={fairwayOverlay.start.x} y1={fairwayOverlay.start.y} x2={fairwayOverlay.end.x} y2={fairwayOverlay.end.y} />
+            <line className="fairway-width-tick" x1={fairwayOverlay.start.x - 5} y1={fairwayOverlay.start.y - 5} x2={fairwayOverlay.start.x + 5} y2={fairwayOverlay.start.y + 5} />
+            <line className="fairway-width-tick" x1={fairwayOverlay.end.x - 5} y1={fairwayOverlay.end.y - 5} x2={fairwayOverlay.end.x + 5} y2={fairwayOverlay.end.y + 5} />
+          </>}
+        </g>
         <g data-layer="targets" className="map-layer layer-targets">
           {project.targets.map((target) => {
             const point = projectCoordinate(projection, target);
@@ -348,6 +375,20 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
         {distanceLabel ? `Distance: ${distanceLabel}` : measurement.start ? "Select the second point." : "No measurement selected."}
       </p>
       <span className="sr-only" aria-live="polite">{announcement}</span>
+      <section className="project-panel fairway-width-panel" aria-labelledby="fairway-width-title">
+        <h4 id="fairway-width-title">Fairway width</h4>
+        <div className="map-tools" aria-label="Fairway width carry distance">
+          {[220, 250, 280].map((yards) => <button key={yards} type="button" className={fairwayYards === yards ? "" : "secondary"}
+            aria-pressed={fairwayYards === yards} onClick={() => setFairwayYards(yards)}>{yards} yd</button>)}
+        </div>
+        {typeof fairwayWidth.widthMeters === "number"
+          ? <p className="measurement-result">Fairway width at {fairwayYards} yd: {roundHalfUpNonnegative(fairwayWidth.widthMeters * YARDS_PER_METER)} yd ({roundHalfUpNonnegative(fairwayWidth.widthMeters)} m).</p>
+          : <p className="measurement-result">No fairway-width estimate at {fairwayYards} yd.</p>}
+        <div className="fairway-width-status" role="status" aria-live="polite">
+          {fairwayWidth.warnings.map((warning) => <p className="warning" key={warning}>{fairwayWarningCopy[warning]}</p>)}
+        </div>
+        <p className="hint">Outline-derived local estimate only; it does not account for hazards or playability.</p>
+      </section>
       <section className="project-panel" aria-labelledby="targets-title">
         <div className="map-heading">
           <h4 id="targets-title">Targets</h4>

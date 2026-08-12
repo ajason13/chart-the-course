@@ -322,10 +322,16 @@ test("renders and measures the selected hole with pointer, keyboard, mobile, and
   const map = page.getByTestId("hole-vector-map");
   await expect(map).toBeVisible();
   await expect(page.getByText("Course data © OpenStreetMap contributors.")).toBeVisible();
-  for (const layer of ["vegetation", "generic-water", "golf-water", "rough", "fairway", "bunker", "green", "tee", "route", "measurement"]) {
+  for (const layer of ["vegetation", "generic-water", "golf-water", "rough", "fairway", "bunker", "green", "tee", "route", "measurement", "fairway-width"]) {
     await expect(map.locator(`[data-layer="${layer}"]`)).toHaveCount(1);
   }
   await expect(map.locator('[data-layer="vegetation"] circle')).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Fairway width" })).toBeVisible();
+  await page.getByRole("button", { name: "220 yd" }).click();
+  await expect(page.getByText(/at 220 yd/i)).toBeVisible();
+  await page.getByRole("button", { name: "280 yd" }).click();
+  await expect(page.getByText(/at 280 yd/i)).toBeVisible();
+  await expect(page.locator('.fairway-width-status[role="status"][aria-live="polite"]')).toHaveCount(1);
   expect(await map.evaluate((element) => element.getBoundingClientRect().right <= window.innerWidth)).toBe(true);
 
   await map.click({ position: { x: 60, y: 60 } });

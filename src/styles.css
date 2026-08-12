@@ -80,6 +80,9 @@ pre { background: #18221c; border-radius: 5px; color: #eef4ed; font-size: .8rem;
 .layer-tee { fill: #d9e7bd; stroke: #244e30; stroke-width: 3; }
 .layer-route { fill: none; stroke: #6d351d; stroke-dasharray: 8 5; stroke-width: 4; }
 .layer-carry-arcs { fill: none; stroke: #713b89; stroke-dasharray: 12 5 3 5; stroke-width: 3; }
+.layer-fairway-width { fill: none; stroke: #a34f16; stroke-width: 4; }
+.fairway-width-line { stroke-dasharray: 8 4; }
+.fairway-width-tick { stroke-width: 3; }
 .carry-label { fill: #3f2050; font-size: 14px; font-weight: 800; paint-order: stroke; stroke: #fffdf8; stroke-width: 4; }
 .target-hit { fill: transparent; }
 .target-outer { fill: #fffdf8; stroke: #512c68; stroke-width: 4; }

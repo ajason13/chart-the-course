@@ -62,6 +62,24 @@ narrow-success row. Claude requested only a diff-level confirmation of that
 commit; do not move from `2. QA Planning (Claude)` or begin runtime work until
 it returns ready.
 
+CTC-009 implementation in development - 2026-08-11. Claude independently
+confirmed the pushed specification is internally consistent and returned
+`READY FOR IMPLEMENTATION`; Notion moved to `3. In Development (ChatGPT)`.
+Branch `ctc-009-fairway-width` now implements a local, native-TypeScript
+fairway-width estimator in `src/fairwayWidth.ts` and selected-hole UI in
+`src/HoleMap.tsx`. It stations 220/250/280 yd along the ordered mapped route,
+uses the local perpendicular tangent-plane line, reports only the fairway
+interval containing the target line, and emits typed warnings for absent,
+irregular, tangent/overlap, degenerate, split, outside, and beyond-route
+states. No project/carry persistence, request, provider, production dependency,
+or user-data-flow behavior changes. Unit tests cover straight, dogleg, narrow
+success, sub-epsilon degeneration, split/gap, missing, beyond-route, tangent,
+and collinear overlap; the existing network-isolated Playwright selected-hole
+test verifies controls, live-status semantics, responsive map layout, and no
+new external request. `npm run check` passed (82 Vitest tests, 19 Playwright
+tests), as did `git diff --check` and compliance (production audit: 0
+vulnerabilities). Final Claude audit remains required before Done.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
