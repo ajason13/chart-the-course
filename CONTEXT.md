@@ -4,6 +4,32 @@ Last updated: 2026-06-26
 
 ## Current Status
 
+CTC-009 Claude QA checkpoint pending - 2026-08-11. Clean synchronized `main` at
+`6a3a3ac75a495f69086bbc794c53914dbbe82001` was inspected along with the live
+Notion task. Codex is the specification/research owner under the current
+workflow; the legacy `1. Spec Drafting (Gemini)` label was used only because
+the Notion schema retains it. Codex created the implementation-ready local,
+dependency-free estimator specification at
+`docs/handoffs/ctc-009-fairway-width-spec.md` (SHA-256
+`f5aaa2a1cbd7154237bafd74e4459a939d0e5398d537e8ec4e25b95aca2d27f0`) and
+the self-contained Claude QA-planning prompt at
+`docs/handoffs/ctc-009-claude-qa-planning-prompt.md` (SHA-256
+`4089c7f50f1b40889e5b2a9ce57bb52db54657b9ea41aac2f09715b83ef4dd3b`). Claude
+returned `READY WITH REQUIRED CORRECTIONS`; Codex accepted B-1--B-5 and
+RC-1--RC-8 in `docs/handoffs/ctc-009-claude-qa-plan-addendum.md` (SHA-256
+`158624d649cac7bc204758cd102c1ffd27b03e68bd8af45fe947a1cafbb2d84c`). The
+addendum makes vertex tolerance, narrow-vs-degenerate outcomes, collinearity,
+boundary containment, single-ring normalized geometry, rounding, even-odd
+pairing, UI state isolation, accessibility, and no-dependency implementation
+rules explicit. Checkpoint prompt:
+`docs/handoffs/ctc-009-claude-qa-checkpoint-prompt.md` (SHA-256
+`fe7c3521c959833159ad226e414c826d3830fa382d913859246a9b1c9b377e9d`). The
+algorithm uses only local tangent-plane metres and the existing ordered hole
+route/fairway polygons; it forbids provider, Overpass, dependency, API,
+account, telemetry, persistence, PDF, and user-data-flow expansion. Notion is
+`2. QA Planning (Claude)`. No runtime code has changed and implementation is
+blocked until Claude accepts the checkpoint. `git diff --check` passed.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
