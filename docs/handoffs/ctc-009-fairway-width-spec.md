@@ -84,8 +84,8 @@ For each candidate polygon:
 5. Union overlapping/touching intervals across all valid polygons. Choose the
    union interval that contains `t = 0` (epsilon-inclusive). Its width is
    `end - start`. A result is valid only when this width is greater than
-   `0.01 m`; a zero/narrower interval is `narrow-fairway` and has no numeric
-   estimate.
+   `0.01 m`; a zero/narrower interval is `unstable-degenerate-width` and has
+   no numeric estimate.
 
 No candidate polygons yields `missing-fairway`. Valid polygons with no interval
 containing `t=0` yield `target-line-outside-fairway`. Both have no numeric
@@ -136,7 +136,8 @@ documented pure planar test seam) and cover:
 | --- | --- |
 | Straight fairway | 220/250/280 stations produce the known perpendicular width. |
 | Dogleg | station follows route length, and exact-vertex station uses downstream tangent. |
-| Narrow fairway | a width below/equal to 0.01 m yields `narrow-fairway`, no number. |
+| Narrow fairway (legitimate) | a mapped fairway about 15 yd wide returns a truthful small numeric width, not a warning. |
+| Sub-epsilon degeneracy | a width below/equal to 0.01 m yields `unstable-degenerate-width`, no number. |
 | Split fairway | only the interval containing station is measured; a gap returns outside + split. |
 | Missing/non-polygon | typed missing warning and no overlay. |
 | Degenerate/odd/tangent/collinear | deterministic warning/failure; no fabricated width. |
