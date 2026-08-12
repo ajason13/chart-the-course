@@ -114,10 +114,12 @@ there is no numeric result.
 Warnings appear in the panel with `role="status"` / `aria-live="polite"`:
 
 - missing: `No usable fairway polygon is mapped for this hole.`
+- invalid target line: `The mapped target line is not usable for a fairway-width estimate.`
+- beyond route: `This carry is beyond the mapped target line.`
 - outside: `The target line at this carry does not fall inside a mapped fairway.`
-- irregular: `Some mapped fairway outlines are irregular; their width was not used.`
+- irregular/degenerate/odd: `Some mapped fairway outlines are irregular; their width was not used.`
 - tangent/overlap: `The fairway boundary only touches or overlaps this width line; the estimate may be unavailable.`
-- narrow: `The mapped fairway is too narrow to estimate at this carry.`
+- unstable-degenerate width: `The mapped fairway crossing is too small to estimate reliably at this carry.`
 - split: `Multiple fairway sections cross this line; only the section containing the target line is measured.`
 
 Do not describe the result as a recommendation, precise course measurement, or
