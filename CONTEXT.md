@@ -30,6 +30,19 @@ account, telemetry, persistence, PDF, and user-data-flow expansion. Notion is
 `2. QA Planning (Claude)`. No runtime code has changed and implementation is
 blocked until Claude accepts the checkpoint. `git diff --check` passed.
 
+CTC-009 QA artifact correction - 2026-08-11. Claude independently confirmed
+all substantive algorithmic blockers closed but found the pre-implementation
+warning-copy docs were not yet in repository history. Codex corrected the
+premature wording and committed the handoff bundle on feature branch
+`ctc-009-fairway-width` in `e5beea4` (`Document CTC-009 fairway width
+specification`); commit `7f927d9` adds explicit copy for invalid target line,
+beyond route, missing, outside, irregular/degenerate/odd geometry,
+tangent/overlap, unstable-degenerate width, and split fairway. The remaining
+Claude check is mechanical only, via
+`docs/handoffs/ctc-009-claude-warning-copy-confirmation-prompt.md`. Keep
+Notion at `2. QA Planning (Claude)` and do not begin runtime work until Claude
+returns `READY FOR IMPLEMENTATION`.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
