@@ -392,3 +392,25 @@ test("manages targets, carry arcs, and strict local project exchange", async ({ 
   await expect(page.getByText("Course data © OpenStreetMap contributors.")).toBeVisible();
   await assertAxe(page);
 });
+
+test("keeps fairway-width selection transient without duplicating its status region", async ({ page }) => {
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? ctc006Detail : discovery });
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+
+  const map = page.getByTestId("hole-vector-map");
+  await page.getByRole("button", { name: "Add target" }).click();
+  await map.click({ position: { x: 180, y: 180 } });
+  await page.getByRole("button", { name: "Add carry" }).click();
+  const carries = map.locator('[data-layer="carry-arcs"] [data-carry-id]');
+  await expect(carries).toHaveCount(1);
+  for (const yards of [220, 250, 280, 220, 280]) await page.getByRole("button", { name: `${yards} yd` }).click();
+  await expect(page.locator('.fairway-width-status[role="status"][aria-live="polite"]')).toHaveCount(1);
+  await expect(carries).toHaveCount(1);
+  await expect(page.locator('input[value="Target 1"]')).toHaveCount(1);
+});

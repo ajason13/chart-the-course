@@ -36,6 +36,16 @@ describe("fairway width estimator", () => {
     expect(result.warnings).toEqual([]);
   });
 
+  it("uses the downstream tangent at an exact or epsilon-adjacent carry station vertex", () => {
+    const carry250m = 250 * 0.9144;
+    for (const offset of [-0.0005, 0, 0.0005]) {
+      const selected = hole([[0, 0], [0, carry250m + offset], [240, carry250m + offset]], [rectangle(-120, carry250m - 20, 120, carry250m + 20)]);
+      const result = estimateFairwayWidth(selected, 250);
+      expect(result.widthMeters).toBeCloseTo(40, 4);
+      expect(result.warnings).toEqual([]);
+    }
+  });
+
   it("returns a truthful narrow result and distinguishes a sub-epsilon degeneration", () => {
     const narrow = estimateFairwayWidth(hole([[0, 0], [0, 300]], [rectangle(-6.858, 0, 6.858, 300)]), 250);
     expect(narrow.widthMeters).toBeCloseTo(13.716, 3);
@@ -61,6 +71,21 @@ describe("fairway width estimator", () => {
     expect(tangent.warnings).toContain("tangent-fairway-boundary");
     const overlap = estimateFairwayWidth(hole([[0, 0], [0, 300]], [[[-10, 228.6], [10, 228.6], [10, 260], [-10, 260], [-10, 228.6]]]), 250);
     expect(overlap.warnings).toContain("unstable-line-fairway-overlap");
+  });
+
+  it("handles concave, overlapping, endpoint, boundary, and mixed-validity fairways", () => {
+    const vertical = [[0, 0], [0, 300]] as Array<[number, number]>;
+    const concave = estimateFairwayWidth(hole(vertical, [[[-30, 0], [30, 0], [30, 300], [10, 300], [10, 240], [-10, 240], [-10, 300], [-30, 300], [-30, 0]]]), 250);
+    expect(concave.widthMeters).toBeCloseTo(60, 4);
+    const overlapping = estimateFairwayWidth(hole(vertical, [rectangle(-20, 0, 5, 300), rectangle(-5, 0, 20, 300)]), 250);
+    expect(overlapping.widthMeters).toBeCloseTo(40, 4);
+    const endpoint = estimateFairwayWidth(hole([[0, 0], [0, 228.6]], [rectangle(-12, 0, 12, 250)]), 250);
+    expect(endpoint.widthMeters).toBeCloseTo(24, 4);
+    const boundary = estimateFairwayWidth(hole(vertical, [rectangle(0, 0, 20, 300)]), 250);
+    expect(boundary.widthMeters).toBeCloseTo(20, 4);
+    const mixed = estimateFairwayWidth(hole(vertical, [rectangle(-12, 0, 12, 300), [[-10, 228.6], [10, 228.6], [10, 260], [-10, 260], [-10, 228.6]]]), 250);
+    expect(mixed.widthMeters).toBeCloseTo(24, 4);
+    expect(mixed.warnings).toContain("unstable-line-fairway-overlap");
   });
 
   it("rounds non-negative display values half up", () => {
