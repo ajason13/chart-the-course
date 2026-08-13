@@ -89,6 +89,22 @@ acceptance criteria, guardrails, and verification evidence, is
 until Claude returns a verdict and any findings are resolved or explicitly
 accepted.
 
+CTC-009 Done - 2026-08-13. Claude final audit returned `PASS` after directly
+checking out pushed branch `ctc-009-fairway-width` at `5052e70`. It
+independently confirmed the implementation and test-only final-fix chain,
+84/84 Vitest tests, unchanged dependency manifests, boundary/union/mixed-valid
+estimator behavior, and transient UI state coverage; it explicitly authorized
+Done. Final local verification: `npm run check` (84 Vitest, 20 Playwright),
+`git diff --check`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`
+(production audit: 0 vulnerabilities). CTC-009 adds local fairway-width
+estimation without provider, Overpass, dependency, persistence, PDF, or
+user-data-flow expansion. Non-blocking future-test note: the committed concave
+fixture is concave but its selected station does not create >2 crossings;
+Claude independently tested that pairing branch and did not require a change.
+Notion is `5. Done`. Key commits: implementation `ce1cb84`, final test
+expansion `5052e70`.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
