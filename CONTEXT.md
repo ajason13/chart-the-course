@@ -105,6 +105,17 @@ Claude independently tested that pairing branch and did not require a change.
 Notion is `5. Done`. Key commits: implementation `ce1cb84`, final test
 expansion `5052e70`.
 
+CTC-010 specification drafting - 2026-08-15. After machine-restart recovery,
+live Notion showed no active task; CTC-010 is the next unblocked tactical-
+planning dependency, while CTC-011 remains Backlog. Codex is the
+specification/research owner and moved CTC-010 to `1. Spec Drafting (Gemini)`.
+The local-only, dependency-free contract is in
+`docs/handoffs/ctc-010-club-profile-dispersion-spec.md`, with required
+independent QA planning in `docs/handoffs/ctc-010-claude-qa-planning-prompt.md`.
+Do not begin runtime work until Claude accepts the plan. Baseline `main` is
+`6a3a3ac`; `npm run check` (76 Vitest, 19 Playwright), `git diff --check`, and
+compliance passed; production audit found 0 vulnerabilities.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
