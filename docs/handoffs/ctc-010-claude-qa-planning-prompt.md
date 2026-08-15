@@ -12,9 +12,10 @@ minor improvements. Do not authorize unrelated scope.
 The live task requires that a user define club carry and lateral dispersion,
 the app render a correctly positioned ellipse for selected target/club, profile
 data remain local unless explicitly exported, and tests verify conversion and
-orientation. The planning checkpoint is commit
-`22f730fe29bf07c1502763a6bede66d3f47921a8` on branch
-`ctc-010-dispersion-profile`.
+orientation. The initial planning checkpoint is commit
+`fd4585e193dacfa7a1bae9f08e6b06cdd23c259b` on branch
+`ctc-010-dispersion-profile`, rebased on completed CTC-009 commit
+`b29893f67765706c6a1a944c70157014f053180e`.
 
 Existing code is a local React/SVG app. `src/map.ts` provides a north-up local
 tangent-plane projection and `YARDS_PER_METER`; `src/project.ts` strictly

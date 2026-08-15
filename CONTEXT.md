@@ -112,9 +112,10 @@ specification/research owner and moved CTC-010 to `1. Spec Drafting (Gemini)`.
 The local-only, dependency-free contract is in
 `docs/handoffs/ctc-010-club-profile-dispersion-spec.md`, with required
 independent QA planning in `docs/handoffs/ctc-010-claude-qa-planning-prompt.md`.
-Do not begin runtime work until Claude accepts the plan. Baseline `main` is
-`6a3a3ac`; `npm run check` (76 Vitest, 19 Playwright), `git diff --check`, and
-compliance passed; production audit found 0 vulnerabilities.
+Do not begin runtime work until Claude accepts the plan. The initial `main`
+baseline `6a3a3ac` is superseded by the CTC-009 rebase recorded below;
+`npm run check` (76 Vitest, 19 Playwright), `git diff --check`, and compliance
+passed; production audit found 0 vulnerabilities.
 
 CTC-010 Claude QA-plan response - 2026-08-15. Claude returned `BLOCKED` after
 correctly finding the planning commits were local-only and the contract omitted
