@@ -116,6 +116,15 @@ Do not begin runtime work until Claude accepts the plan. Baseline `main` is
 `6a3a3ac`; `npm run check` (76 Vitest, 19 Playwright), `git diff --check`, and
 compliance passed; production audit found 0 vulnerabilities.
 
+CTC-010 Claude QA-plan response - 2026-08-15. Claude returned `BLOCKED` after
+correctly finding the planning commits were local-only and the contract omitted
+the CTC-009 base, planar-vs-geodesic landing decision, and project-wide
+App-to-HoleMap state flow. Codex accepts B-1--B-3 and RC-1--RC-7. The correction
+addendum is `docs/handoffs/ctc-010-claude-qa-plan-addendum.md`; rebase CTC-010
+onto completed CTC-009, push the corrected branch, and obtain Claude re-review
+before implementation. Claude's minors (defaults, distinct dash, disclaimer,
+and durable context) are accepted too.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
