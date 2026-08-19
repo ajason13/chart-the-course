@@ -30,6 +30,11 @@ lateral full widths `L` and `W` in yards, the boundary point is:
 
 `C + u * (L / YARDS_PER_METER / 2 * cos θ) + n * (W / YARDS_PER_METER / 2 * sin θ)`.
 
+The whole boundary-point expression above is in local metres. Multiply that
+complete expression by `projection.scale` exactly once to produce SVG
+coordinates; do not treat the SVG-converted centre as `C` while leaving the
+two radius offsets unscaled.
+
 This intentionally differs slightly from an existing geodesic carry ring at
 long distances. The UI must describe both as local planning estimates, without
 claiming they coincide exactly.
@@ -73,6 +78,15 @@ when any un-clipped SVG point is outside `INNER_MIN_X..INNER_MAX_X` or
   and after every rejected edit.
 - Include a visible hint: “Local dispersion guide only; it is not a shot
   recommendation or confidence estimate.”
+
+## Claude re-review disposition
+
+Claude returned `READY WITH REQUIRED CORRECTIONS` on 2026-08-18. RC-8 is the
+documentation clarification immediately above; Claude explicitly authorized
+implementation after that correction and did not require a further planning
+review. Club profile state resets on course load, matching the existing
+single-course target/carry project model; the UI must say unsaved profile data
+is cleared when a different course is loaded.
 
 ## Re-review acceptance matrix
 

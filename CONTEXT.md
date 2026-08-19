@@ -126,6 +126,16 @@ onto completed CTC-009, push the corrected branch, and obtain Claude re-review
 before implementation. Claude's minors (defaults, distinct dash, disclaimer,
 and durable context) are accepted too.
 
+CTC-010 QA addendum accepted - 2026-08-18. Claude independently verified the
+pushed/rebased CTC-010 branch and returned `READY WITH REQUIRED CORRECTIONS`.
+RC-8 clarified that the complete local-metre ellipse boundary expression is
+scaled by `projection.scale` once for SVG output; it is recorded in the QA-plan
+addendum. Claude requires no further planning review and authorizes runtime
+implementation. The profile must disclose that a course change clears unsaved
+profile data, matching existing single-course project behavior. Move Notion to
+`3. In Development (ChatGPT)`; retain the no-persistence, no-network,
+no-dependency, no-PDF, and no-recommendation boundaries.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
