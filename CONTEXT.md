@@ -136,6 +136,20 @@ profile data, matching existing single-course project behavior. Move Notion to
 `3. In Development (ChatGPT)`; retain the no-persistence, no-network,
 no-dependency, no-PDF, and no-recommendation boundaries.
 
+CTC-010 implementation - 2026-08-18. Branch `ctc-010-dispersion-profile`
+implements native local-only club profiles and a 64-sample planar SVG
+dispersion ellipse. Explicit project v2 export/import carries a strict global
+`clubProfile` and migrates v1 imports to an empty profile; it uses no browser
+persistence, network request, provider, dependency, PDF, source-export, or
+recommendation behavior. The selected origin/target/club stays transient in
+`HoleMap`, while profile state is owned by `App`; course load clears unsaved
+profile data. Tests cover schema/migration, ID/label safety, planar units and
+orientation, off-map clipping, accessible edit/reversion behavior, export
+isolation, reload behavior, mobile layout, and axe. Node 24 verification passed
+`npm run check` (92 Vitest, 21 Playwright), `git diff --check`, and compliance
+(production audit: 0 vulnerabilities). Prepare required final Claude audit;
+do not mark Done before Claude's verdict.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
