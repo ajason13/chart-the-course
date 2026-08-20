@@ -4,6 +4,107 @@ Last updated: 2026-06-26
 
 ## Current Status
 
+CTC-009 Claude QA checkpoint pending - 2026-08-11. Clean synchronized `main` at
+`6a3a3ac75a495f69086bbc794c53914dbbe82001` was inspected along with the live
+Notion task. Codex is the specification/research owner under the current
+workflow; the legacy `1. Spec Drafting (Gemini)` label was used only because
+the Notion schema retains it. Codex created the implementation-ready local,
+dependency-free estimator specification at
+`docs/handoffs/ctc-009-fairway-width-spec.md` (SHA-256
+`f5aaa2a1cbd7154237bafd74e4459a939d0e5398d537e8ec4e25b95aca2d27f0`) and
+the self-contained Claude QA-planning prompt at
+`docs/handoffs/ctc-009-claude-qa-planning-prompt.md` (SHA-256
+`4089c7f50f1b40889e5b2a9ce57bb52db54657b9ea41aac2f09715b83ef4dd3b`). Claude
+returned `READY WITH REQUIRED CORRECTIONS`; Codex accepted B-1--B-5 and
+RC-1--RC-8 in `docs/handoffs/ctc-009-claude-qa-plan-addendum.md` (SHA-256
+`158624d649cac7bc204758cd102c1ffd27b03e68bd8af45fe947a1cafbb2d84c`). The
+addendum makes vertex tolerance, narrow-vs-degenerate outcomes, collinearity,
+boundary containment, single-ring normalized geometry, rounding, even-odd
+pairing, UI state isolation, accessibility, and no-dependency implementation
+rules explicit. Checkpoint prompt:
+`docs/handoffs/ctc-009-claude-qa-checkpoint-prompt.md` (SHA-256
+`fe7c3521c959833159ad226e414c826d3830fa382d913859246a9b1c9b377e9d`). The
+algorithm uses only local tangent-plane metres and the existing ordered hole
+route/fairway polygons; it forbids provider, Overpass, dependency, API,
+account, telemetry, persistence, PDF, and user-data-flow expansion. Notion is
+`2. QA Planning (Claude)`. No runtime code has changed and implementation is
+blocked until Claude accepts the checkpoint. `git diff --check` passed.
+
+CTC-009 QA artifact correction - 2026-08-11. Claude independently confirmed
+all substantive algorithmic blockers closed but found the pre-implementation
+warning-copy docs were not yet in repository history. Codex corrected the
+premature wording and committed the handoff bundle on feature branch
+`ctc-009-fairway-width` in `e5beea4` (`Document CTC-009 fairway width
+specification`); commit `7f927d9` adds explicit copy for invalid target line,
+beyond route, missing, outside, irregular/degenerate/odd geometry,
+tangent/overlap, unstable-degenerate width, and split fairway. The remaining
+Claude check is mechanical only, via
+`docs/handoffs/ctc-009-claude-warning-copy-confirmation-prompt.md`. Keep
+Notion at `2. QA Planning (Claude)` and do not begin runtime work until Claude
+returns `READY FOR IMPLEMENTATION`.
+
+CTC-009 QA artifact remote access resolved - 2026-08-11. Claude correctly
+blocked verification because the requested CTC-009 documentation commits were
+local only. Branch `ctc-009-fairway-width` is now pushed and tracks
+`origin/ctc-009-fairway-width` at
+`https://github.com/ajason13/chart-the-course/tree/ctc-009-fairway-width`.
+Claude must inspect the committed specification and QA addendum on that remote
+branch and return the requested mechanical artifact confirmation before runtime
+implementation is authorized.
+
+CTC-009 warning-copy consistency correction - 2026-08-11. Claude found that
+the committed base spec's algorithm and acceptance matrix retained the rejected
+`narrow-fairway` label even though the UI copy and addendum correctly separated
+legitimate narrow widths from degenerate crossings. Commit `523e4a6`
+(`Correct CTC-009 narrow width specification`) changes the sub-1 cm result to
+`unstable-degenerate-width` and adds the required legitimate ~15 yd
+narrow-success row. Claude requested only a diff-level confirmation of that
+commit; do not move from `2. QA Planning (Claude)` or begin runtime work until
+it returns ready.
+
+CTC-009 implementation in development - 2026-08-11. Claude independently
+confirmed the pushed specification is internally consistent and returned
+`READY FOR IMPLEMENTATION`; Notion moved to `3. In Development (ChatGPT)`.
+Branch `ctc-009-fairway-width` now implements a local, native-TypeScript
+fairway-width estimator in `src/fairwayWidth.ts` and selected-hole UI in
+`src/HoleMap.tsx`. It stations 220/250/280 yd along the ordered mapped route,
+uses the local perpendicular tangent-plane line, reports only the fairway
+interval containing the target line, and emits typed warnings for absent,
+irregular, tangent/overlap, degenerate, split, outside, and beyond-route
+states. No project/carry persistence, request, provider, production dependency,
+or user-data-flow behavior changes. Unit tests cover straight, dogleg, narrow
+success, sub-epsilon degeneration, split/gap, missing, beyond-route, tangent,
+and collinear overlap; the existing network-isolated Playwright selected-hole
+test verifies controls, live-status semantics, responsive map layout, and no
+new external request. `npm run check` passed (82 Vitest tests, 19 Playwright
+tests), as did `git diff --check` and compliance (production audit: 0
+vulnerabilities). Final Claude audit remains required before Done.
+
+CTC-009 final audit pending - 2026-08-11. Verified implementation commit
+`ce1cb84ed44fc0f59ce610e202f9417ae2a0b21d` is pushed to
+`ctc-009-fairway-width`; Notion is `4. Final Audit (Claude)`. The
+self-contained final-audit prompt, including the exact relevant diff,
+acceptance criteria, guardrails, and verification evidence, is
+`docs/handoffs/ctc-009-claude-final-audit-prompt.md`. Do not mark CTC-009 Done
+until Claude returns a verdict and any findings are resolved or explicitly
+accepted.
+
+CTC-009 Done - 2026-08-13. Claude final audit returned `PASS` after directly
+checking out pushed branch `ctc-009-fairway-width` at `5052e70`. It
+independently confirmed the implementation and test-only final-fix chain,
+84/84 Vitest tests, unchanged dependency manifests, boundary/union/mixed-valid
+estimator behavior, and transient UI state coverage; it explicitly authorized
+Done. Final local verification: `npm run check` (84 Vitest, 20 Playwright),
+`git diff --check`, and
+`npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh`
+(production audit: 0 vulnerabilities). CTC-009 adds local fairway-width
+estimation without provider, Overpass, dependency, persistence, PDF, or
+user-data-flow expansion. Non-blocking future-test note: the committed concave
+fixture is concave but its selected station does not create >2 crossings;
+Claude independently tested that pairing branch and did not require a change.
+Notion is `5. Done`. Key commits: implementation `ce1cb84`, final test
+expansion `5052e70`.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course

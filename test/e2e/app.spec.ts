@@ -322,10 +322,16 @@ test("renders and measures the selected hole with pointer, keyboard, mobile, and
   const map = page.getByTestId("hole-vector-map");
   await expect(map).toBeVisible();
   await expect(page.getByText("Course data © OpenStreetMap contributors.")).toBeVisible();
-  for (const layer of ["vegetation", "generic-water", "golf-water", "rough", "fairway", "bunker", "green", "tee", "route", "measurement"]) {
+  for (const layer of ["vegetation", "generic-water", "golf-water", "rough", "fairway", "bunker", "green", "tee", "route", "measurement", "fairway-width"]) {
     await expect(map.locator(`[data-layer="${layer}"]`)).toHaveCount(1);
   }
   await expect(map.locator('[data-layer="vegetation"] circle')).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Fairway width" })).toBeVisible();
+  await page.getByRole("button", { name: "220 yd" }).click();
+  await expect(page.getByText(/at 220 yd/i)).toBeVisible();
+  await page.getByRole("button", { name: "280 yd" }).click();
+  await expect(page.getByText(/at 280 yd/i)).toBeVisible();
+  await expect(page.locator('.fairway-width-status[role="status"][aria-live="polite"]')).toHaveCount(1);
   expect(await map.evaluate((element) => element.getBoundingClientRect().right <= window.innerWidth)).toBe(true);
 
   await map.click({ position: { x: 60, y: 60 } });
@@ -385,4 +391,26 @@ test("manages targets, carry arcs, and strict local project exchange", async ({ 
   await expect(page.locator('input[value="Target 1"]')).toBeVisible();
   await expect(page.getByText("Course data © OpenStreetMap contributors.")).toBeVisible();
   await assertAxe(page);
+});
+
+test("keeps fairway-width selection transient without duplicating its status region", async ({ page }) => {
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? ctc006Detail : discovery });
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+
+  const map = page.getByTestId("hole-vector-map");
+  await page.getByRole("button", { name: "Add target" }).click();
+  await map.click({ position: { x: 180, y: 180 } });
+  await page.getByRole("button", { name: "Add carry" }).click();
+  const carries = map.locator('[data-layer="carry-arcs"] [data-carry-id]');
+  await expect(carries).toHaveCount(1);
+  for (const yards of [220, 250, 280, 220, 280]) await page.getByRole("button", { name: `${yards} yd` }).click();
+  await expect(page.locator('.fairway-width-status[role="status"][aria-live="polite"]')).toHaveCount(1);
+  await expect(carries).toHaveCount(1);
+  await expect(page.locator('input[value="Target 1"]')).toHaveCount(1);
 });
