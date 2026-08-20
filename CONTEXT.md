@@ -150,6 +150,20 @@ isolation, reload behavior, mobile layout, and axe. Node 24 verification passed
 (production audit: 0 vulnerabilities). Prepare required final Claude audit;
 do not mark Done before Claude's verdict.
 
+CTC-010 Done - 2026-08-19. Claude final audit returned `PASS WITH MINOR FIXES`
+after independently checking out implementation commit `d107b92` (the branch
+tip `72929ac` adds only the audit packet), running 92/92 Vitest tests, TypeScript
+compilation, production audit (0 vulnerabilities), and whitespace validation.
+Claude could not run Playwright because its sandbox could not reach the browser
+binary CDN, but directly reviewed the 21-test browser suite; local Node 24
+verification already passed it. Claude authorized Done with no code changes.
+Deferred optional follow-up only: exercise raw GIS source export after adding a
+club profile (current structural isolation is independently confirmed), and
+consider undo parity for club deletion. No observability, logging, telemetry,
+network, persistence, dependency, provider, PDF, attribution, or user-data
+flow behavior was added. Key commits: implementation `d107b92`, final-audit
+packet `72929ac`.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
