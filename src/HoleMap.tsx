@@ -8,8 +8,9 @@ import type {
 } from "./normalize";
 import type { SourceMetadata } from "./overpass";
 import { carryRings, teeOrigins } from "./carry";
+import { dispersionEllipse } from "./dispersion";
 import { estimateFairwayWidth, roundHalfUpNonnegative } from "./fairwayWidth";
-import { generateProjectId, type CarryOriginV1, type HoleStateV1, type TargetV1 } from "./project";
+import { generateProjectId, type CarryOriginV1, type ClubProfileV2, type ClubV2, type HoleStateV1, type TargetV1 } from "./project";
 import {
   INNER_MAX_X,
   INNER_MAX_Y,
@@ -40,6 +41,8 @@ type HoleMapProps = {
   source: SourceMetadata;
   project: HoleStateV1;
   onProjectChange: (project: HoleStateV1) => void;
+  clubProfile: ClubProfileV2;
+  onClubProfileChange: (profile: ClubProfileV2) => void;
 };
 
 type Measurement = { start: Coordinate | null; end: Coordinate | null };
@@ -65,7 +68,7 @@ function warningText(warning: NormalizationWarning): string {
   return `${warning.code}: ${warning.affectedIdentity}`;
 }
 
-export function HoleMap({ hole, warnings, source, project, onProjectChange }: HoleMapProps) {
+export function HoleMap({ hole, warnings, source, project, onProjectChange, clubProfile, onClubProfileChange }: HoleMapProps) {
   const projection = useMemo(() => createProjection(holeCoordinates(hole)), [hole]);
   const [measurement, setMeasurement] = useState<Measurement>({ start: null, end: null });
   const [crosshair, setCrosshair] = useState<ViewportPoint>({ x: 400, y: 300 });
@@ -75,6 +78,10 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
   const [lastDeleted, setLastDeleted] = useState<{ target: TargetV1; index: number } | null>(null);
   const [carryErrors, setCarryErrors] = useState<Record<string, string>>({});
   const [targetErrors, setTargetErrors] = useState<Record<string, string>>({});
+  const [clubErrors, setClubErrors] = useState<Record<string, string>>({});
+  const [dispersionOrigin, setDispersionOrigin] = useState<CarryOriginV1 | null>(null);
+  const [dispersionTargetId, setDispersionTargetId] = useState<string | null>(null);
+  const [dispersionClubId, setDispersionClubId] = useState<string | null>(null);
   const [fairwayYards, setFairwayYards] = useState(250);
   const undoButton = useRef<HTMLButtonElement>(null);
 
@@ -85,8 +92,25 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
     setRepositionId(null);
     setLastDeleted(null);
     setFairwayYards(250);
+    setDispersionOrigin(null);
+    setDispersionTargetId(null);
+    setDispersionClubId(null);
     setAnnouncement("Selected hole changed. Measurement cleared.");
   }, [hole.source.sourceKey]);
+
+  useEffect(() => {
+    setDispersionClubId((current) => clubProfile.clubs.some(({ id }) => id === current) ? current : clubProfile.clubs[0]?.id ?? null);
+  }, [clubProfile.clubs]);
+
+  useEffect(() => {
+    setDispersionTargetId((current) => project.targets.some(({ id }) => id === current) ? current : project.targets[0]?.id ?? null);
+    setDispersionOrigin((current) => {
+      if (current?.kind === "tee" && teeOrigins(hole).some(({ sourceKey }) => sourceKey === current.sourceKey)) return current;
+      if (current?.kind === "target" && project.targets.some(({ id }) => id === current.targetId)) return current;
+      const tee = teeOrigins(hole)[0];
+      return tee ? { kind: "tee", sourceKey: tee.sourceKey } : project.targets[0] ? { kind: "target", targetId: project.targets[0].id } : null;
+    });
+  }, [hole, project.targets]);
 
   useEffect(() => {
     if (lastDeleted) requestAnimationFrame(() => undoButton.current?.focus());
@@ -213,6 +237,23 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
   const carryModels = project.carries.map((carry) => ({ carry, rings: carryRings(carry, hole, project.targets, projection) }));
   const clipId = `map-inner-clip-${hole.source.sourceKey.replace("/", "-")}`;
   const availableTees = teeOrigins(hole);
+  const selectedClub = clubProfile.clubs.find(({ id }) => id === dispersionClubId);
+  const selectedDispersionTarget = project.targets.find(({ id }) => id === dispersionTargetId);
+  const dispersion = dispersionEllipse({
+    club: selectedClub,
+    origin: dispersionOrigin,
+    target: selectedDispersionTarget,
+    hole,
+    targets: project.targets,
+    projection,
+  });
+  const dispersionStatus: Record<string, string> = {
+    "projection-unavailable": "Dispersion unavailable because map projection is unavailable.",
+    "origin-unavailable": "Select an available tee or target as the dispersion origin.",
+    "target-unavailable": "Select a target for the dispersion guide.",
+    "club-unavailable": "Add or select a club for the dispersion guide.",
+    "degenerate-target-line": "Dispersion unavailable because the origin and target are too close together.",
+  };
   const fairwayWidth = estimateFairwayWidth(hole, fairwayYards);
   const fairwayOverlay = fairwayWidth.start && fairwayWidth.end ? {
     start: projectCoordinate(projection, fairwayWidth.start), end: projectCoordinate(projection, fairwayWidth.end),
@@ -240,6 +281,55 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
     setTargetErrors((current) => ({ ...current, [id]: "" }));
     setLastDeleted(null);
     return true;
+  }
+
+  function addClub() {
+    if (clubProfile.clubs.length >= 14) return;
+    const used = new Set(clubProfile.clubs.map(({ label }) => label.normalize("NFC").toLowerCase()));
+    let number = clubProfile.clubs.length + 1;
+    while (used.has(`club ${number}`)) number += 1;
+    const club: ClubV2 = { id: generateProjectId("club"), label: `Club ${number}`, carry: 150, longitudinal: 30, lateral: 20 };
+    onClubProfileChange({ clubs: [...clubProfile.clubs, club] });
+    setDispersionClubId(club.id);
+    setAnnouncement(`${club.label} added to the club profile.`);
+  }
+
+  function updateClub(id: string, field: keyof Omit<ClubV2, "id">, raw: string): boolean {
+    const key = `${id}-${field}`;
+    let value: string | number;
+    if (field === "label") {
+      value = raw.trim().normalize("NFC");
+      const comparison = value.toLowerCase();
+      if (!value || [...value].length > 40 || clubProfile.clubs.some((club) => club.id !== id && club.label.normalize("NFC").toLowerCase() === comparison)) {
+        const message = !value || [...value].length > 40
+          ? "Use a club name from 1 to 40 characters."
+          : "Club names must be unique, ignoring case.";
+        setClubErrors((current) => ({ ...current, [key]: message }));
+        setAnnouncement(message);
+        return false;
+      }
+    } else {
+      value = Number(raw.trim());
+      const maximum = field === "carry" ? 700 : 200;
+      if (!/^\d+$/.test(raw.trim()) || !Number.isInteger(value) || value < 1 || value > maximum) {
+        const message = `Use a whole-yard ${field} value from 1 to ${maximum}.`;
+        setClubErrors((current) => ({ ...current, [key]: message }));
+        setAnnouncement(message);
+        return false;
+      }
+    }
+    onClubProfileChange({ clubs: clubProfile.clubs.map((club) => club.id === id ? { ...club, [field]: value } : club) });
+    setClubErrors((current) => ({ ...current, [key]: "" }));
+    setAnnouncement("Club profile updated.");
+    return true;
+  }
+
+  function changeDispersionOrigin(value: string) {
+    const separator = value.indexOf(":");
+    const identity = value.slice(separator + 1);
+    setDispersionOrigin(value.startsWith("tee:")
+      ? { kind: "tee", sourceKey: identity as SourceKey }
+      : { kind: "target", targetId: identity });
   }
 
   function deleteTarget(id: string) {
@@ -343,15 +433,20 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
             <line className="fairway-width-tick" x1={fairwayOverlay.end.x - 5} y1={fairwayOverlay.end.y - 5} x2={fairwayOverlay.end.x + 5} y2={fairwayOverlay.end.y + 5} />
           </>}
         </g>
+        <g data-layer="dispersion" className="map-layer layer-dispersion" clipPath={`url(#${clipId})`}>
+          {!("kind" in dispersion) && <polygon className="dispersion-ellipse"
+            points={dispersion.points.map(({ x, y }) => `${x},${y}`).join(" ")}
+            role="img" aria-label={`${selectedClub!.label} dispersion guide: ${selectedClub!.carry} yard carry, ${selectedClub!.longitudinal} yard longitudinal full width, ${selectedClub!.lateral} yard lateral full width`} />}
+        </g>
         <g data-layer="targets" className="map-layer layer-targets">
           {project.targets.map((target) => {
             const point = projectCoordinate(projection, target);
             return <g key={target.id} className="target-marker" data-target-id={target.id} role="button" tabIndex={0}
               aria-label={`${target.label}, target`} onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => { event.stopPropagation(); setAnnouncement(`${target.label} selected.`); }}
+              onClick={(event) => { event.stopPropagation(); setDispersionTargetId(target.id); setAnnouncement(`${target.label} selected.`); }}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault(); event.stopPropagation(); setAnnouncement(`${target.label} selected.`);
+                  event.preventDefault(); event.stopPropagation(); setDispersionTargetId(target.id); setAnnouncement(`${target.label} selected.`);
                 }
               }}>
               <circle className="target-hit" cx={point.x} cy={point.y} r="22" />
@@ -388,6 +483,53 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange }: Ho
           {fairwayWidth.warnings.map((warning) => <p className="warning" key={warning}>{fairwayWarningCopy[warning]}</p>)}
         </div>
         <p className="hint">Outline-derived local estimate only; it does not account for hazards or playability.</p>
+      </section>
+      <section className="project-panel dispersion-panel" aria-labelledby="dispersion-title">
+        <div className="map-heading"><h4 id="dispersion-title">Club profile and dispersion</h4>
+          <button className="secondary" type="button" disabled={clubProfile.clubs.length >= 14} onClick={addClub}>Add club</button></div>
+        <p className="hint">Local dispersion guide only; it is not a shot recommendation or confidence estimate.</p>
+        <p className="hint">The club profile is saved only in an exported project file. Loading a different course clears unsaved profile data.</p>
+        {clubProfile.clubs.length === 0 ? <p>No clubs added.</p> : <ul className="club-list">
+          {clubProfile.clubs.map((club) => <li key={club.id}>
+            <label>Club name<input key={`${club.id}-label-${club.label}`} defaultValue={club.label} maxLength={40}
+              onBlur={(event) => { if (!updateClub(club.id, "label", event.currentTarget.value)) event.currentTarget.value = club.label; }}
+              onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></label>
+            {clubErrors[`${club.id}-label`] && <p className="warning">{clubErrors[`${club.id}-label`]}</p>}
+            {(["carry", "longitudinal", "lateral"] as const).map((field) => <label key={field}>
+              {field === "carry" ? "Carry yards" : field === "longitudinal" ? "Longitudinal full width yards" : "Lateral full width yards"}
+              <input key={`${club.id}-${field}-${club[field]}`} inputMode="numeric" defaultValue={club[field]}
+                onBlur={(event) => { if (!updateClub(club.id, field, event.currentTarget.value)) event.currentTarget.value = String(club[field]); }}
+                onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
+              {clubErrors[`${club.id}-${field}`] && <span className="warning">{clubErrors[`${club.id}-${field}`]}</span>}
+            </label>)}
+            <button className="secondary danger" type="button" onClick={() => {
+              onClubProfileChange({ clubs: clubProfile.clubs.filter(({ id }) => id !== club.id) });
+              setAnnouncement(`${club.label} deleted from the club profile.`);
+            }}>Delete club</button>
+          </li>)}
+        </ul>}
+        <div className="dispersion-controls">
+          <label>Dispersion origin<select value={dispersionOrigin ? `${dispersionOrigin.kind}:${dispersionOrigin.kind === "tee" ? dispersionOrigin.sourceKey : dispersionOrigin.targetId}` : ""}
+            onChange={(event) => changeDispersionOrigin(event.target.value)} disabled={availableTees.length === 0 && project.targets.length === 0}>
+            <option value="" disabled>Select origin</option>
+            {availableTees.map((tee) => <option key={tee.sourceKey} value={`tee:${tee.sourceKey}`}>Tee {tee.sourceKey}</option>)}
+            {project.targets.map((target) => <option key={target.id} value={`target:${target.id}`}>{target.label}</option>)}
+          </select></label>
+          <label>Dispersion target<select value={dispersionTargetId ?? ""} onChange={(event) => setDispersionTargetId(event.target.value)} disabled={project.targets.length === 0}>
+            <option value="" disabled>Select target</option>
+            {project.targets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}
+          </select></label>
+          <label>Dispersion club<select value={dispersionClubId ?? ""} onChange={(event) => setDispersionClubId(event.target.value)} disabled={clubProfile.clubs.length === 0}>
+            <option value="" disabled>Select club</option>
+            {clubProfile.clubs.map((club) => <option key={club.id} value={club.id}>{club.label}</option>)}
+          </select></label>
+        </div>
+        <div className="dispersion-status" role="status" aria-live="polite">
+          {"kind" in dispersion
+            ? <p>{dispersionStatus[dispersion.kind]}</p>
+            : dispersion.offMap ? <p className="warning">Part of this dispersion guide is outside the map view.</p>
+              : <p>{selectedClub!.label} dispersion guide shown.</p>}
+        </div>
       </section>
       <section className="project-panel" aria-labelledby="targets-title">
         <div className="map-heading">
