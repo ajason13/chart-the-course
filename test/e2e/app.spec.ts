@@ -269,6 +269,7 @@ test("exports raw GIS source only for loaded detail data", async ({ page }) => {
   expect(exported.osmElementsSummary).toContainEqual({ type: "way", id: 9000060001, tagKeys: ["leisure", "name"] });
   expect(text).not.toContain("targets");
   expect(text).not.toContain("carries");
+  expect(text).not.toContain("clubProfile");
   await expect(page.getByText("Raw GIS source export started.")).toBeVisible();
 });
 
@@ -322,7 +323,7 @@ test("renders and measures the selected hole with pointer, keyboard, mobile, and
   const map = page.getByTestId("hole-vector-map");
   await expect(map).toBeVisible();
   await expect(page.getByText("Course data © OpenStreetMap contributors.")).toBeVisible();
-  for (const layer of ["vegetation", "generic-water", "golf-water", "rough", "fairway", "bunker", "green", "tee", "route", "measurement", "fairway-width"]) {
+  for (const layer of ["vegetation", "generic-water", "golf-water", "rough", "fairway", "bunker", "green", "tee", "route", "measurement", "fairway-width", "dispersion"]) {
     await expect(map.locator(`[data-layer="${layer}"]`)).toHaveCount(1);
   }
   await expect(map.locator('[data-layer="vegetation"] circle')).toHaveCount(0);
@@ -354,6 +355,16 @@ test("renders and measures the selected hole with pointer, keyboard, mobile, and
 });
 
 test("manages targets, carry arcs, and strict local project exchange", async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = URL.createObjectURL.bind(URL);
+    (window as typeof window & { __ctcProjectTexts?: string[] }).__ctcProjectTexts = [];
+    URL.createObjectURL = (blob) => {
+      if (blob instanceof Blob && blob.type === "application/json") void blob.text().then((text) => {
+        (window as typeof window & { __ctcProjectTexts: string[] }).__ctcProjectTexts.push(text);
+      });
+      return original(blob);
+    };
+  });
   await isolateNetwork(page, async (route) => {
     const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
     await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? ctc006Detail : discovery });
@@ -375,6 +386,25 @@ test("manages targets, carry arcs, and strict local project exchange", async ({ 
   await expect(map.locator('[data-layer="carry-arcs"] text')).toHaveText("150 yd");
   await expect(page.getByText(/outside the map view/)).toBeVisible();
 
+  await page.getByRole("button", { name: "Add club" }).click();
+  await expect(page.getByLabel("Club name")).toHaveValue("Club 1");
+  await expect(map.locator('[data-layer="dispersion"] .dispersion-ellipse')).toHaveCount(1);
+  const layers = await map.locator("[data-layer]").evaluateAll((elements) => elements.map((element) => element.getAttribute("data-layer")));
+  expect(layers.indexOf("dispersion")).toBeGreaterThan(layers.indexOf("fairway-width"));
+  expect(layers.indexOf("dispersion")).toBeLessThan(layers.indexOf("targets"));
+
+  const beforeDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export project" }).click();
+  await beforeDownloadPromise;
+  await page.waitForFunction(() => (window as typeof window & { __ctcProjectTexts: string[] }).__ctcProjectTexts.length === 1);
+  const beforeProfile = await page.evaluate(() => JSON.parse((window as typeof window & { __ctcProjectTexts: string[] }).__ctcProjectTexts[0]).clubProfile);
+
+  const carryInput = page.getByLabel("Carry yards");
+  await carryInput.fill("0");
+  await carryInput.blur();
+  await expect(carryInput).toHaveValue("150");
+  await expect(page.locator(".dispersion-panel .warning").getByText(/whole-yard carry value/)).toBeVisible();
+
   await page.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(page.getByRole("button", { name: "Undo delete" })).toBeVisible();
   await page.getByRole("button", { name: "Undo delete" }).click();
@@ -384,6 +414,9 @@ test("manages targets, carry arcs, and strict local project exchange", async ({ 
   await page.getByRole("button", { name: "Export project" }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe("chart-the-course-project.json");
+  await page.waitForFunction(() => (window as typeof window & { __ctcProjectTexts: string[] }).__ctcProjectTexts.length === 2);
+  const afterProfile = await page.evaluate(() => JSON.parse((window as typeof window & { __ctcProjectTexts: string[] }).__ctcProjectTexts[1]).clubProfile);
+  expect(afterProfile).toEqual(beforeProfile);
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByLabel("Import project file (.json)").setInputFiles("fixtures/projects/synthetic-project-wrong-course.json");
@@ -391,6 +424,34 @@ test("manages targets, carry arcs, and strict local project exchange", async ({ 
   await expect(page.locator('input[value="Target 1"]')).toBeVisible();
   await expect(page.getByText("Course data © OpenStreetMap contributors.")).toBeVisible();
   await assertAxe(page);
+});
+
+test("keeps club profile and dispersion selections transient across reload", async ({ page }) => {
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? ctc006Detail : discovery });
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+  const map = page.getByTestId("hole-vector-map");
+  await page.getByRole("button", { name: "Add target" }).click();
+  await map.click({ position: { x: 180, y: 180 } });
+  await page.getByRole("button", { name: "Add club" }).click();
+  await expect(page.getByLabel("Dispersion origin")).toBeEnabled();
+  await expect(page.getByLabel("Dispersion target")).toHaveValue(/t-[0-9a-f]{12}/);
+  await expect(page.getByLabel("Dispersion club")).toHaveValue(/p-[0-9a-f]{12}/);
+  await expect(map.locator('[data-layer="dispersion"] polygon[role="img"]')).toHaveAttribute("aria-label", /150 yard carry, 30 yard longitudinal full width, 20 yard lateral full width/);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+  await assertAxe(page);
+
+  await page.reload();
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await expect(page.getByText("No clubs added.")).toBeVisible();
+  await expect(page.getByTestId("hole-vector-map").locator('[data-layer="dispersion"] polygon')).toHaveCount(0);
 });
 
 test("keeps fairway-width selection transient without duplicating its status region", async ({ page }) => {

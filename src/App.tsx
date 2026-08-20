@@ -33,6 +33,7 @@ import {
   parseProjectText,
   projectMatchErrors,
   serializeProject,
+  type ClubProfileV2,
   type HoleStateV1,
   type ValidationError,
 } from "./project";
@@ -126,6 +127,7 @@ export function App() {
   const [invalidField, setInvalidField] = useState<keyof Bbox | "courseName" | null>(null);
   const [selectedHoleKey, setSelectedHoleKey] = useState("");
   const [projectHoles, setProjectHoles] = useState<Partial<Record<SourceKey, HoleStateV1>>>({});
+  const [clubProfile, setClubProfile] = useState<ClubProfileV2>({ clubs: [] });
   const [projectErrors, setProjectErrors] = useState<ValidationError[]>([]);
   const [projectMessage, setProjectMessage] = useState("");
   const [sourceExportMessage, setSourceExportMessage] = useState("");
@@ -154,6 +156,7 @@ export function App() {
   useEffect(() => {
     setSelectedHoleKey(normalized?.holes[0]?.source.sourceKey ?? "");
     setProjectHoles({});
+    setClubProfile({ clubs: [] });
     setProjectErrors([]);
     setProjectMessage("");
   }, [normalized]);
@@ -174,6 +177,7 @@ export function App() {
     if (!courseSourceKey) return;
     const project = emptyProject(courseSourceKey);
     project.holes = projectHoles;
+    project.clubProfile = clubProfile;
     const blob = new Blob([serializeProject(project)], { type: PROJECT_MIME });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -213,7 +217,8 @@ export function App() {
   async function importProject(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file || !courseSourceKey) return;
-    const hasState = Object.values(projectHoles).some((hole) => hole && (hole.targets.length > 0 || hole.carries.length > 0));
+    const hasState = clubProfile.clubs.length > 0
+      || Object.values(projectHoles).some((hole) => hole && (hole.targets.length > 0 || hole.carries.length > 0));
     if (hasState && !window.confirm("Importing will replace your current project. Continue?")) {
       event.target.value = "";
       importInput.current?.focus();
@@ -247,6 +252,7 @@ export function App() {
       return;
     }
     setProjectHoles(validated.project.holes);
+    setClubProfile(validated.project.clubProfile);
     setProjectMessage("Project imported successfully.");
     event.target.value = "";
     requestAnimationFrame(() => projectNotice.current?.focus());
@@ -559,14 +565,15 @@ export function App() {
                     {normalized.holes.filter((hole) => hole.source.sourceKey === selectedHoleKey).map((hole) => (
                       <HoleMap key={hole.source.sourceKey} hole={hole} warnings={normalized.warnings} source={normalized.source}
                         project={holeProject(hole.source.sourceKey)}
-                        onProjectChange={(project) => setHoleProject(hole.source.sourceKey, project)} />
+                        onProjectChange={(project) => setHoleProject(hole.source.sourceKey, project)}
+                        clubProfile={clubProfile} onClubProfileChange={setClubProfile} />
                     ))}
                   </>
                 ) : <p className="map-empty" role="status">No normalized holes are available to render.</p>}
                 {normalized && normalized.holes.length > 0 && (
                   <section className="project-io" aria-labelledby="project-io-title">
                     <h3 id="project-io-title">Local project file</h3>
-                    <p className="hint">Project files contain user-authored targets and carry settings only. Import replaces current project state when valid.</p>
+                    <p className="hint">Project files contain user-authored targets, carry settings, and the club profile. Import replaces current project state when valid. Loading a different course clears unsaved profile data.</p>
                     <div className="actions">
                       <button type="button" onClick={exportProject} disabled={!courseSourceKey}>Export project</button>
                       <label className="file-label">Import project file (.json)

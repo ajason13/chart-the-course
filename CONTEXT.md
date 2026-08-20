@@ -105,6 +105,73 @@ Claude independently tested that pairing branch and did not require a change.
 Notion is `5. Done`. Key commits: implementation `ce1cb84`, final test
 expansion `5052e70`.
 
+CTC-010 specification drafting - 2026-08-15. After machine-restart recovery,
+live Notion showed no active task; CTC-010 is the next unblocked tactical-
+planning dependency, while CTC-011 remains Backlog. Codex is the
+specification/research owner and moved CTC-010 to `1. Spec Drafting (Gemini)`.
+The local-only, dependency-free contract is in
+`docs/handoffs/ctc-010-club-profile-dispersion-spec.md`, with required
+independent QA planning in `docs/handoffs/ctc-010-claude-qa-planning-prompt.md`.
+Do not begin runtime work until Claude accepts the plan. The initial `main`
+baseline `6a3a3ac` is superseded by the CTC-009 rebase recorded below;
+`npm run check` (76 Vitest, 19 Playwright), `git diff --check`, and compliance
+passed; production audit found 0 vulnerabilities.
+
+CTC-010 Claude QA-plan response - 2026-08-15. Claude returned `BLOCKED` after
+correctly finding the planning commits were local-only and the contract omitted
+the CTC-009 base, planar-vs-geodesic landing decision, and project-wide
+App-to-HoleMap state flow. Codex accepts B-1--B-3 and RC-1--RC-7. The correction
+addendum is `docs/handoffs/ctc-010-claude-qa-plan-addendum.md`; rebase CTC-010
+onto completed CTC-009, push the corrected branch, and obtain Claude re-review
+before implementation. Claude's minors (defaults, distinct dash, disclaimer,
+and durable context) are accepted too.
+
+CTC-010 QA addendum accepted - 2026-08-18. Claude independently verified the
+pushed/rebased CTC-010 branch and returned `READY WITH REQUIRED CORRECTIONS`.
+RC-8 clarified that the complete local-metre ellipse boundary expression is
+scaled by `projection.scale` once for SVG output; it is recorded in the QA-plan
+addendum. Claude requires no further planning review and authorizes runtime
+implementation. The profile must disclose that a course change clears unsaved
+profile data, matching existing single-course project behavior. Move Notion to
+`3. In Development (ChatGPT)`; retain the no-persistence, no-network,
+no-dependency, no-PDF, and no-recommendation boundaries.
+
+CTC-010 implementation - 2026-08-18. Branch `ctc-010-dispersion-profile`
+implements native local-only club profiles and a 64-sample planar SVG
+dispersion ellipse. Explicit project v2 export/import carries a strict global
+`clubProfile` and migrates v1 imports to an empty profile; it uses no browser
+persistence, network request, provider, dependency, PDF, source-export, or
+recommendation behavior. The selected origin/target/club stays transient in
+`HoleMap`, while profile state is owned by `App`; course load clears unsaved
+profile data. Tests cover schema/migration, ID/label safety, planar units and
+orientation, off-map clipping, accessible edit/reversion behavior, export
+isolation, reload behavior, mobile layout, and axe. Node 24 verification passed
+`npm run check` (92 Vitest, 21 Playwright), `git diff --check`, and compliance
+(production audit: 0 vulnerabilities). Prepare required final Claude audit;
+do not mark Done before Claude's verdict.
+
+CTC-010 Done - 2026-08-19. Claude final audit returned `PASS WITH MINOR FIXES`
+after independently checking out implementation commit `d107b92` (the branch
+tip `72929ac` adds only the audit packet), running 92/92 Vitest tests, TypeScript
+compilation, production audit (0 vulnerabilities), and whitespace validation.
+Claude could not run Playwright because its sandbox could not reach the browser
+binary CDN, but directly reviewed the 21-test browser suite; local Node 24
+verification already passed it. Claude authorized Done with no code changes.
+Deferred optional follow-up only: exercise raw GIS source export after adding a
+club profile (current structural isolation is independently confirmed), and
+consider undo parity for club deletion. No observability, logging, telemetry,
+network, persistence, dependency, provider, PDF, attribution, or user-data
+flow behavior was added. Key commits: implementation `d107b92`, final-audit
+packet `72929ac`.
+
+CTC-009/010 pull-request correction - 2026-08-19/20. The audited feature
+branches had been pushed but not opened as pull requests. PR #16
+(`ctc-009-fairway-width` → `main`) merged CTC-009. Stacked PR #17 merged CTC-010
+into that feature branch, not `main`; PR #19 (`ctc-009-fairway-width` → `main`)
+is the required final consolidation PR for the already-audited CTC-010 diff.
+Notion links CTC-010 to #19. No implementation changes were made by these
+pull-request corrections.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
