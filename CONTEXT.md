@@ -164,6 +164,14 @@ network, persistence, dependency, provider, PDF, attribution, or user-data
 flow behavior was added. Key commits: implementation `d107b92`, final-audit
 packet `72929ac`.
 
+CTC-009/010 pull-request correction - 2026-08-19. The audited feature branches
+had been pushed but not opened as pull requests. PR #16
+(`ctc-009-fairway-width` → `main`) now carries CTC-009; PR #17
+(`ctc-010-dispersion-profile` → `ctc-009-fairway-width`) carries CTC-010 as a
+focused stacked PR because its SVG layer builds on CTC-009. Both Notion tasks
+now link to their PRs. Merge #16 before #17; no implementation changes were
+made by this correction.
+
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
 take over the former Gemini specification/research role for Chart the Course
