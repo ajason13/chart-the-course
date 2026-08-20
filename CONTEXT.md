@@ -176,10 +176,9 @@ CTC-010 delivered to main - 2026-08-20. PR #19 merged at
 `2026-08-20T22:44:38Z` with merge commit
 `4cc54543a272582e76d3df8ae94265e21956250b`. This places the already-audited
 CTC-010 implementation on `main` after the stacked-PR correction. Main CI run
-`32425628747` is still in progress at this record; confirm its conclusion before
-treating the post-merge verification as complete. CTC-010 remains Notion
-`5. Done` because Claude authorized closure; no new runtime behavior was added
-by PR #19.
+`32425628747` completed successfully for that merge commit. CTC-010 remains
+Notion `5. Done` because Claude authorized closure; no new runtime behavior was
+added by PR #19.
 
 Workflow role update - 2026-06-26. Gemini Chat/Deep Research is currently
 treated as degraded or unreliable for deep implementation research. Codex may
