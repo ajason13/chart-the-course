@@ -4,6 +4,23 @@ Last updated: 2026-06-26
 
 ## Current Status
 
+CTC-011 specification drafting - 2026-08-20. Codex is acting as the
+specification/research fallback (Gemini was not used). Live Notion task and
+project context were fetched; Notion is `1. Spec Drafting (Gemini)` because
+that legacy label is the schema's specification stage. From clean updated
+`origin/main` `d8103c37ba8785098ae2835f6c7a08891ac1516e`, Codex created branch
+`ctc-011-target-risk-scoring` and the planning-only contract at
+`docs/handoffs/ctc-011-target-risk-scoring-spec.md`, plus the independent
+review prompt at `docs/handoffs/ctc-011-claude-qa-planning-prompt.md`. The
+proposed local-only indicator uses existing targets and CTC-010 local-metre
+dispersion data, but scores only associated polygonal `golf-water` geometry;
+generic water and `golf=out_of_bounds` are excluded because the normalized
+model has no out-of-bounds feature kind. No runtime code, dependency,
+network/provider, persistence, export/PDF, telemetry, account, or user-data
+flow change is authorized. Push this documentation checkpoint, move Notion to
+`2. QA Planning (Claude)`, and obtain a `READY FOR IMPLEMENTATION` (or an
+explicitly implementation-authorizing corrected verdict) before coding.
+
 CTC-009 Claude QA checkpoint pending - 2026-08-11. Clean synchronized `main` at
 `6a3a3ac75a495f69086bbc794c53914dbbe82001` was inspected along with the live
 Notion task. Codex is the specification/research owner under the current
