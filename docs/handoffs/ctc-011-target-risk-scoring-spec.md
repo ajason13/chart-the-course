@@ -3,7 +3,10 @@
 Status: Codex is the specification/research owner because Gemini is not used
 for this task. Prepared 2026-08-20 from clean `origin/main`
 `d8103c37ba8785098ae2835f6c7a08891ac1516e`. Runtime implementation is blocked
-until the independent Claude QA-planning verdict authorizes it.
+until the independent Claude QA-planning verdict authorizes it. Claude returned
+`READY WITH REQUIRED CORRECTIONS` on 2026-08-21; RC-1 through RC-4 below are
+accepted in this revision. The audit explicitly authorizes implementation once
+this corrected checkpoint is pushed.
 
 ## Decision and boundaries
 
@@ -59,7 +62,7 @@ export const RISK_EPSILON_M = 0.01;
 export type RiskStatus = "safe" | "marginal" | "unsafe" | "unavailable";
 export type RiskWarning = "missing-risk-geometry" | "irregular-risk-polygon"
   | "projection-unavailable" | "origin-unavailable" | "club-unavailable"
-  | "candidate-unavailable" | "degenerate-target-line" | "off-map";
+  | "degenerate-target-line" | "off-map";
 export type TargetRisk = {
   targetId: string; targetLabel: string; status: RiskStatus;
   penalty: number | null; overlapSamples: number; sampleCount: number;
@@ -75,11 +78,15 @@ The helper accepts the selected `NormalizedHole`, `Projection | null`, resolved
 `ClubV2 | null`, `CarryOriginV1 | null`, and `TargetV1[]`, and returns a new
 value without mutation. Targets are copied and sorted by bytewise ascending
 ASCII `id`; labels never affect ordering. IDs must be unique already under the
-project contract. A candidate that is the resolved origin target is
-`unavailable` with `degenerate-target-line`; other invalid prerequisites yield
-every candidate unavailable with the appropriate shared warning. The helper
-must use `resolveCarryOrigin`, `projectCoordinate`, and `YARDS_PER_METER` like
-`dispersionEllipse`; it must not parse SVG coordinates.
+project contract. An empty target array short-circuits before prerequisite
+evaluation and returns exactly `{ candidates: [], lowestRiskTargetId: null,
+warnings: [] }`; the UI's no-target branch keys only on `candidates.length ===
+0`. A candidate that is the resolved origin target is `unavailable` with
+`degenerate-target-line`; other invalid prerequisites yield every existing
+candidate unavailable with the appropriate shared warning. The helper must use
+`resolveCarryOrigin`, `projectCoordinate`, and `YARDS_PER_METER` like
+`dispersionEllipse`; it must not parse SVG coordinates. It must import
+`roundHalfUpNonnegative` from `src/fairwayWidth.ts`, not recreate rounding.
 
 ## Dispersion and overlap algorithm
 
@@ -115,8 +122,9 @@ deterministic. No polygon clipping is performed.
 Before polygon testing, project every ring-8 sample to SVG using the existing
 scale. If any is outside the inclusive inner map rectangle, return that
 candidate `unavailable`, `penalty: null`, `off-map`; do not score only the
-visible fraction. Projection failure is likewise unavailable. Invalid risk
-geometry never becomes zero risk.
+visible fraction. This is strictly per candidate: off-map candidates do not
+suppress valid scoreable rows for other targets. Projection failure is likewise
+unavailable. Invalid risk geometry never becomes zero risk.
 
 Status bands are exact: `safe` for 0--4, `marginal` for 5--24, and `unsafe`
 for 25--100. These are display bands for mapped overlap only, not safety
@@ -142,7 +150,7 @@ Use these exact messages:
 - no geometry: `No usable mapped golf-water geometry is available for this hole.`
 - invalid prerequisite: reuse the specific existing dispersion unavailable
   message, then `Mapped-risk comparison is unavailable.`
-- off map: `This dispersion guide extends outside the map view, so mapped-risk overlap is unavailable.`
+- off map row: `{targetLabel}: mapped-risk overlap is unavailable because this dispersion guide extends outside the map view.`
 - footer: `This local indicator considers only mapped golf-water geometry. It is not a shot recommendation, coaching, safety, or rules determination. Mapped geometry may be incomplete or inaccurate. Verify yardages, hazards, boundaries, and local course rules before play.`
 
 Use `role="status" aria-live="polite" aria-atomic="true"` for the single
@@ -170,7 +178,8 @@ Do not modify live data or add brands. Cover:
 | Candidate / tie | Targets are ID-sorted; same penalty selects lexical-lowest ID regardless of input order/labels. |
 | Missing / incomplete | No eligible geometry is unavailable; generic water, bunker, vegetation, point/line, unassociated and invalid geometry never count. |
 | OOB model | An ignored `golf=out_of_bounds` raw element cannot become a score category until normalization changes. |
-| Failures | Missing projection/origin/club, selected-origin target, short line, off-map ellipse, near-pole projection, invalid polygon, and no target yield typed unavailable results. |
+| Failures | Empty targets returns the exact empty comparison contract; separately, missing projection/origin/club, selected-origin target, short line, off-map ellipse, near-pole projection, and invalid polygon yield typed unavailable results for each existing target. Include two targets where only one is off-map and prove the remaining target still scores with the exact target-labelled row copy. |
+| Sampling limit | A thin golf-water polygon strictly between two radial samples and angular samples returns 0 / `safe`; document in the test that this is the disclosed fixed-grid resolution limit, not a safety conclusion or a regression. |
 | Isolation | Existing unit/project tests prove no schema/export mutation; focused browser test proves panel behavior, axe, mobile layout, reload reset, and no request after detail load. |
 
 Run Node 24 `npm run check`, `git diff --check`, and
@@ -191,6 +200,23 @@ score; persistence of risk selection; additions to exports/PDFs; dependencies;
 and AGPL/study-only code reuse. Remaining uncertainty is inherent mapped-data
 coverage and simplified equal-area sampling; the unavailable states and exact
 disclosure prevent presenting either as a course or playing truth.
+
+## Accepted Claude QA-planning corrections
+
+Claude's 2026-08-21 review independently verified the model, geometry, and
+existing UI contracts. Codex accepts all required corrections without changing
+the algorithm or scope:
+
+- RC-1 removes the undefined `candidate-unavailable` warning rather than
+  introducing an ambiguous fallback state.
+- RC-2 chooses the audit-authorized per-candidate path: off-map is a
+  target-labelled unavailable row and never suppresses other scoreable targets.
+- RC-3 defines the empty-target return contract and distinguishes it from a
+  populated unavailable comparison.
+- RC-4 locks the fixed radial/angular-grid blind spot as a disclosed,
+  non-guarantee test case.
+- MC-1 is accepted: reuse CTC-009's exported half-up nonnegative rounding
+  helper to prevent display drift.
 
 ## Claude QA-planning audit prompt
 

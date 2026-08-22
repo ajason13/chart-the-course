@@ -21,6 +21,17 @@ authorized. Push this documentation checkpoint, move Notion to `2. QA Planning
 (Claude)`, and obtain a `READY FOR IMPLEMENTATION` (or an explicitly
 implementation-authorizing corrected verdict) before coding.
 
+CTC-011 QA-planning corrections - 2026-08-21. Claude independently audited
+the pushed planning checkpoint and returned `READY WITH REQUIRED CORRECTIONS`.
+Codex accepted RC-1--RC-4 in the same consolidated handoff: removed undefined
+`candidate-unavailable`; made off-map result/copy target-specific without
+suppressing other scored rows; specified the empty-target return; and added a
+disclosed fixed-grid sampling-limit test. It also accepted the minor directive
+to reuse CTC-009's `roundHalfUpNonnegative`. Claude explicitly authorizes
+runtime implementation once this corrected checkpoint is pushed; no further
+planning re-audit is needed because the selected per-target off-map path is its
+authorized option.
+
 CTC-009 Claude QA checkpoint pending - 2026-08-11. Clean synchronized `main` at
 `6a3a3ac75a495f69086bbc794c53914dbbe82001` was inspected along with the live
 Notion task. Codex is the specification/research owner under the current
