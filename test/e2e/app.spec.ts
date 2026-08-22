@@ -389,6 +389,8 @@ test("manages targets, carry arcs, and strict local project exchange", async ({ 
   await page.getByRole("button", { name: "Add club" }).click();
   await expect(page.getByLabel("Club name")).toHaveValue("Club 1");
   await expect(map.locator('[data-layer="dispersion"] .dispersion-ellipse')).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Mapped-risk indicator" })).toBeVisible();
+  await expect(page.locator('.risk-status[role="status"][aria-live="polite"]')).toHaveCount(1);
   const layers = await map.locator("[data-layer]").evaluateAll((elements) => elements.map((element) => element.getAttribute("data-layer")));
   expect(layers.indexOf("dispersion")).toBeGreaterThan(layers.indexOf("fairway-width"));
   expect(layers.indexOf("dispersion")).toBeLessThan(layers.indexOf("targets"));

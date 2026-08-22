@@ -32,6 +32,20 @@ runtime implementation once this corrected checkpoint is pushed; no further
 planning re-audit is needed because the selected per-target off-map path is its
 authorized option.
 
+CTC-011 implementation ready for final audit - 2026-08-21. The approved
+local-only implementation adds `src/riskScore.ts`, a transient `Mapped-risk
+indicator` panel, and deterministic unit/browser coverage. It samples the
+existing 64-point dispersion boundary plus seven weighted interior rings,
+scores only associated polygonal `golf-water`, and makes generic water,
+unmapped out-of-bounds tags, missing data, and off-map candidate geometry
+unavailable rather than safe. Existing targets are ID-sorted with a
+penalty-then-ID lowest-overlap tie-break; all controls and exports remain
+unchanged. Node 24 verification passed: `npm run check` (97 Vitest, 21
+Playwright), `git diff --check`, and compliance (production audit: 0
+vulnerabilities). Prepare the required self-contained Claude final-audit
+prompt, move Notion to `4. Final Audit (Claude)`, and do not mark Done until
+Claude authorizes it.
+
 CTC-009 Claude QA checkpoint pending - 2026-08-11. Clean synchronized `main` at
 `6a3a3ac75a495f69086bbc794c53914dbbe82001` was inspected along with the live
 Notion task. Codex is the specification/research owner under the current
