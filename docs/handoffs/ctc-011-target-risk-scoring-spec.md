@@ -151,6 +151,7 @@ Use these exact messages:
 - invalid prerequisite: reuse the specific existing dispersion unavailable
   message, then `Mapped-risk comparison is unavailable.`
 - off map row: `{targetLabel}: mapped-risk overlap is unavailable because this dispersion guide extends outside the map view.`
+- other unavailable row: `{targetLabel}: mapped-risk overlap is unavailable.`
 - footer: `This local indicator considers only mapped golf-water geometry. It is not a shot recommendation, coaching, safety, or rules determination. Mapped geometry may be incomplete or inaccurate. Verify yardages, hazards, boundaries, and local course rules before play.`
 
 Use `role="status" aria-live="polite" aria-atomic="true"` for the single

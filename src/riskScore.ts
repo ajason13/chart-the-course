@@ -103,7 +103,8 @@ function pointOnSegment(point: MeterPoint, start: MeterPoint, end: MeterPoint): 
   const cross = Math.abs((point.x - start.x) * delta.y - (point.y - start.y) * delta.x) / length;
   if (cross > RISK_EPSILON_M) return false;
   const dot = (point.x - start.x) * delta.x + (point.y - start.y) * delta.y;
-  return dot >= -RISK_EPSILON_M && dot <= length * length + RISK_EPSILON_M;
+  const along = dot / length;
+  return along >= -RISK_EPSILON_M && along <= length + RISK_EPSILON_M;
 }
 
 function containsPoint(polygon: MeterPoint[], point: MeterPoint): boolean {

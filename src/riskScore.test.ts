@@ -68,6 +68,33 @@ describe("scoreTargetRisks", () => {
     expect(result.lowestRiskTargetId).toBe(first.id);
   });
 
+  it("reports every shared unavailable prerequisite and missing mapped geometry", () => {
+    const destination = target("t-000000000001", 300, 0);
+    const targets = [target("t-000000000000", 0, 0), destination];
+    for (const [input, warning] of [
+      [{ projection: null }, "projection-unavailable"],
+      [{ club: null }, "club-unavailable"],
+      [{ origin: null }, "origin-unavailable"],
+      [{ origin: { kind: "target", targetId: "t-ffffffffffff" } }, "origin-unavailable"],
+      [{ hole: hole([]) }, "missing-risk-geometry"],
+    ] as const) {
+      const result = scoreTargetRisks({ club, origin: { kind: "target", targetId: targets[0].id }, projection, hole: hole([water(square(1000, 1000, 5))]), targets, ...input });
+      expect(result.candidates.every((candidate) => candidate.penalty === null && candidate.warnings.includes(warning))).toBe(true);
+    }
+  });
+
+  it("counts a boundary sample with a fixed metre tolerance on short and ordinary edges", () => {
+    const origin = target("t-000000000000", 0, 0);
+    const destination = target("t-000000000001", 300, 0);
+    const edgeX = 100 * .9144 + 80 * .9144 / 2;
+    const shortEdge = water([[edgeX, -.025], [edgeX, .025], [edgeX + .1, .025], [edgeX + .1, -.025], [edgeX, -.025]]);
+    const ordinaryEdge = water([[edgeX + .005, -5], [edgeX + .005, 5], [edgeX + 1, 5], [edgeX + 1, -5], [edgeX + .005, -5]]);
+    for (const feature of [shortEdge, ordinaryEdge]) {
+      const result = scoreTargetRisks({ club, origin: { kind: "target", targetId: origin.id }, projection, hole: hole([feature]), targets: [origin, destination] });
+      expect(result.candidates.find(({ targetId }) => targetId === destination.id)?.overlapSamples).toBeGreaterThan(0);
+    }
+  });
+
   it("keeps an off-map target unavailable without suppressing a scoreable target", () => {
     const origin = target("t-000000000000", 0, 0);
     const onMap = target("t-000000000001", 300, 0);

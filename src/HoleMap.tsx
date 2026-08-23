@@ -562,7 +562,7 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange, club
                 Mapped golf-water overlap: {candidate.penalty}%. {candidate.status} mapped-risk indicator.</p>
               : candidate.warnings.includes("off-map")
                 ? <p className="warning">{candidate.targetLabel}: mapped-risk overlap is unavailable because this dispersion guide extends outside the map view.</p>
-                : <p>Mapped-risk overlap is unavailable.</p>}
+                : <p>{candidate.targetLabel}: mapped-risk overlap is unavailable.</p>}
           </li>)}
         </ul>}
         <p className="hint">This local indicator considers only mapped golf-water geometry. It is not a shot recommendation, coaching, safety, or rules determination. Mapped geometry may be incomplete or inaccurate. Verify yardages, hazards, boundaries, and local course rules before play.</p>
