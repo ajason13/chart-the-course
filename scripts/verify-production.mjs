@@ -7,7 +7,7 @@ export function verifyProduction(directory = "dist") {
   const manifest = JSON.parse(readFileSync(resolve(directory, ".vite/manifest.json"), "utf8"));
   assert.deepEqual(Object.entries(manifest).filter(([, item]) => item.isEntry).map(([key]) => key),
     ["index.html"], "Production must contain only the application entry");
-  const allowed = new Set(["index.html", ".vite/manifest.json"]);
+  const allowed = new Set(["index.html", ".vite/manifest.json", ".vite/runtime-dependencies.json"]);
   const visited = new Set();
   function visit(key) {
     if (visited.has(key)) return;
