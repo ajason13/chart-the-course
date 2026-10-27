@@ -95,9 +95,11 @@ test("discovers candidates, loads detail explicitly, caches it, and shows attrib
 
 test("makes no requests on keystrokes, blocks duplicate submit, and cancels explicitly", async ({ page }) => {
   let requests = 0;
+  let releaseRequest!: () => void;
+  const pendingRequest = new Promise<void>((resolve) => { releaseRequest = resolve; });
   await isolateNetwork(page, async (route) => {
     requests += 1;
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await pendingRequest;
     await route.fulfill({ json: discovery });
   });
   await page.goto("/");
@@ -107,13 +109,197 @@ test("makes no requests on keystrokes, blocks duplicate submit, and cancels expl
 
   await page.getByRole("button", { name: "Search courses" }).click();
   await expect(page.getByRole("button", { name: "Search courses" })).toBeDisabled();
-  expect(requests).toBe(1);
+  await expect.poll(() => requests).toBe(1);
   await page.getByRole("button", { name: "Cancel request" }).click();
   await expect(page.getByText("Request cancelled.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Search courses" })).toBeFocused();
-  await page.waitForTimeout(600);
+  releaseRequest();
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   await expect(page.getByText("Request cancelled.")).toBeVisible();
   expect(requests).toBe(1);
+});
+
+// Delay delivery to the cache promise after IndexedDB has completed. The app
+// must still reject obsolete work even when the underlying operation finishes.
+async function installCacheGate(page: Page) {
+  await page.addInitScript(() => {
+    type Gate = {
+      phase: "read" | "write" | null;
+      fail: boolean;
+      pending: boolean;
+      release: () => void;
+    };
+    const gate: Gate = { phase: null, fail: false, pending: false, release: () => {} };
+    Object.assign(window, { cacheGate: gate });
+    const get = IDBObjectStore.prototype.get;
+    IDBObjectStore.prototype.get = function (...args) {
+      const request = get.apply(this, args);
+      if (gate.phase !== "read") return request;
+      gate.phase = null;
+      Object.defineProperty(request, "onsuccess", {
+        set(callback: (event: Event) => void) {
+          request.addEventListener("success", (event) => {
+            gate.pending = true;
+            gate.release = () => {
+              if (gate.fail) request.onerror?.call(request, event);
+              else callback.call(request, event);
+            };
+          });
+        },
+      });
+      return request;
+    };
+    const transaction = IDBDatabase.prototype.transaction;
+    IDBDatabase.prototype.transaction = function (...args) {
+      const result = transaction.apply(this, args);
+      if (gate.phase !== "write" || result.mode !== "readwrite") return result;
+      gate.phase = null;
+      Object.defineProperty(result, "oncomplete", {
+        set(callback: (event: Event) => void) {
+          result.addEventListener("complete", (event) => {
+            gate.pending = true;
+            gate.release = () => {
+              if (gate.fail) result.onerror?.call(result, event);
+              else callback.call(result, event);
+            };
+          });
+        },
+      });
+      return result;
+    };
+  });
+}
+
+async function armCacheGate(page: Page, phase: "read" | "write", fail = false) {
+  await page.evaluate(({ phase, fail }) => {
+    Object.assign((window as unknown as { cacheGate: object }).cacheGate, { phase, fail, pending: false });
+  }, { phase, fail });
+}
+
+async function releaseCacheGate(page: Page) {
+  await page.evaluate(() => (window as unknown as { cacheGate: { release: () => void } }).cacheGate.release());
+  // Drain promise continuations and React rendering before negative assertions.
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+}
+
+for (const outcome of ["hit", "miss", "warning"]) {
+  test(`cancels delayed cache ${outcome} before a newer detail selection`, async ({ page }) => {
+    let requests = 0;
+    await installCacheGate(page);
+    await isolateNetwork(page, async (route) => {
+      requests += 1;
+      const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+      await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? syntheticDetail : discovery });
+    });
+    await page.goto("/");
+    await fillBounds(page);
+    await page.getByRole("button", { name: "Search courses" }).click();
+    await expect(page.getByText("Synthetic Municipal Course", { exact: true })).toBeVisible();
+    if (outcome === "miss") await page.getByLabel(/Course name/).fill("Uncached search");
+    await armCacheGate(page, "read", outcome === "warning");
+    await page.getByRole("button", { name: "Search courses" }).click();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { cacheGate: { pending: boolean } }).cacheGate.pending)).toBe(true);
+    await expect(page.getByRole("button", { name: "Search courses" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Load raw detail" })).toBeDisabled();
+    await page.getByRole("button", { name: "Cancel request" }).click();
+    await expect(page.getByText("Request cancelled.", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Load raw detail" }).click();
+    await expect(page.getByText(/raw detail entities loaded/)).toBeVisible();
+    await releaseCacheGate(page);
+    await expect(page.getByText(/raw detail entities loaded/)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Stored course data available" })).toHaveCount(0);
+    await expect(page.locator(".status .warning")).toHaveCount(0);
+    expect(requests).toBe(2);
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download Raw GIS Source (ODbL)" }).click();
+    const download = await downloadPromise;
+    const stream = await download.createReadStream();
+    let text = "";
+    for await (const chunk of stream!) text += chunk.toString();
+    expect(JSON.parse(text).rawResponse).toBe(JSON.stringify(syntheticDetail));
+  });
+}
+
+for (const fail of [false, true]) {
+  test(`cancelled cache write ${fail ? "failure" : "success"} cannot update newer results or warnings`, async ({ page }) => {
+    await installCacheGate(page);
+    await isolateNetwork(page, async (route) => route.fulfill({ json: discovery }));
+    await page.goto("/");
+    await fillBounds(page);
+    await armCacheGate(page, "write", fail);
+    await page.getByRole("button", { name: "Search courses" }).click();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { cacheGate: { pending: boolean } }).cacheGate.pending)).toBe(true);
+    await page.getByRole("button", { name: "Cancel request" }).click();
+    await expect(page.getByText("Request cancelled.", { exact: true })).toBeVisible();
+    if (fail) {
+      await page.getByLabel(/Course name/).fill("Newer search");
+      await page.getByRole("button", { name: "Search courses" }).click();
+      await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible();
+    }
+    await releaseCacheGate(page);
+    if (fail) {
+      await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible();
+      await expect(page.locator(".status .warning")).toHaveCount(0);
+      return;
+    }
+    await expect(page.getByText("Request cancelled.", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Raw OSM entities" })).toHaveCount(0);
+    await expect(page.locator(".status .warning")).toHaveCount(0);
+    await page.getByLabel(/Course name/).fill("Newer search");
+    await page.getByRole("button", { name: "Search courses" }).click();
+    await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible();
+  });
+}
+
+test("cancelled stale fallback cannot restore its consent prompt after a newer selection", async ({ page }) => {
+  let searches = 0;
+  let releaseFailure!: () => void;
+  const pendingFailure = new Promise<void>((resolve) => { releaseFailure = resolve; });
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    if (query.includes("purpose:golf-course-detail")) return route.fulfill({ json: syntheticDetail });
+    searches += 1;
+    if (searches === 1) return route.fulfill({ json: discovery });
+    if (searches === 3) await pendingFailure;
+    await route.fulfill({ status: 500, body: "error" });
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible();
+  await page.clock.setFixedTime(Date.now() + 8 * 24 * 60 * 60 * 1000);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await expect(page.getByRole("heading", { name: "Stored course data available" })).toBeVisible();
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await expect.poll(() => searches).toBe(3);
+  await expect(page.getByRole("heading", { name: "Stored course data available" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Cancel request" }).click();
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await expect(page.getByText(/raw detail entities loaded/)).toBeVisible();
+  releaseFailure();
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await expect(page.getByRole("heading", { name: "Stored course data available" })).toHaveCount(0);
+  await expect(page.getByText(/raw detail entities loaded/)).toBeVisible();
+});
+
+test("obsolete refresh cooldown expires without replacing the current cache status", async ({ page }) => {
+  await page.clock.install();
+  await installCacheGate(page);
+  await isolateNetwork(page, async (route) => route.fulfill({ json: discovery }));
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible();
+  await armCacheGate(page, "write");
+  await page.getByRole("button", { name: "Refresh course data" }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { cacheGate: { pending: boolean } }).cacheGate.pending)).toBe(true);
+  await page.getByRole("button", { name: "Cancel request" }).click();
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await expect(page.getByText("Course data loaded from durable cache.")).toBeVisible();
+  await releaseCacheGate(page);
+  await page.clock.fastForward(5_000);
+  await expect(page.getByText("Course data loaded from durable cache.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Refresh course data" })).toBeEnabled();
 });
 
 test("validates input before requests and focuses the first invalid field", async ({ page }) => {
