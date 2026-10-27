@@ -53,6 +53,8 @@ type ViewState =
   | { kind: "parse" }
   | { kind: "shape" };
 
+type LoadedResult = Extract<ViewState, { kind: "success" | "empty" }>;
+
 const INITIAL_FIELDS = { south: "", west: "", north: "", east: "" };
 const REFRESH_COOLDOWN_MS = 5_000;
 
@@ -118,6 +120,7 @@ export function App() {
   const [fields, setFields] = useState(INITIAL_FIELDS);
   const [courseName, setCourseName] = useState("");
   const [state, setState] = useState<ViewState>({ kind: "idle" });
+  const [loadedResult, setLoadedResult] = useState<LoadedResult | null>(null);
   const [warning, setWarning] = useState("");
   const [refreshStatus, setRefreshStatus] = useState("Refresh course data is available after loading results.");
   const [staleCandidate, setStaleCandidate] = useState<StaleCandidate | null>(null);
@@ -149,17 +152,9 @@ export function App() {
 
   const loading = state.kind === "loading";
   const normalized = useMemo(() =>
-    state.kind === "success" && state.mode === "detail"
-      ? normalizeGolfCourse(state.response, state.source)
-      : null, [state]);
-
-  useEffect(() => {
-    setSelectedHoleKey(normalized?.holes[0]?.source.sourceKey ?? "");
-    setProjectHoles({});
-    setClubProfile({ clubs: [] });
-    setProjectErrors([]);
-    setProjectMessage("");
-  }, [normalized]);
+    loadedResult?.mode === "detail"
+      ? normalizeGolfCourse(loadedResult.response, loadedResult.source)
+      : null, [loadedResult]);
 
   const courseSourceKey = normalized?.courseCandidates[0]?.source.sourceKey ?? null;
   const holeKeys = normalized?.holes.map(({ source }) => source.sourceKey) ?? [];
@@ -263,12 +258,24 @@ export function App() {
   }
 
   function classifyFailure(failure: RequestFailure) {
-    setActiveSourceEvidence(null);
     if (failure.kind === "cancelled") setState({ kind: "cancelled" });
     else if (failure.kind === "timeout" || (failure.kind === "http" && failure.status === 504)) setState({ kind: "timeout" });
     else if (failure.kind === "rate-limit") setState({ kind: "rate-limit", retryAfterMs: failure.retryAfterMs });
     else if (failure.kind === "http") setState({ kind: "http", status: failure.status });
     else setState({ kind: "network", message: failure.message });
+  }
+
+  function canReplaceResult(mode: OverpassCacheMode, response: OverpassResponse, source: CachedResponse["source"], context: RequestContext) {
+    if (mode !== "detail" || !normalized?.holes.length || activeContext?.cacheKey !== context.cacheKey) return true;
+    const next = normalizeGolfCourse(response, source);
+    const nextHoleKeys = new Set(next.holes.map((hole) => hole.source.sourceKey));
+    if (next.courseCandidates[0]?.source.sourceKey !== courseSourceKey
+      || normalized.holes.some((hole) => !nextHoleKeys.has(hole.source.sourceKey))) {
+      setState({ kind: "invalid", message: "Updated course data could not replace the loaded course." });
+      setRefreshStatus("Course or hole identities changed. Existing course and project were retained. Export your project before loading changed course data.");
+      return false;
+    }
+    return true;
   }
 
   function displayResult(
@@ -280,18 +287,36 @@ export function App() {
     rawResponse?: string,
     consentState: SourceConsentState = "fresh",
   ) {
+    if (!canReplaceResult(mode, response, source, context)) return false;
+    const next = mode === "detail" ? normalizeGolfCourse(response, source) : null;
+    const sameCourse = mode === "detail" && loadedResult?.mode === "detail"
+      && activeContext?.cacheKey === context.cacheKey
+      && next?.courseCandidates[0]?.source.sourceKey === courseSourceKey;
+    if (!sameCourse) {
+      setSelectedHoleKey(next?.holes[0]?.source.sourceKey ?? "");
+      setProjectHoles({});
+      setClubProfile({ clubs: [] });
+      setProjectErrors([]);
+      setProjectMessage("");
+    }
+    if (sameCourse && !next?.holes.some((hole) => hole.source.sourceKey === selectedHoleKey)) {
+      setSelectedHoleKey(next?.holes[0]?.source.sourceKey ?? "");
+    }
     setActiveContext(context);
     setActiveSourceEvidence(mode === "detail" && rawResponse
       ? { mode, cacheKey: context.cacheKey, rawResponse, source, consentState }
       : null);
     setSourceExportMessage("");
-    setState(response.elements.length
+    const result: LoadedResult = response.elements.length
       ? { kind: "success", mode, cached, response, source }
-      : { kind: "empty", mode, cached, response, source });
+      : { kind: "empty", mode, cached, response, source };
+    setLoadedResult(result);
+    setState(result);
+    return true;
   }
 
   function cacheKeyForCurrentResult(): string | null {
-    return state.kind === "success" || state.kind === "empty" ? activeContext?.cacheKey ?? null : null;
+    return activeContext?.cacheKey ?? null;
   }
 
   function cooldownRemaining(cacheKey: string): number {
@@ -316,15 +341,15 @@ export function App() {
   ) {
     setWarning("");
     setStaleCandidate(null);
-    setActiveSourceEvidence(null);
     setSourceExportMessage("");
 
     let stale: Extract<CacheLookup, { kind: "stale" }> | null = null;
     if (!options.bypassCache) {
       const cache = await overpassCache.read({ key: cacheKey, mode, query, bbox });
       if (cache.kind === "hit") {
-        displayResult(mode, true, cache.response, cache.cached.source, { mode, bbox, query, cacheKey, timeout }, cache.cached.rawResponse);
-        setRefreshStatus("Course data loaded from durable cache.");
+        if (displayResult(mode, true, cache.response, cache.cached.source, { mode, bbox, query, cacheKey, timeout }, cache.cached.rawResponse)) {
+          setRefreshStatus("Course data loaded from durable cache.");
+        }
         return;
       }
       if (cache.kind === "stale") stale = cache;
@@ -341,9 +366,9 @@ export function App() {
     }
     const result = await fetchOverpass(query, timeout, activeController.signal);
     if (requestIdentity.current !== id) return;
-    controller.current = null;
 
     if (!result.ok) {
+      controller.current = null;
       classifyFailure(result.failure);
       if (stale) {
         setStaleCandidate({
@@ -360,17 +385,19 @@ export function App() {
     try {
       parsed = JSON.parse(result.rawResponse);
     } catch {
-      setActiveSourceEvidence(null);
+      if (options.manualRefresh) setRefreshStatus("Refresh failed. Existing course view was left unchanged.");
       setState({ kind: "parse" });
       return;
     }
     const response = validateResponse(parsed);
     if (!response) {
-      setActiveSourceEvidence(null);
+      if (options.manualRefresh) setRefreshStatus("Refresh failed. Existing course view was left unchanged.");
       setState({ kind: "shape" });
       return;
     }
     const source = sourceMetadata(query, bbox);
+    const context = { mode, bbox, query, cacheKey, timeout };
+    if (!canReplaceResult(mode, response, source, context)) return;
     try {
       const cacheResult = await overpassCache.write({
         key: cacheKey,
@@ -384,7 +411,9 @@ export function App() {
         setWarning("Result displayed, but durable cache could not be updated.");
       }
     }
-    displayResult(mode, false, response, source, { mode, bbox, query, cacheKey, timeout }, result.rawResponse);
+    if (requestIdentity.current !== id) return;
+    controller.current = null;
+    displayResult(mode, false, response, source, context, result.rawResponse);
     if (options.manualRefresh) setRefreshStatus("Refresh complete.");
   }
 
@@ -419,8 +448,7 @@ export function App() {
 
   function refreshCourseData() {
     if (loading) return;
-    let context: RequestContext | null = null;
-    if (state.kind === "success" || state.kind === "empty") context = activeContext;
+    const context = activeContext;
     if (!context) return;
     const remaining = cooldownRemaining(context.cacheKey);
     if (remaining > 0) {
@@ -449,18 +477,16 @@ export function App() {
     requestIdentity.current += 1;
     controller.current?.abort();
     controller.current = null;
-    setActiveSourceEvidence(null);
     setSourceExportMessage("");
     setState({ kind: "cancelled" });
+    if (loadedResult) setRefreshStatus("Request cancelled. Existing course view was left unchanged.");
     requestAnimationFrame(() => submitButton.current?.focus());
   }
 
-  const showsOsmResult = state.kind === "success" || state.kind === "empty";
+  const showsOsmResult = loadedResult !== null;
   const errorState = ["invalid", "rate-limit", "timeout", "network", "http", "parse", "shape"].includes(state.kind);
   const canRefresh = showsOsmResult && !loading;
-  const canExportGisSource = (state.kind === "success" || state.kind === "empty")
-    && state.mode === "detail"
-    && activeSourceEvidence?.mode === "detail";
+  const canExportGisSource = loadedResult?.mode === "detail" && activeSourceEvidence?.mode === "detail";
 
   return (
     <main className="shell">
@@ -518,16 +544,16 @@ export function App() {
         </section>
       )}
 
-      {(state.kind === "success" || state.kind === "empty") && (
+      {loadedResult && (
         <section className="results" aria-labelledby="results-title">
           <div>
-            <p className="eyebrow">{state.mode} response</p>
+            <p className="eyebrow">{loadedResult.mode} response</p>
             <h2 id="results-title">Raw OSM entities</h2>
           </div>
-          <EntitySummary response={state.response} />
-          {state.mode === "discovery" && (
+          <EntitySummary response={loadedResult.response} />
+          {loadedResult.mode === "discovery" && (
             <ul className="candidate-list">
-              {state.response.elements.map((element) => {
+              {loadedResult.response.elements.map((element) => {
                 const bounds = parseCandidateBounds(element.bounds);
                 return (
                   <li key={`${element.type}-${element.id}`}>
@@ -540,10 +566,10 @@ export function App() {
               })}
             </ul>
           )}
-          {state.mode === "detail" && (
+          {loadedResult.mode === "detail" && (
             <>
               <ul className="raw-list">
-                {state.response.elements.map((element) => <li key={`${element.type}-${element.id}`}><code>{element.type}/{element.id}</code> {elementName(element)}</li>)}
+                {loadedResult.response.elements.map((element) => <li key={`${element.type}-${element.id}`}><code>{element.type}/{element.id}</code> {elementName(element)}</li>)}
               </ul>
               <section className="map-workspace" aria-labelledby="map-workspace-title">
                 <div className="map-selection">
@@ -606,10 +632,10 @@ export function App() {
           <details>
             <summary>Source diagnostics</summary>
             <dl className="diagnostics">
-              <div><dt>Endpoint</dt><dd>{state.source.endpoint}</dd></div>
-              <div><dt>Bbox</dt><dd>{state.source.bbox}</dd></div>
-              <div><dt>Completed</dt><dd>{state.source.completedAt}</dd></div>
-              <div><dt>Query</dt><dd><pre>{state.source.query}</pre></dd></div>
+              <div><dt>Endpoint</dt><dd>{loadedResult.source.endpoint}</dd></div>
+              <div><dt>Bbox</dt><dd>{loadedResult.source.bbox}</dd></div>
+              <div><dt>Completed</dt><dd>{loadedResult.source.completedAt}</dd></div>
+              <div><dt>Query</dt><dd><pre>{loadedResult.source.query}</pre></dd></div>
             </dl>
           </details>
         </section>
