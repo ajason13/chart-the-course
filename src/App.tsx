@@ -126,7 +126,7 @@ export function App() {
   const [staleCandidate, setStaleCandidate] = useState<StaleCandidate | null>(null);
   const [activeContext, setActiveContext] = useState<RequestContext | null>(null);
   const [activeSourceEvidence, setActiveSourceEvidence] = useState<ActiveSourceEvidence | null>(null);
-  const refreshCooldowns = useRef(new Map<string, number>());
+  const [refreshCooldowns, setRefreshCooldowns] = useState(new Map<string, number>());
   const [invalidField, setInvalidField] = useState<keyof Bbox | "courseName" | null>(null);
   const [selectedHoleKey, setSelectedHoleKey] = useState("");
   const [projectHoles, setProjectHoles] = useState<Partial<Record<SourceKey, HoleStateV1>>>({});
@@ -320,14 +320,21 @@ export function App() {
   }
 
   function cooldownRemaining(cacheKey: string): number {
-    return Math.max(0, (refreshCooldowns.current.get(cacheKey) ?? 0) - Date.now());
+    return Math.max(0, (refreshCooldowns.get(cacheKey) ?? 0) - Date.now());
   }
 
-  function startRefreshCooldown(cacheKey: string) {
-    refreshCooldowns.current.set(cacheKey, Date.now() + REFRESH_COOLDOWN_MS);
+  function startRefreshCooldown(cacheKey: string, id: number) {
+    const expiresAt = Date.now() + REFRESH_COOLDOWN_MS;
+    setRefreshCooldowns((current) => new Map(current).set(cacheKey, expiresAt));
     setRefreshStatus("Refresh cooldown active. Please wait 5 seconds.");
     window.setTimeout(() => {
-      if (cooldownRemaining(cacheKey) === 0) setRefreshStatus("Refresh course data is available.");
+      setRefreshCooldowns((current) => {
+        if (current.get(cacheKey) !== expiresAt) return current;
+        const next = new Map(current);
+        next.delete(cacheKey);
+        return next;
+      });
+      if (requestIdentity.current === id) setRefreshStatus("Refresh course data is available.");
     }, REFRESH_COOLDOWN_MS);
   }
 
@@ -339,82 +346,92 @@ export function App() {
     timeout: number,
     options: RequestOptions = {},
   ) {
+    const id = ++requestIdentity.current;
+    controller.current?.abort();
+    const activeController = new AbortController();
+    controller.current = activeController;
+    setState({ kind: "loading", mode });
     setWarning("");
     setStaleCandidate(null);
     setSourceExportMessage("");
 
-    let stale: Extract<CacheLookup, { kind: "stale" }> | null = null;
-    if (!options.bypassCache) {
-      const cache = await overpassCache.read({ key: cacheKey, mode, query, bbox });
-      if (cache.kind === "hit") {
-        if (displayResult(mode, true, cache.response, cache.cached.source, { mode, bbox, query, cacheKey, timeout }, cache.cached.rawResponse)) {
-          setRefreshStatus("Course data loaded from durable cache.");
+    try {
+      let stale: Extract<CacheLookup, { kind: "stale" }> | null = null;
+      if (!options.bypassCache) {
+        const cache = await overpassCache.read({ key: cacheKey, mode, query, bbox, signal: activeController.signal });
+        if (requestIdentity.current !== id) return;
+        if (cache.kind === "hit") {
+          if (displayResult(mode, true, cache.response, cache.cached.source, { mode, bbox, query, cacheKey, timeout }, cache.cached.rawResponse)) {
+            setRefreshStatus("Course data loaded from durable cache.");
+          }
+          return;
         }
+        if (cache.kind === "stale") stale = cache;
+        if (cache.kind === "warning") setWarning(cache.message);
+      }
+
+      if (options.manualRefresh) {
+        startRefreshCooldown(cacheKey, id);
+        setRefreshStatus("Refreshing course data from OpenStreetMap.");
+      }
+      const result = await fetchOverpass(query, timeout, activeController.signal);
+      if (requestIdentity.current !== id) return;
+
+      if (!result.ok) {
+        classifyFailure(result.failure);
+        if (stale) {
+          setStaleCandidate({
+            context: { mode, bbox, query, cacheKey, timeout },
+            cached: stale.cached,
+            response: stale.response,
+            recordDate: stale.cached.source.completedAt,
+          });
+        }
+        if (options.manualRefresh) setRefreshStatus("Refresh failed. Existing course view was left unchanged.");
         return;
       }
-      if (cache.kind === "stale") stale = cache;
-      if (cache.kind === "warning") setWarning(cache.message);
-    }
-
-    const id = ++requestIdentity.current;
-    const activeController = new AbortController();
-    controller.current = activeController;
-    setState({ kind: "loading", mode });
-    if (options.manualRefresh) {
-      startRefreshCooldown(cacheKey);
-      setRefreshStatus("Refreshing course data from OpenStreetMap.");
-    }
-    const result = await fetchOverpass(query, timeout, activeController.signal);
-    if (requestIdentity.current !== id) return;
-
-    if (!result.ok) {
-      controller.current = null;
-      classifyFailure(result.failure);
-      if (stale) {
-        setStaleCandidate({
-          context: { mode, bbox, query, cacheKey, timeout },
-          cached: stale.cached,
-          response: stale.response,
-          recordDate: stale.cached.source.completedAt,
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(result.rawResponse);
+      } catch {
+        if (options.manualRefresh) setRefreshStatus("Refresh failed. Existing course view was left unchanged.");
+        setState({ kind: "parse" });
+        return;
+      }
+      const response = validateResponse(parsed);
+      if (!response) {
+        if (options.manualRefresh) setRefreshStatus("Refresh failed. Existing course view was left unchanged.");
+        setState({ kind: "shape" });
+        return;
+      }
+      const source = sourceMetadata(query, bbox);
+      const context = { mode, bbox, query, cacheKey, timeout };
+      if (!canReplaceResult(mode, response, source, context)) return;
+      try {
+        const cacheResult = await overpassCache.write({
+          key: cacheKey,
+          mode,
+          cached: { rawResponse: result.rawResponse, source },
+          signal: activeController.signal,
         });
+        if (requestIdentity.current !== id) return;
+        if (cacheResult.kind === "warning") setWarning(cacheResult.message);
+      } catch (error) {
+        if (requestIdentity.current !== id) return;
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          setWarning("Result displayed, but durable cache could not be updated.");
+        }
       }
-      if (options.manualRefresh) setRefreshStatus("Refresh failed. Existing course view was left unchanged.");
-      return;
-    }
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(result.rawResponse);
-    } catch {
-      if (options.manualRefresh) setRefreshStatus("Refresh failed. Existing course view was left unchanged.");
-      setState({ kind: "parse" });
-      return;
-    }
-    const response = validateResponse(parsed);
-    if (!response) {
-      if (options.manualRefresh) setRefreshStatus("Refresh failed. Existing course view was left unchanged.");
-      setState({ kind: "shape" });
-      return;
-    }
-    const source = sourceMetadata(query, bbox);
-    const context = { mode, bbox, query, cacheKey, timeout };
-    if (!canReplaceResult(mode, response, source, context)) return;
-    try {
-      const cacheResult = await overpassCache.write({
-        key: cacheKey,
-        mode,
-        cached: { rawResponse: result.rawResponse, source },
-        signal: activeController.signal,
-      });
-      if (cacheResult.kind === "warning") setWarning(cacheResult.message);
+      if (requestIdentity.current !== id) return;
+      if (displayResult(mode, false, response, source, context, result.rawResponse) && options.manualRefresh) {
+        setRefreshStatus("Refresh complete.");
+      }
     } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) {
-        setWarning("Result displayed, but durable cache could not be updated.");
-      }
+      if (requestIdentity.current !== id || (error instanceof DOMException && error.name === "AbortError")) return;
+      setState({ kind: "network", message: error instanceof Error ? error.message : "Request failed." });
+    } finally {
+      if (requestIdentity.current === id) controller.current = null;
     }
-    if (requestIdentity.current !== id) return;
-    controller.current = null;
-    displayResult(mode, false, response, source, context, result.rawResponse);
-    if (options.manualRefresh) setRefreshStatus("Refresh complete.");
   }
 
   function submitDiscovery(event: FormEvent) {
@@ -477,6 +494,7 @@ export function App() {
     requestIdentity.current += 1;
     controller.current?.abort();
     controller.current = null;
+    setStaleCandidate(null);
     setSourceExportMessage("");
     setState({ kind: "cancelled" });
     if (loadedResult) setRefreshStatus("Request cancelled. Existing course view was left unchanged.");
