@@ -11,13 +11,13 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && npm run verify:production",
     "preview": "vite preview --host 127.0.0.1",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test": "npm run test:unit && npm run test:e2e",
     "verify:scaffold": "node scripts/verify-scaffold.mjs",
-    "check": "npm run verify:scaffold && npm run build && npm run test",
+    "check": "npm run verify:scaffold && npm run build && npm run build:experiments && npm run test",
     "install:ci": "npm ci",
     "generate:sbom": "npx @cyclonedx/cyclonedx-npm --omit dev --output-format JSON --output-file sbom.json --validate",
     "build:sbom": "npm run install:ci && npm run generate:sbom",
@@ -25,7 +25,10 @@
     "license:deny": "npx license-checker-rseidelsohn --production --excludePrivatePackages --failOn \"GPL-2.0-only;GPL-3.0-only;AGPL-3.0;UNLICENSED\"",
     "license:check": "npm run license:allow && npm run license:deny",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
-    "compliance": "npm run generate:sbom && npm run license:check && npm run audit:prod"
+    "compliance": "npm run generate:sbom && npm run license:check && npm run audit:prod",
+    "build:experiments": "tsc --noEmit && vite build --mode experiments",
+    "preview:experiments": "vite preview --mode experiments --host 127.0.0.1",
+    "verify:production": "node --test scripts/verify-production.test.mjs && node scripts/verify-production.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.11.3",

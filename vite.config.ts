@@ -1,8 +1,18 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), {
+    name: "exclude-production-experiments",
+    generateBundle() {
+      if (mode === "experiments") return;
+      for (const id of this.getModuleIds()) {
+        if (/\/(?:ctc008|ctc014)[^/]*|\/node_modules\/(?:jspdf|pdfjs-dist|pdfkit|svg-to-pdfkit|svg2pdf\.js|blob-stream)\//i.test(id)) {
+          this.error(`Experiment module is forbidden in production: ${id}`);
+        }
+      }
+    }
+  }],
   server: {
     host: "127.0.0.1",
     port: 5173,
@@ -14,12 +24,12 @@ export default defineConfig({
     strictPort: false
   },
   build: {
+    outDir: mode === "experiments" ? "dist-experiments" : "dist",
+    manifest: true,
     rollupOptions: {
-      input: {
-        app: "index.html",
-        ctc014: "ctc014.html",
-        ctc008: "ctc008.html"
-      }
+      input: mode === "experiments"
+        ? ["ctc014.html", "ctc008.html"]
+        : "index.html"
     }
   },
   test: {
@@ -27,4 +37,4 @@ export default defineConfig({
     globals: true,
     include: ["src/**/*.test.ts"]
   }
-});
+}));
