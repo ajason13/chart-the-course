@@ -46,7 +46,28 @@ git diff --check
 npm_config_cache=/private/tmp/chart-the-course-npm-cache scripts/compliance.sh
 ```
 
-`npm run check` runs the app build, unit tests, and Playwright smoke test.
+`npm run check` builds both outputs, verifies production artifact exclusions,
+and runs unit tests plus the app and PDF experiment browser tests. CI runs
+this same command. Build both outputs before running `npm run test:e2e` alone.
+
+## Production and experiment builds
+
+`npm run build` emits only the application in `dist/` and checks its output.
+`npm run preview` serves that production output. Deploy only `dist/`.
+
+The CTC-008 and CTC-014 fixture-backed PDF experiments are research artifacts;
+production PDF export has not been adopted. Build them explicitly with
+`npm run build:experiments`, then serve `dist-experiments/` with
+`npm run preview:experiments`. Open `/ctc008.html` or `/ctc014.html` on the
+printed URL. Keep this separate output out of application deployments.
+`npm run dev` is a source development server and can serve the experiment
+HTML files; it does not represent the production artifact boundary.
+
+Playwright uses separate preview servers: application tests run on port 4173,
+and `experiments-chromium` runs the existing PDF checks on port 4174.
+For only PDF checks after building both outputs, use
+`npm run test:e2e -- --project=experiments-chromium`.
+
 Production compliance remains in `scripts/compliance.sh`.
 
 ## Governance Notes

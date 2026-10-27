@@ -30,7 +30,7 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Run app checks
+      - name: Verify production artifacts and app and experiment checks
         run: npm run check
 
       - name: Run production compliance
