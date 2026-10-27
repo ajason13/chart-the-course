@@ -1,5 +1,11 @@
 # Governance Workflow
 
+> Historical workflow, superseded on 2026-10-24 by `../AGENTS.md` and global
+> Codex delivery guidance. The tracker and external-model handoffs below are
+> retained as provenance and are not prerequisites for new work. Product,
+> licensing, and qualified-human release constraints remain in their dedicated
+> policy documents.
+
 Status: Updated on 2026-06-26 after Gemini reliability review.
 
 Chart the Course uses a document-first workflow. Notion is long-term project

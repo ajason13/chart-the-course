@@ -5,9 +5,11 @@ and aligned with the governance docs in this repository.
 
 ## Before You Start
 
-1. Read `AGENTS.md`, `CONTEXT.md`, `SECURITY.md`, and `ATTRIBUTION.md`.
-2. Review the relevant decision records under `docs/`.
-3. Confirm the selected task has acceptance criteria in Notion.
+For Codex session operations, see [the session entry point](docs/codex-sessions.md).
+
+1. Read `AGENTS.md`, `SECURITY.md`, and `ATTRIBUTION.md`.
+2. Review only the decision records under `docs/` that affect the task.
+3. State clear acceptance criteria in the issue, pull request, or task prompt.
 
 ## Development
 
