@@ -42,7 +42,7 @@
     "svg-to-pdfkit": "0.1.8",
     "svg2pdf.js": "2.7.0",
     "typescript": "6.0.3",
-    "vite": "8.0.16",
+    "vite": "8.3.5",
     "vitest": "4.1.12"
   },
   "dependencies": {
