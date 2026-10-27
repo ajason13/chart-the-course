@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import type { OverpassResponse } from "../../src/overpass";
 import AxeBuilder from "@axe-core/playwright";
 import ctc006Detail from "../../fixtures/overpass/synthetic-golf-course-ctc006.json" with { type: "json" };
 
@@ -215,6 +216,109 @@ test("refreshes loaded course data with cooldown and durable cache replacement",
   await expect(page.getByText("way/9000000102")).toBeVisible();
   expect(detailRequests).toBe(2);
 });
+
+// Two holes make a reset to the first hole observable during refresh.
+const refreshDetail = {
+  elements: [
+    ...ctc006Detail.elements,
+    { ...ctc006Detail.elements[1], id: 9000060102, tags: { golf: "hole", ref: "2", par: "4" } },
+    ...ctc006Detail.elements.filter((element) => element.tags.golf === "tee").map((element) => ({
+      ...element, id: 9000060202, tags: { golf: "tee", ref: "2" },
+    })),
+  ],
+} as OverpassResponse;
+
+async function downloadedJson(page: Page, button: string) {
+  const downloading = page.waitForEvent("download");
+  await page.getByRole("button", { name: button, exact: true }).click();
+  const download = await downloading;
+  expect(await download.failure()).toBeNull();
+  return JSON.parse(await page.evaluate(() => (window as typeof window & { __ctcLastBlob: Promise<string> }).__ctcLastBlob));
+}
+
+for (const scenario of ["success", "HTTP failure", "network failure", "malformed JSON", "invalid shape", "cancellation", "missing hole", "changed hole", "changed course", "empty detail"]) {
+  test(`preserves populated planning state during same-course refresh: ${scenario}`, async ({ page }) => {
+    await page.addInitScript(() => {
+      const original = URL.createObjectURL.bind(URL);
+      URL.createObjectURL = (blob) => {
+        if (blob instanceof Blob) (window as typeof window & { __ctcLastBlob: Promise<string> }).__ctcLastBlob = blob.text();
+        return original(blob);
+      };
+    });
+    let detailRequests = 0;
+    let releaseRefresh: () => void = () => {};
+    const refreshPending = new Promise<void>((resolve) => { releaseRefresh = resolve; });
+    const updated = structuredClone(refreshDetail);
+    // The raw evidence changes while the project identities remain stable.
+    updated.elements[0].tags = { ...updated.elements[0].tags, name: "Refreshed synthetic course" };
+    if (scenario === "missing hole") updated.elements = updated.elements.filter((element) => element.id !== 9000060102);
+    if (scenario === "changed hole") updated.elements.find((element) => element.id === 9000060102)!.id = 9000060199;
+    if (scenario === "changed course") updated.elements[0].id = 9000060099;
+    if (scenario === "empty detail") updated.elements = [];
+    await isolateNetwork(page, async (route) => {
+      const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+      if (!query.includes("purpose:golf-course-detail")) {
+        await route.fulfill({ json: discovery });
+        return;
+      }
+      detailRequests += 1;
+      if (detailRequests === 1) {
+        await route.fulfill({ json: refreshDetail });
+        return;
+      }
+      await refreshPending;
+      if (scenario === "HTTP failure") await route.fulfill({ status: 500, body: "error" });
+      else if (scenario === "network failure") await route.abort("internetdisconnected");
+      else if (scenario === "malformed JSON") await route.fulfill({ body: "{" });
+      else if (scenario === "invalid shape") await route.fulfill({ json: { elements: [{ type: "area", id: 1 }] } });
+      else await route.fulfill({ json: updated });
+    });
+    await page.goto("/");
+    await fillBounds(page);
+    await page.getByRole("button", { name: "Search courses" }).click();
+    await page.getByRole("button", { name: "Load raw detail" }).click();
+    const hole = page.getByRole("combobox", { name: /^Hole/ });
+    await hole.selectOption("way/9000060102");
+    const map = page.getByTestId("hole-vector-map");
+    await page.getByRole("button", { name: "Add target" }).click();
+    await map.click({ position: { x: 180, y: 180 } });
+    await page.getByRole("button", { name: "Add carry" }).click();
+    await page.getByRole("button", { name: "Add club" }).click();
+    const before = await downloadedJson(page, "Export project");
+    expect(Object.values(before.holes)).toEqual([expect.objectContaining({
+      targets: [expect.anything()], carries: [expect.anything()],
+    })]);
+    expect(before.clubProfile.clubs).toHaveLength(1);
+    const oldSource = await downloadedJson(page, "Download Raw GIS Source (ODbL)");
+
+    await page.getByRole("button", { name: "Refresh course data", exact: true }).click();
+    await expect(page.getByText("Loading detail results.")).toBeVisible();
+    await expect(hole).toHaveValue("way/9000060102");
+    await expect(page.getByLabel("Club name")).toHaveValue("Club 1");
+    if (scenario === "cancellation") {
+      await page.getByRole("button", { name: "Cancel request" }).click();
+      await expect(page.getByText("Request cancelled.", { exact: true })).toBeVisible();
+    }
+    releaseRefresh();
+    if (scenario === "success") await expect(page.getByText("Refresh complete.", { exact: true })).toBeVisible();
+    else if (["missing hole", "changed hole", "changed course", "empty detail"].includes(scenario)) {
+      await expect(page.getByText(/Course or hole identities changed/)).toBeVisible();
+    } else if (scenario !== "cancellation") {
+      await expect(page.getByText("Refresh failed. Existing course view was left unchanged.", { exact: true })).toBeVisible({ timeout: 15_000 });
+    }
+    await expect(hole).toHaveValue("way/9000060102");
+    const after = await downloadedJson(page, "Export project");
+    expect(after).toEqual({ ...before, exportedAt: after.exportedAt });
+    const source = await downloadedJson(page, "Download Raw GIS Source (ODbL)");
+    if (scenario === "success") {
+      expect(JSON.parse(source.rawResponse)).toEqual(updated);
+      expect(source.rawResponse).not.toBe(oldSource.rawResponse);
+    } else {
+      expect(source).toEqual({ ...oldSource, exportedAt: source.exportedAt });
+    }
+    expect(detailRequests).toBe(scenario === "network failure" ? 5 : 2);
+  });
+}
 
 test("exports raw GIS source only for loaded detail data", async ({ page }) => {
   const rawDetailText = JSON.stringify(ctc006Detail);
