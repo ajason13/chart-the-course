@@ -68,7 +68,10 @@ and `experiments-chromium` runs the existing PDF checks on port 4174.
 For only PDF checks after building both outputs, use
 `npm run test:e2e -- --project=experiments-chromium`.
 
-Production compliance remains in `scripts/compliance.sh`.
+Production compliance remains in `scripts/compliance.sh`. It rebuilds the app
+and reconciles its package inventory with fresh production SBOM, license and
+audit evidence. See [artifact compliance](docs/artifact-compliance.md) for the
+artifact boundary, CI evidence and separate experiment/tooling checks.
 
 ## Governance Notes
 

@@ -33,5 +33,20 @@ jobs:
       - name: Verify production artifacts and app and experiment checks
         run: npm run check
 
-      - name: Run production compliance
+      - name: Reconcile production artifacts with compliance evidence
         run: npm run compliance
+
+      - name: Audit tooling and experiment dependencies separately
+        run: npm run audit:all
+
+      - name: Preserve production compliance evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: production-compliance
+          include-hidden-files: true
+          if-no-files-found: error
+          path: |
+            .compliance/
+            dist/.vite/runtime-dependencies.json
+            dist/.vite/manifest.json

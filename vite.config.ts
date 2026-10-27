@@ -1,8 +1,9 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import { runtimeInventory } from "./scripts/runtime-inventory.mjs";
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), {
+  plugins: [react(), ...(mode === "experiments" ? [] : [runtimeInventory()]), {
     name: "exclude-production-experiments",
     generateBundle() {
       if (mode === "experiments") return;
@@ -13,6 +14,12 @@ export default defineConfig(({ mode }) => ({
       }
     }
   }],
+  worker: mode === "experiments" ? undefined : {
+    plugins: () => [{
+      name: "exclude-production-workers",
+      buildStart() { this.error("Production worker builds require separate dependency provenance"); }
+    }]
+  },
   server: {
     host: "127.0.0.1",
     port: 5173,
