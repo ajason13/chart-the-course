@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import type { ProjectV2 } from "../../src/project";
 import type { OverpassResponse } from "../../src/overpass";
 import AxeBuilder from "@axe-core/playwright";
 import ctc006Detail from "../../fixtures/overpass/synthetic-golf-course-ctc006.json" with { type: "json" };
@@ -1189,6 +1190,122 @@ test("manages targets, carry arcs, and strict local project exchange", async ({ 
   await expect(page.locator('input[value="Target 1"]')).toBeVisible();
   await expect(page.getByText("Course data © OpenStreetMap contributors.")).toBeVisible();
   await assertAxe(page);
+});
+
+// Use the live-detail workflow so source and authored project downloads coexist.
+async function preparePopulatedProject(page: Page): Promise<ProjectV2> {
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? ctc006Detail : discovery });
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses", exact: true }).click();
+  await page.getByRole("button", { name: "Open course", exact: true }).click();
+  await page.getByRole("button", { name: "Add target", exact: true }).click();
+  await page.getByTestId("hole-vector-map").click({ position: { x: 180, y: 180 } });
+  await page.getByRole("button", { name: "Add carry", exact: true }).click();
+  await page.getByRole("button", { name: "Add club", exact: true }).click();
+  for (const [label, value] of [
+    ["Target label", "Exchange landing"], ["Distances in yards", "125, 175"],
+    ["Club name", "Exchange iron"], ["Carry yards", "165"],
+    ["Longitudinal full width yards", "28"], ["Lateral full width yards", "18"],
+  ]) {
+    await page.getByLabel(label, { exact: true }).fill(value);
+    await page.getByLabel(label, { exact: true }).blur();
+  }
+  const saved: ProjectV2 = await downloadedJson(page, "Export project");
+  expect(saved.schema).toBe("chart-the-course-project/v2");
+  expect(saved.courseSourceKey).toBe("way/9000060001");
+  const hole = saved.holes["way/9000060101"]!;
+  expect(hole.targets).toEqual([{
+    id: expect.stringMatching(/^t-[0-9a-f]{12}$/), label: "Exchange landing",
+    lat: expect.any(Number), lon: expect.any(Number),
+  }]);
+  expect(hole.carries).toEqual([{
+    id: expect.stringMatching(/^c-[0-9a-f]{12}$/),
+    origin: { kind: "tee", sourceKey: "way/9000060201" }, distances: [125, 175],
+  }]);
+  expect(saved.clubProfile.clubs).toEqual([{
+    id: expect.stringMatching(/^p-[0-9a-f]{12}$/), label: "Exchange iron",
+    carry: 165, longitudinal: 28, lateral: 18,
+  }]);
+  return saved;
+}
+
+async function importProjectJson(page: Page, project: unknown) {
+  await page.getByLabel("Import project file (.json)").evaluate((input: HTMLInputElement, text) => {
+    const files = new DataTransfer();
+    files.items.add(new File([text], "exchange-project.json", { type: "application/json" }));
+    input.files = files.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }, JSON.stringify(project));
+}
+
+test("restores a populated live-course project download and keeps raw GIS source separate", async ({ page }) => {
+  const saved = await preparePopulatedProject(page);
+  const source = await downloadedJson(page, "Download Raw GIS Source (ODbL)");
+  expect(source.rawResponse).toBe(JSON.stringify(ctc006Detail));
+  const sourceText = JSON.stringify(source);
+  for (const field of ["targets", "carries", "clubProfile", "Exchange landing", "Exchange iron",
+    saved.holes["way/9000060101"]!.targets[0].id, saved.holes["way/9000060101"]!.carries[0].id,
+    saved.clubProfile.clubs[0].id]) expect(sourceText).not.toContain(field);
+
+  // Replace every authored collection, rather than importing over identical state.
+  const replacement = { ...saved, holes: {}, clubProfile: { clubs: [] } };
+  page.once("dialog", (dialog) => dialog.accept());
+  await importProjectJson(page, replacement);
+  await expect(page.getByText("Project imported successfully.", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Target label", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Distances in yards", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("No clubs added.", { exact: true })).toBeVisible();
+  const emptied = await downloadedJson(page, "Export project");
+  expect(emptied).toEqual({ ...replacement, exportedAt: emptied.exportedAt });
+  const emptySource = await downloadedJson(page, "Download Raw GIS Source (ODbL)");
+  expect(source).toEqual({ ...emptySource, exportedAt: source.exportedAt });
+
+  await importProjectJson(page, saved);
+  await expect(page.getByLabel("Target label", { exact: true })).toHaveValue("Exchange landing");
+  await expect(page.getByLabel("Distances in yards", { exact: true })).toHaveValue("125, 175");
+  await expect(page.getByLabel("Club name", { exact: true })).toHaveValue("Exchange iron");
+  const restored = await downloadedJson(page, "Export project");
+  expect(restored).toEqual({ ...saved, exportedAt: restored.exportedAt });
+  const map = page.getByTestId("hole-vector-map");
+  await expect(map.locator('[data-layer="targets"] [data-target-id]'))
+    .toHaveAttribute("data-target-id", saved.holes["way/9000060101"]!.targets[0].id);
+  await expect(map.locator('[data-layer="carry-arcs"] text')).toHaveText(["125 yd", "175 yd"]);
+  await expect(map.locator('[data-layer="dispersion"] polygon[role="img"]'))
+    .toHaveAttribute("aria-label", /Exchange iron.*165 yard carry, 28 yard longitudinal full width, 18 yard lateral full width/);
+});
+
+test("rejects invalid project replacements atomically and migrates supported v1 downloads", async ({ page }) => {
+  const saved = await preparePopulatedProject(page);
+  const invalid = structuredClone(saved);
+  invalid.holes["way/9000060101"]!.targets[0].label = "Must not be applied";
+  invalid.clubProfile.clubs[0].carry = 0; // A bad club must not partially apply the changed target.
+  const wrongCourse = { ...saved, courseSourceKey: "way/9000000001", clubProfile: { clubs: [] } };
+  const wrongHole = { ...saved, holes: { "way/9000000101": saved.holes["way/9000060101"] }, clubProfile: { clubs: [] } };
+  let confirmations = 0;
+  page.on("dialog", async (dialog) => { confirmations += 1; await dialog.dismiss(); });
+  for (const [candidate, code] of [[invalid, "OUT_OF_RANGE"], [wrongCourse, "COURSE_MISMATCH"], [wrongHole, "HOLE_MISMATCH"]] as const) {
+    await importProjectJson(page, candidate);
+    await expect(page.getByRole("alert")).toContainText(code);
+    const retained = await downloadedJson(page, "Export project");
+    expect(retained).toEqual({ ...saved, exportedAt: retained.exportedAt });
+  }
+  expect(confirmations).toBe(0); // Validation must precede replacement consent.
+  page.removeAllListeners("dialog");
+
+  const { clubProfile: _profile, ...legacyFields } = saved;
+  const legacy = { ...legacyFields, schema: "chart-the-course-project/v1" };
+  page.once("dialog", (dialog) => dialog.accept());
+  await importProjectJson(page, legacy);
+  await expect(page.getByText("Project imported successfully.", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Target label", { exact: true })).toHaveValue("Exchange landing");
+  await expect(page.getByLabel("Distances in yards", { exact: true })).toHaveValue("125, 175");
+  await expect(page.getByText("No clubs added.", { exact: true })).toBeVisible();
+  const migrated = await downloadedJson(page, "Export project");
+  expect(migrated).toEqual({ ...saved, exportedAt: migrated.exportedAt, clubProfile: { clubs: [] } });
 });
 
 test("keeps club profile and dispersion selections transient across reload", async ({ page }) => {
