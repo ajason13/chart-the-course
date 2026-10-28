@@ -376,8 +376,10 @@ export function App() {
         if (cache.kind === "hit") {
           if (displayResult(mode, true, cache.response, cache.cached.source, context, cache.cached.rawResponse)) {
             setRefreshStatus("Course data loaded from durable cache.");
+            return;
           }
-          return;
+          setState({ kind: "loading", mode });
+          setRefreshStatus("Stored course data could not be used. Retrying with OpenStreetMap.");
         }
         if (cache.kind === "stale") stale = cache;
         if (cache.kind === "warning") setWarning(cache.message);
@@ -435,8 +437,8 @@ export function App() {
         }
       }
       if (requestIdentity.current !== id) return;
-      if (displayResult(mode, false, response, source, context, result.rawResponse) && options.manualRefresh) {
-        setRefreshStatus("Refresh complete.");
+      if (displayResult(mode, false, response, source, context, result.rawResponse)) {
+        setRefreshStatus(options.manualRefresh ? "Refresh complete." : "Course data loaded from OpenStreetMap.");
       }
     } catch (error) {
       if (requestIdentity.current !== id || (error instanceof DOMException && error.name === "AbortError")) return;

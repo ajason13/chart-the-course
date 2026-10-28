@@ -866,3 +866,30 @@ for (const evidence of ["missing", "duplicate"]) {
     await expect(page.getByRole("button", { name: "Load raw detail" })).toBeEnabled();
   });
 }
+
+for (const cachedEvidence of ["missing", "duplicate"]) {
+  test(`retries selected course from live data when shared cache has ${cachedEvidence} evidence`, async ({ page }) => {
+    const { default: multiple } = await import("../../fixtures/overpass/synthetic-multiple-courses.json", { with: { type: "json" } });
+    const courseA = { ...discovery.elements[0], id: 9000060000, tags: { leisure: "golf_course", name: "Synthetic Course A" } };
+    let detailRequests = 0;
+    await isolateNetwork(page, async (route) => {
+      const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+      if (!query.includes("purpose:golf-course-detail")) return route.fulfill({ json: { elements: [courseA, discovery.elements[0]] } });
+      detailRequests += 1;
+      const elements = detailRequests > 1 ? multiple.elements : cachedEvidence === "missing"
+        ? multiple.elements.filter((element) => element.id !== 9000060001)
+        : [...multiple.elements, multiple.elements[0]];
+      return route.fulfill({ json: { elements } });
+    });
+    await page.goto("/");
+    await fillBounds(page);
+    await page.getByRole("button", { name: "Search courses" }).click();
+    await page.getByRole("button", { name: "Load raw detail" }).nth(0).click();
+    await expect(page.getByText(/Selected course:.*\(way\/9000060000\)/)).toBeVisible();
+    await page.getByRole("button", { name: "Search courses" }).click();
+    await page.getByRole("button", { name: "Load raw detail" }).nth(1).click();
+    await expect(page.getByText(/Selected course:.*\(way\/9000060001\)/)).toBeVisible();
+    expect(detailRequests).toBe(2);
+    await expect(page.getByRole("button", { name: "Export project", exact: true })).toBeEnabled();
+  });
+}
