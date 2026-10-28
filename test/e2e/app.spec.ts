@@ -414,6 +414,167 @@ const refreshDetail = {
   ],
 } as OverpassResponse;
 
+async function prepareGuardWorkspace(page: Page, discoveryResponse?: (route: Route) => Promise<void>) {
+  await page.addInitScript(() => {
+    const original = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = (blob) => {
+      if (blob instanceof Blob) (window as typeof window & { __ctcLastBlob: Promise<string> }).__ctcLastBlob = blob.text();
+      return original(blob);
+    };
+  });
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    if (query.includes("purpose:golf-course-detail")) return route.fulfill({ json: refreshDetail });
+    if (discoveryResponse) return discoveryResponse(route);
+    return route.fulfill({ json: discovery });
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses" }).click();
+  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await expect(page.getByTestId("hole-vector-map")).toBeVisible();
+}
+
+async function expectProjectDirty(page: Page, dirty: boolean) {
+  await expect(page.getByText(dirty ? "Unsaved project changes." : "No unsaved project changes.", { exact: true })).toBeVisible();
+  // A cancelable event also verifies that the listener is removed when clean,
+  // without relying on the browser's discretionary native-dialog policy.
+  await expect.poll(() => page.evaluate(() => {
+    const event = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  })).toBe(dirty);
+}
+
+for (const kind of ["target", "carry", "club"] as const) {
+  test(`tracks unsaved ${kind} creation, edits, deletion and export baselines`, async ({ page }) => {
+    await prepareGuardWorkspace(page);
+    await expectProjectDirty(page, false);
+    const map = page.getByTestId("hole-vector-map");
+    await map.click({ position: { x: 180, y: 180 } });
+    await map.click({ position: { x: 240, y: 240 } });
+    await expectProjectDirty(page, false); // Measurement is not authored state.
+    await page.getByRole("button", { name: `Add ${kind}`, exact: true }).click();
+    if (kind === "target") await map.click({ position: { x: 180, y: 180 } });
+    await expectProjectDirty(page, true);
+    await downloadedJson(page, "Download Raw GIS Source (ODbL)");
+    await expectProjectDirty(page, true);
+    await downloadedJson(page, "Export project");
+    await expectProjectDirty(page, false);
+    const editor = page.getByLabel(kind === "target" ? "Target label" : kind === "carry" ? "Distances in yards" : "Club name", { exact: true });
+    const original = await editor.inputValue();
+    await editor.fill(kind === "carry" ? "175" : "Edited name");
+    await editor.blur();
+    await expectProjectDirty(page, true);
+    await editor.fill(original);
+    await editor.blur();
+    await expectProjectDirty(page, false); // Exact content reversion restores baseline.
+    await page.getByRole("button", { name: kind === "target" ? "Delete" : `Delete ${kind}`, exact: true }).click();
+    await expectProjectDirty(page, true); // Deletion of exported content is an edit.
+    if (kind === "target") {
+      await page.getByRole("button", { name: "Undo delete", exact: true }).click();
+      await expectProjectDirty(page, false);
+    } else {
+      await downloadedJson(page, "Export project");
+      await expectProjectDirty(page, false);
+    }
+  });
+}
+
+for (const cached of [true, false]) {
+  test(`retains exact dirty project and selection when cancelling ${cached ? "cached" : "pending network"} replacement`, async ({ page }) => {
+    let discoveries = 0;
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    await prepareGuardWorkspace(page, async (route) => {
+      discoveries += 1;
+      if (discoveries > 1) await pending;
+      await route.fulfill({ json: discovery });
+    });
+    const hole = page.getByRole("combobox", { name: /^Hole/ });
+    await hole.selectOption("way/9000060102");
+    await page.getByRole("button", { name: "Add club", exact: true }).click();
+    const before = await downloadedJson(page, "Export project");
+    if (!cached) await page.getByLabel(/Course name/).fill("Uncached search");
+    if (cached) {
+      await page.getByLabel("Club name", { exact: true }).fill("Retain this club");
+      await page.getByLabel("Club name", { exact: true }).blur();
+    }
+    const dialog = page.waitForEvent("dialog");
+    await page.getByRole("button", { name: "Search courses", exact: true }).click();
+    if (!cached) {
+      await expect(page.getByText("Loading discovery results.", { exact: true })).toBeVisible();
+      // Edits made after request start must still be protected at commit time.
+      await page.getByLabel("Club name", { exact: true }).fill("Retain this club");
+      await page.getByLabel("Club name", { exact: true }).blur();
+      release();
+    }
+    const confirmation = await dialog;
+    expect(confirmation.type()).toBe("confirm");
+    expect(confirmation.message()).toContain("Discard unsaved project changes");
+    await confirmation.dismiss();
+    await expect(page.getByText("Replacement cancelled. Existing course, project and selection were retained.", { exact: true })).toBeVisible();
+    await expect(hole).toHaveValue("way/9000060102");
+    await expectProjectDirty(page, true);
+    const retained = await downloadedJson(page, "Export project");
+    expect(retained).toEqual({ ...before, exportedAt: retained.exportedAt, clubProfile: {
+      clubs: [{ ...before.clubProfile.clubs[0], label: "Retain this club" }],
+    } });
+    await expectProjectDirty(page, false);
+    await page.getByRole("button", { name: "Add carry", exact: true }).click();
+    page.once("dialog", (confirmation) => confirmation.accept());
+    await page.getByRole("button", { name: "Search courses", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Load raw detail", exact: true })).toBeVisible();
+    await expect(page.getByTestId("hole-vector-map")).toHaveCount(0);
+    await page.getByRole("button", { name: "Load raw detail", exact: true }).click();
+    await expectProjectDirty(page, false);
+    await expect(page.getByText("No clubs added.", { exact: true })).toBeVisible();
+    await expect(hole).toHaveValue("way/9000060101");
+    expect(discoveries).toBe(cached ? 1 : 2);
+    await assertAxe(page);
+  });
+}
+
+test("import establishes a baseline only after validation and replacement consent", async ({ page }) => {
+  await prepareGuardWorkspace(page);
+  await page.getByRole("button", { name: "Add club", exact: true }).click();
+  const saved = await downloadedJson(page, "Export project");
+  const input = page.getByLabel("Import project file (.json)");
+  const importSaved = () => input.evaluate((element: HTMLInputElement, text) => {
+    const files = new DataTransfer();
+    files.items.add(new File([text], "saved.json", { type: "application/json" }));
+    element.files = files.files;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  }, JSON.stringify(saved));
+  await page.getByLabel("Club name", { exact: true }).fill("Unsaved club");
+  await page.getByLabel("Club name", { exact: true }).blur();
+  await input.setInputFiles("fixtures/projects/synthetic-project-wrong-course.json");
+  await expect(page.getByRole("alert")).toContainText("COURSE_MISMATCH");
+  await expectProjectDirty(page, true);
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await importSaved();
+  await expect(page.getByLabel("Club name", { exact: true })).toHaveValue("Unsaved club");
+  await expectProjectDirty(page, true);
+  page.once("dialog", (dialog) => dialog.accept());
+  await importSaved();
+  await expect(page.getByText("Project imported successfully.", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Club name", { exact: true })).toHaveValue("Club 1");
+  await expectProjectDirty(page, false);
+  await page.getByRole("button", { name: "Delete club", exact: true }).click();
+  await expectProjectDirty(page, true);
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await importSaved();
+  await expect(page.getByText("No clubs added.", { exact: true })).toBeVisible();
+  await expectProjectDirty(page, true); // Unsaved deletion is protected even when empty.
+  const dialog = page.waitForEvent("dialog");
+  const reload = page.reload();
+  const warning = await dialog;
+  expect(warning.type()).toBe("beforeunload");
+  await warning.accept();
+  await reload;
+  await expect(page.getByRole("heading", { name: "Course discovery", exact: true })).toBeVisible();
+});
+
 async function downloadedJson(page: Page, button: string) {
   const downloading = page.waitForEvent("download");
   await page.getByRole("button", { name: button, exact: true }).click();
@@ -475,12 +636,16 @@ for (const scenario of ["success", "HTTP failure", "network failure", "malformed
       targets: [expect.anything()], carries: [expect.anything()],
     })]);
     expect(before.clubProfile.clubs).toHaveLength(1);
+    await page.getByLabel("Club name", { exact: true }).fill("Unsaved profile");
+    await page.getByLabel("Club name", { exact: true }).blur();
+    before.clubProfile.clubs[0].label = "Unsaved profile";
+    await expectProjectDirty(page, true);
     const oldSource = await downloadedJson(page, "Download Raw GIS Source (ODbL)");
 
     await page.getByRole("button", { name: "Refresh course data", exact: true }).click();
     await expect(page.getByText("Loading detail results.")).toBeVisible();
     await expect(hole).toHaveValue("way/9000060102");
-    await expect(page.getByLabel("Club name")).toHaveValue("Club 1");
+    await expect(page.getByLabel("Club name")).toHaveValue("Unsaved profile");
     if (scenario === "cancellation") {
       await page.getByRole("button", { name: "Cancel request" }).click();
       await expect(page.getByText("Request cancelled.", { exact: true })).toBeVisible();
@@ -493,6 +658,7 @@ for (const scenario of ["success", "HTTP failure", "network failure", "malformed
       await expect(page.getByText("Refresh failed. Existing course view was left unchanged.", { exact: true })).toBeVisible({ timeout: 15_000 });
     }
     await expect(hole).toHaveValue("way/9000060102");
+    await expectProjectDirty(page, true);
     const after = await downloadedJson(page, "Export project");
     expect(after).toEqual({ ...before, exportedAt: after.exportedAt });
     const source = await downloadedJson(page, "Download Raw GIS Source (ODbL)");
@@ -708,7 +874,6 @@ test("manages targets, carry arcs, and strict local project exchange", async ({ 
   const afterProfile = await page.evaluate(() => JSON.parse((window as typeof window & { __ctcProjectTexts: string[] }).__ctcProjectTexts[1]).clubProfile);
   expect(afterProfile).toEqual(beforeProfile);
 
-  page.once("dialog", (dialog) => dialog.accept());
   await page.getByLabel("Import project file (.json)").setInputFiles("fixtures/projects/synthetic-project-wrong-course.json");
   await expect(page.getByRole("alert")).toContainText("COURSE_MISMATCH");
   await expect(page.locator('input[value="Target 1"]')).toBeVisible();
@@ -736,6 +901,7 @@ test("keeps club profile and dispersion selections transient across reload", asy
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
   await assertAxe(page);
 
+  page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
