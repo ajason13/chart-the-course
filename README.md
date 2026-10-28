@@ -28,8 +28,10 @@ The merged React/TypeScript application supports:
   explicit refresh, and consent before using expired data after a failed request.
 
 To use the app, enter bounds (each span at most 0.35 degrees), search, choose a
-course with **Load raw detail**, then select a hole. Discovery and uncached
-detail loading require network access to Overpass. To try the tools without
+course with **Open course**, then select a hole. The selected-hole map leads the
+planning workspace; expand **Source diagnostics** below it to inspect raw entities,
+source bounds, timestamp, and the exact query. Discovery and uncached detail
+loading require network access to Overpass. To try the tools without
 coordinates or course-data network access, choose **Open synthetic demo**.
 The app itself must still be loaded; this does not install an offline app.
 The demo is clearly labeled synthetic, disables course refresh and raw GIS
