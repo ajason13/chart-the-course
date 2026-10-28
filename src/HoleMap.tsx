@@ -39,6 +39,7 @@ type HoleMapProps = {
   hole: NormalizedHole;
   warnings: NormalizationWarning[];
   source: SourceMetadata;
+  synthetic?: boolean;
   project: HoleStateV1;
   onProjectChange: (project: HoleStateV1) => void;
   clubProfile: ClubProfileV2;
@@ -68,7 +69,7 @@ function warningText(warning: NormalizationWarning): string {
   return `${warning.code}: ${warning.affectedIdentity}`;
 }
 
-export function HoleMap({ hole, warnings, source, project, onProjectChange, clubProfile, onClubProfileChange }: HoleMapProps) {
+export function HoleMap({ hole, warnings, source, synthetic = false, project, onProjectChange, clubProfile, onClubProfileChange }: HoleMapProps) {
   const projection = useMemo(() => createProjection(holeCoordinates(hole)), [hole]);
   const [measurement, setMeasurement] = useState<Measurement>({ start: null, end: null });
   const [crosshair, setCrosshair] = useState<ViewportPoint>({ x: 400, y: 300 });
@@ -400,7 +401,7 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange, club
         tabIndex={0} role="group" aria-label="Selected hole vector map and measurement surface"
         onPointerDown={handlePointer} onKeyDown={handleKey}>
         <title>Selected hole vector map</title>
-        <desc>Blank vector-only OpenStreetMap-derived golf hole geometry with two-point measurement controls.</desc>
+        <desc>Blank vector-only {synthetic ? "synthetic demo" : "OpenStreetMap-derived"} golf hole geometry with two-point measurement controls.</desc>
         <defs><clipPath id={clipId}><rect x={INNER_MIN_X} y={INNER_MIN_Y}
           width={INNER_MAX_X - INNER_MIN_X} height={INNER_MAX_Y - INNER_MIN_Y} /></clipPath></defs>
         <rect className="map-inner-boundary" x={INNER_MIN_X} y={INNER_MIN_Y}
@@ -598,7 +599,9 @@ export function HoleMap({ hole, warnings, source, project, onProjectChange, club
         {warnings.length === 0 ? <p>No normalization warnings.</p>
           : <ul>{warnings.map((warning) => <li key={`${warning.code}-${warning.affectedIdentity}`}>{warningText(warning)}</li>)}</ul>}
       </details>
-      <p className="attribution">Course data © OpenStreetMap contributors. <a href={source.copyrightUrl}>OpenStreetMap copyright and license</a>.</p>
+      {synthetic
+        ? <p className="attribution">Synthetic demo geometry from Chart the Course fixtures. Not a real golf course.</p>
+        : <p className="attribution">Course data © OpenStreetMap contributors. <a href={source.copyrightUrl}>OpenStreetMap copyright and license</a>.</p>}
     </section>
   );
 }

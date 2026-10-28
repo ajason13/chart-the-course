@@ -38,6 +38,7 @@ import {
   type ValidationError,
 } from "./project";
 import type { SourceKey } from "./normalize";
+import demoFixture from "../fixtures/overpass/synthetic-golf-course-ctc006.json";
 
 type ViewState =
   | { kind: "idle" }
@@ -46,6 +47,7 @@ type ViewState =
   | { kind: "cancelled" }
   | { kind: "empty"; mode: "discovery" | "detail"; cached: boolean; response: OverpassResponse; source: CachedResponse["source"] }
   | { kind: "success"; mode: "discovery" | "detail"; cached: boolean; response: OverpassResponse; source: CachedResponse["source"] }
+  | { kind: "demo"; mode: "detail"; cached: false; response: OverpassResponse; source: CachedResponse["source"] }
   | { kind: "rate-limit"; retryAfterMs?: number }
   | { kind: "timeout" }
   | { kind: "network"; message: string }
@@ -53,7 +55,7 @@ type ViewState =
   | { kind: "parse" }
   | { kind: "shape" };
 
-type LoadedResult = Extract<ViewState, { kind: "success" | "empty" }>;
+type LoadedResult = Extract<ViewState, { kind: "success" | "empty" | "demo" }>;
 
 const INITIAL_FIELDS = { south: "", west: "", north: "", east: "" };
 const REFRESH_COOLDOWN_MS = 5_000;
@@ -96,6 +98,7 @@ type StaleCandidate = {
 function stateMessage(state: ViewState): string {
   switch (state.kind) {
     case "idle": return "Enter a bounded location and submit when ready.";
+    case "demo": return "Synthetic demo loaded. No course data was requested from the network.";
     case "invalid": return state.message;
     case "loading": return `Loading ${state.mode} results.`;
     case "cancelled": return "Request cancelled.";
@@ -160,6 +163,7 @@ export function App() {
   const importInput = useRef<HTMLInputElement>(null);
   const projectNotice = useRef<HTMLParagraphElement>(null);
   const projectErrorHeading = useRef<HTMLHeadingElement>(null);
+  const workspaceHeading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => () => {
     requestIdentity.current += 1;
@@ -336,6 +340,7 @@ export function App() {
     context: RequestContext,
     rawResponse?: string,
     consentState: SourceConsentState = "fresh",
+    synthetic = false,
   ) {
     if (!canReplaceResult(mode, response, source, context)) return "invalid";
     const next = mode === "detail" ? normalizeGolfCourse(response, source) : null;
@@ -365,12 +370,38 @@ export function App() {
       ? { mode, cacheKey: context.cacheKey, rawResponse, source, consentState }
       : null);
     setSourceExportMessage("");
-    const result: LoadedResult = response.elements.length
+    const result: LoadedResult = synthetic
+      ? { kind: "demo", mode: "detail", cached: false, response, source }
+      : response.elements.length
       ? { kind: "success", mode, cached, response, source }
       : { kind: "empty", mode, cached, response, source };
     setLoadedResult(result);
     setState(result);
     return "displayed";
+  }
+
+  function openDemo() {
+    // Supersede every pending cache/network operation before replacing the view.
+    requestIdentity.current += 1;
+    controller.current?.abort();
+    controller.current = null;
+    setStaleCandidate(null);
+    setWarning("");
+    setInvalidField(null);
+    const bbox = demoFixture.chartTheCourseFixture.bbox;
+    const query = "Bundled synthetic-golf-course-ctc006.json (demo v1; not an Overpass response)";
+    const context: RequestContext = {
+      mode: "detail", bbox, query, cacheKey: "synthetic-demo-v1", timeout: 45,
+      selectedCourseKey: "way/9000060001",
+    };
+    const source = {
+      query, bbox: "35,-80,35.01,-79.99", completedAt: "2026-10-28T00:00:00.000Z",
+      endpoint: "Bundled synthetic fixture; no network endpoint", copyrightUrl: "",
+    };
+    if (displayResult("detail", false, demoFixture as OverpassResponse, source, context, undefined, "fresh", true) === "displayed") {
+      setRefreshStatus("Demo data is bundled. Refresh and raw OpenStreetMap source export are unavailable.");
+      requestAnimationFrame(() => workspaceHeading.current?.focus());
+    }
   }
 
   function cacheKeyForCurrentResult(): string | null {
@@ -526,7 +557,7 @@ export function App() {
   }
 
   function refreshCourseData() {
-    if (loading) return;
+    if (loading || loadedResult?.kind === "demo") return;
     const context = activeContext;
     if (!context) return;
     const remaining = cooldownRemaining(context.cacheKey);
@@ -563,7 +594,8 @@ export function App() {
     requestAnimationFrame(() => submitButton.current?.focus());
   }
 
-  const showsOsmResult = loadedResult !== null;
+  const isDemo = loadedResult?.kind === "demo";
+  const showsOsmResult = loadedResult !== null && !isDemo;
   const errorState = ["invalid", "rate-limit", "timeout", "network", "http", "parse", "shape"].includes(state.kind);
   const canRefresh = showsOsmResult && !loading;
   const canExportGisSource = loadedResult?.mode === "detail" && activeSourceEvidence?.mode === "detail";
@@ -578,6 +610,8 @@ export function App() {
 
       <section className="search-panel" aria-labelledby="search-title">
         <h2 id="search-title">Course discovery</h2>
+        <p>Try the planning tools without entering coordinates or contacting a course-data service.</p>
+        <button type="button" onClick={openDemo}>Open synthetic demo</button>
         <form onSubmit={submitDiscovery}>
           <label>Course name <span>(optional)</span>
             <input ref={courseNameRef} name="courseName" value={courseName} onChange={(event) => setCourseName(event.target.value)}
@@ -627,8 +661,9 @@ export function App() {
       {loadedResult && (
         <section className="results" aria-labelledby="results-title">
           <div>
-            <p className="eyebrow">{loadedResult.mode} response</p>
-            <h2 id="results-title">Raw OSM entities</h2>
+            <p className="eyebrow">{isDemo ? "Bundled synthetic demo" : `${loadedResult.mode} response`}</p>
+            <h2 id="results-title">{isDemo ? "Synthetic course entities" : "Raw OSM entities"}</h2>
+            {isDemo && <p>Synthetic demo geometry, not a real course or live OpenStreetMap evidence. Demo projects use stable synthetic IDs; open this demo again before importing them.</p>}
           </div>
           <EntitySummary response={loadedResult.response} />
           {loadedResult.mode === "discovery" && (
@@ -653,7 +688,7 @@ export function App() {
               </ul>
               <section className="map-workspace" aria-labelledby="map-workspace-title">
                 <div className="map-selection">
-                  <h3 id="map-workspace-title">Selected-hole map</h3>
+                  <h3 id="map-workspace-title" ref={workspaceHeading} tabIndex={-1}>Selected-hole map</h3>
                   {selectedCourse && <p>Selected course: {String(selectedCourse.source.tags.name ?? courseSourceKey)} ({courseSourceKey})</p>}
                   {normalized && normalized.holes.length > 0 && (
                     <label>Hole
@@ -670,7 +705,7 @@ export function App() {
                 {normalized && normalized.holes.length > 0 ? (
                   <>
                     {normalized.holes.filter((hole) => hole.source.sourceKey === selectedHoleKey).map((hole) => (
-                      <HoleMap key={hole.source.sourceKey} hole={hole} warnings={normalized.warnings} source={normalized.source}
+                      <HoleMap key={hole.source.sourceKey} hole={hole} warnings={normalized.warnings} source={normalized.source} synthetic={isDemo}
                         project={holeProject(hole.source.sourceKey)}
                         onProjectChange={(project) => setHoleProject(hole.source.sourceKey, project)}
                         clubProfile={clubProfile} onClubProfileChange={setClubProfile} />
@@ -698,8 +733,8 @@ export function App() {
                   </section>
                 )}
                 <section className="source-export" aria-labelledby="source-export-title">
-                  <h3 id="source-export-title">OpenStreetMap source data</h3>
-                  <p className="hint">Raw GIS source exports contain exact OpenStreetMap response evidence only. They do not include project targets, carries, notes, or normalized map geometry.</p>
+                  <h3 id="source-export-title">{isDemo ? "Synthetic demo source" : "OpenStreetMap source data"}</h3>
+                  <p className="hint">{isDemo ? "Raw GIS source export is unavailable for synthetic demo data. Export a project to save authored targets, carries and clubs." : "Raw GIS source exports contain exact OpenStreetMap response evidence only. They do not include project targets, carries, notes, or normalized map geometry."}</p>
                   {activeSourceEvidence?.consentState === "stale-consented" && (
                     <p className="warning">This export will contain stale OpenStreetMap data rendered with your consent.</p>
                   )}
@@ -716,7 +751,7 @@ export function App() {
             <dl className="diagnostics">
               <div><dt>Endpoint</dt><dd>{loadedResult.source.endpoint}</dd></div>
               <div><dt>Bbox</dt><dd>{loadedResult.source.bbox}</dd></div>
-              <div><dt>Completed</dt><dd>{loadedResult.source.completedAt}</dd></div>
+              <div><dt>{isDemo ? "Demo version date" : "Completed"}</dt><dd>{loadedResult.source.completedAt}</dd></div>
               <div><dt>Query</dt><dd><pre>{loadedResult.source.query}</pre></dd></div>
             </dl>
           </details>

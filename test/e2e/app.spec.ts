@@ -501,8 +501,9 @@ for (const cached of [true, false]) {
       await page.getByLabel("Club name", { exact: true }).blur();
     }
     const dialog = page.waitForEvent("dialog");
-    await page.getByRole("button", { name: "Search courses", exact: true }).click();
+    const submitting = page.getByRole("button", { name: "Search courses", exact: true }).click();
     if (!cached) {
+      await submitting;
       await expect(page.getByText("Loading discovery results.", { exact: true })).toBeVisible();
       // Edits made after request start must still be protected at commit time.
       await page.getByLabel("Club name", { exact: true }).fill("Retain this club");
@@ -513,6 +514,7 @@ for (const cached of [true, false]) {
     expect(confirmation.type()).toBe("confirm");
     expect(confirmation.message()).toContain("Discard unsaved project changes");
     await confirmation.dismiss();
+    await submitting;
     await expect(page.getByText("Replacement cancelled. Existing course, project and selection were retained.", { exact: true })).toBeVisible();
     await expect(hole).toHaveValue("way/9000060102");
     await expectProjectDirty(page, true);
@@ -582,6 +584,129 @@ async function downloadedJson(page: Page, button: string) {
   expect(await download.failure()).toBeNull();
   return JSON.parse(await page.evaluate(() => (window as typeof window & { __ctcLastBlob: Promise<string> }).__ctcLastBlob));
 }
+
+for (const width of [1280, 390]) {
+  test(`synthetic demo supports offline planning and project round trips at ${width}px`, async ({ page }) => {
+    await isolateNetwork(page); // Any external request fails this test, including Overpass.
+    await page.addInitScript(() => {
+      const original = URL.createObjectURL.bind(URL);
+      URL.createObjectURL = (blob) => {
+        if (blob instanceof Blob) (window as typeof window & { __ctcLastBlob: Promise<string> }).__ctcLastBlob = blob.text();
+        return original(blob);
+      };
+    });
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/");
+    const demo = page.getByRole("button", { name: "Open synthetic demo", exact: true });
+    await expect(demo).toBeVisible();
+    await page.keyboard.press("Tab");
+    await expect(demo).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { name: "Selected-hole map", exact: true })).toBeFocused();
+    const map = page.getByTestId("hole-vector-map");
+    await expect(map).toBeVisible();
+    await expect(page.getByText("Synthetic demo geometry from Chart the Course fixtures. Not a real golf course.")).toBeVisible();
+    await expect(map.locator("desc")).toContainText("synthetic demo");
+    await expect(page.getByText(/Data © OpenStreetMap contributors/)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Refresh course data", exact: true })).toBeDisabled();
+    expect(await map.evaluate((element) => element.getBoundingClientRect().right <= window.innerWidth)).toBe(true);
+    await map.focus();
+    await map.press("Enter");
+    await map.press("Shift+ArrowDown");
+    await map.press("Enter");
+    await expect(page.getByText(/^Distance: \d+ yd \/ \d+ m$/)).toBeVisible();
+    await page.getByRole("button", { name: "Add target", exact: true }).click();
+    await map.focus();
+    await map.press("Enter");
+    await page.getByLabel("Target label", { exact: true }).fill("Demo landing");
+    await page.getByLabel("Target label", { exact: true }).blur();
+    await page.getByRole("button", { name: "Add carry", exact: true }).click();
+    await page.getByLabel("Distances in yards", { exact: true }).fill("175, 200");
+    await page.getByLabel("Distances in yards", { exact: true }).blur();
+    await page.getByRole("button", { name: "Add club", exact: true }).click();
+    await page.getByLabel("Club name", { exact: true }).fill("Demo iron");
+    await page.getByLabel("Club name", { exact: true }).blur();
+    await expect(map.locator('[data-layer="dispersion"] .dispersion-ellipse')).toHaveCount(1);
+    await expectProjectDirty(page, true);
+    await demo.click(); // Reopening the same demo retains authored work.
+    await expect(page.getByLabel("Target label", { exact: true })).toHaveValue("Demo landing");
+    const saved = await downloadedJson(page, "Export project");
+    expect(saved.courseSourceKey).toBe("way/9000060001");
+    expect(saved.holes["way/9000060101"].targets[0].label).toBe("Demo landing");
+    expect(saved.holes["way/9000060101"].carries[0].distances).toEqual([175, 200]);
+    expect(saved.clubProfile.clubs[0].label).toBe("Demo iron");
+    await expectProjectDirty(page, false);
+    await assertAxe(page);
+    expect(await page.evaluate(() => indexedDB.databases())).toEqual([]);
+    await page.reload();
+    await demo.click();
+    await expect(page.getByText("No clubs added.", { exact: true })).toBeVisible();
+    await page.getByLabel("Import project file (.json)").evaluate((element: HTMLInputElement, text) => {
+      const files = new DataTransfer();
+      files.items.add(new File([text], "demo-project.json", { type: "application/json" }));
+      element.files = files.files;
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+    }, JSON.stringify(saved));
+    await expect(page.getByText("Project imported successfully.", { exact: true })).toBeVisible();
+    const restored = await downloadedJson(page, "Export project");
+    expect(restored).toEqual({ ...saved, exportedAt: restored.exportedAt });
+    await expect(map.locator('[data-layer="targets"] [data-target-id]')).toHaveCount(1);
+    await expect(map.locator('[data-layer="carry-arcs"] text')).toHaveText(["175 yd", "200 yd"]);
+    await assertAxe(page);
+  });
+}
+
+test("switching live course to synthetic demo protects unsaved work and clears source evidence", async ({ page }) => {
+  await prepareGuardWorkspace(page);
+  await page.getByRole("button", { name: "Add club", exact: true }).click();
+  await page.getByRole("combobox", { name: /^Hole/ }).selectOption("way/9000060102");
+  const demo = page.getByRole("button", { name: "Open synthetic demo", exact: true });
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await demo.click();
+  await expect(page.getByRole("combobox", { name: /^Hole/ })).toHaveValue("way/9000060102");
+  await expect(page.getByLabel("Club name", { exact: true })).toHaveValue("Club 1");
+  await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)", exact: true })).toBeEnabled();
+  page.once("dialog", (dialog) => dialog.accept());
+  await demo.click();
+  await expect(page.getByRole("heading", { name: "Synthetic course entities", exact: true })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: /^Hole/ })).toHaveValue("way/9000060101");
+  await expect(page.getByText("No clubs added.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)", exact: true })).toBeDisabled();
+  await expectProjectDirty(page, false);
+  await page.getByRole("button", { name: "Add club", exact: true }).click();
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("button", { name: "Search courses", exact: true }).click();
+  await expect(page.getByText("Replacement cancelled. Existing course, project and selection were retained.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Synthetic course entities", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Club name", { exact: true })).toHaveValue("Club 1");
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Search courses", exact: true }).click();
+  await page.getByRole("button", { name: "Load raw detail", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)", exact: true })).toBeEnabled();
+  await expect(page.getByText("Course data © OpenStreetMap contributors.")).toBeVisible();
+});
+
+test("synthetic demo supersedes a pending course-data request", async ({ page }) => {
+  let release!: () => void;
+  let started!: () => void;
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  const requested = new Promise<void>((resolve) => { started = resolve; });
+  await isolateNetwork(page, async (route) => {
+    started();
+    await pending;
+    await route.fulfill({ json: discovery }).catch(() => {}); // Request may already be aborted.
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses", exact: true }).click();
+  await requested;
+  await page.getByRole("button", { name: "Open synthetic demo", exact: true }).click();
+  release();
+  await expect(page.getByRole("heading", { name: "Synthetic course entities", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Load raw detail", exact: true })).toHaveCount(0);
+  await expect(page.getByTestId("hole-vector-map")).toBeVisible();
+});
 
 for (const scenario of ["success", "HTTP failure", "network failure", "malformed JSON", "invalid shape", "cancellation", "missing hole", "changed hole", "changed course", "empty detail"]) {
   test(`preserves populated planning state during same-course refresh: ${scenario}`, async ({ page }) => {
