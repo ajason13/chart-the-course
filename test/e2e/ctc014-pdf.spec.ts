@@ -62,7 +62,8 @@ test("CTC-014 candidates produce independently attributable browser evidence", a
   [8, 10 / 3, 2, 10 / 3].forEach((value, index) => expect(carryDash![index]).toBeCloseTo(value, 10));
   for (const result of [evidence.pdfkitDirect, evidence.pdfkitSvg]) {
     expect(result.evidence).toBeNull();
-    expect(result.error).toMatch(/global is not defined|Cannot read properties of undefined/);
+    // Browser-external Node helpers can fail at different initialization points.
+    expect(result.error).toMatch(/global is not defined|Cannot read properties of undefined|\.inherits is not a function/);
   }
 
   const repeated = await page.evaluate(async () => {
