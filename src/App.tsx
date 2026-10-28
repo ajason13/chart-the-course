@@ -102,8 +102,8 @@ function stateMessage(state: ViewState): string {
     case "invalid": return state.message;
     case "loading": return state.mode === "discovery" ? "Searching courses." : "Loading course data.";
     case "cancelled": return "Request cancelled.";
-    case "empty": return `No ${state.mode === "discovery" ? "courses were" : "course data was"} returned${state.cached ? " from durable cache" : ""}.`;
-    case "success": return `${state.mode === "discovery" ? `${state.response.elements.length} course candidates loaded` : "Course data loaded"}${state.cached ? " from durable cache" : ""}.`;
+    case "empty": return `No ${state.mode === "discovery" ? "courses were" : "course data was"} returned${state.cached ? " from cache" : ""}.`;
+    case "success": return `${state.mode === "discovery" ? `${state.response.elements.length} course candidates loaded` : "Course data loaded"}${state.cached ? " from cache" : ""}.`;
     case "rate-limit": return state.retryAfterMs && state.retryAfterMs > 60_000
       ? "Overpass requested a longer rate-limit wait than this app will hold. Try again later."
       : "Overpass rate-limited this request. Try again later.";
@@ -454,10 +454,11 @@ export function App() {
         const cache = await overpassCache.read({ key: cacheKey, mode, query, bbox, signal: activeController.signal });
         if (requestIdentity.current !== id) return;
         if (cache.kind === "hit") {
+          if (cache.warning) setWarning(cache.warning);
           const displayed = displayResult(mode, true, cache.response, cache.cached.source, context, cache.cached.rawResponse);
           if (displayed === "retained") return;
           if (displayed === "displayed") {
-            setRefreshStatus("Course data loaded from durable cache.");
+            setRefreshStatus("Course data loaded from cache.");
             return;
           }
           setState({ kind: "loading", mode });

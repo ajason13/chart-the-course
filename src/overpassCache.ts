@@ -31,7 +31,7 @@ export type OverpassCacheRecord = {
 };
 
 export type CacheLookup =
-  | { kind: "hit"; cached: CachedResponse; response: OverpassResponse; record: OverpassCacheRecord }
+  | { kind: "hit"; warning?: string; cached: CachedResponse; response: OverpassResponse; record: OverpassCacheRecord }
   | { kind: "stale"; cached: CachedResponse; response: OverpassResponse; record: OverpassCacheRecord }
   | { kind: "miss" }
   | { kind: "warning"; message: string };
@@ -222,7 +222,7 @@ export class OverpassCache {
       }
       const cached = { rawResponse: record.rawResponse, source: record.source };
       return validation.freshness === "fresh"
-        ? { kind: "hit", cached, response: validation.response, record }
+        ? { kind: "hit", cached, response: validation.response, record, ...(this.degraded ? { warning: this.warning } : {}) }
         : { kind: "stale", cached, response: validation.response, record };
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") throw error;
@@ -296,7 +296,8 @@ export class OverpassCache {
   }
 
   private async database(): Promise<IDBDatabase | null> {
-    if (typeof indexedDB === "undefined" || this.degraded) return null;
+    if (typeof indexedDB === "undefined") this.degrade(null);
+    if (this.degraded) return null;
     if (!this.dbPromise) {
       this.dbPromise = openDatabase()
         .then((db) => {
