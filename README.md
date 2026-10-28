@@ -17,6 +17,8 @@ The merged React/TypeScript application supports:
   and east bounds in decimal degrees, with an optional course-name filter.
 - Explicit course selection and detail loading, normalized holes/features,
   raw-entity diagnostics and geometry warnings.
+- An explicit **Open synthetic demo** action that loads a bundled fictional
+  course without course-data requests, using the same planning tools.
 - A selected-hole SVG map with distance measurement, editable targets and
   carries, fairway-width estimates, and club profiles with dispersion guides.
 - Project JSON export/import for authored targets, carries and clubs, separate
@@ -27,8 +29,14 @@ The merged React/TypeScript application supports:
 
 To use the app, enter bounds (each span at most 0.35 degrees), search, choose a
 course with **Load raw detail**, then select a hole. Discovery and uncached
-detail loading require network access to Overpass. Deterministic synthetic
-fixtures support automated tests; there is no in-app offline demo yet.
+detail loading require network access to Overpass. To try the tools without
+coordinates or course-data network access, choose **Open synthetic demo**.
+The app itself must still be loaded; this does not install an offline app.
+The demo is clearly labeled synthetic, disables course refresh and raw GIS
+source export, and never enters the OSM response cache. Save edits with project
+export, then open the demo again before importing its project; its synthetic
+course and hole IDs remain stable. Unsaved-change confirmation also applies
+when switching between a live course and the demo.
 
 Geometry support is limited: node/way geometry is normalized, but relation
 geometry is unsupported. Features associate with holes through numeric `ref`
@@ -124,7 +132,7 @@ artifact boundary, CI evidence and separate experiment/tooling checks.
 See the [GitHub roadmap](https://github.com/ajason13/chart-the-course/issues/32)
 for execution order and dependencies, and the
 [open issues](https://github.com/ajason13/chart-the-course/issues) for current
-status. Synthetic demo access, geometry compatibility improvements, mapped-water
+status. Geometry compatibility improvements, mapped-water
 overlap and active-project PDF export remain tracked work, not shipped features.
 
 For development, read [repository guidance](AGENTS.md),
