@@ -61,6 +61,7 @@ const REFRESH_COOLDOWN_MS = 5_000;
 type RequestOptions = {
   bypassCache?: boolean;
   manualRefresh?: boolean;
+  selectedCourseKey?: SourceKey;
 };
 
 type RequestContext = {
@@ -69,6 +70,7 @@ type RequestContext = {
   query: string;
   cacheKey: string;
   timeout: number;
+  selectedCourseKey?: SourceKey;
 };
 
 type StaleCandidate = {
@@ -156,7 +158,8 @@ export function App() {
       ? normalizeGolfCourse(loadedResult.response, loadedResult.source)
       : null, [loadedResult]);
 
-  const courseSourceKey = normalized?.courseCandidates[0]?.source.sourceKey ?? null;
+  const selectedCourse = normalized?.courseCandidates.find(({ source }) => source.sourceKey === activeContext?.selectedCourseKey);
+  const courseSourceKey = selectedCourse?.source.sourceKey ?? null;
   const holeKeys = normalized?.holes.map(({ source }) => source.sourceKey) ?? [];
 
   function holeProject(key: SourceKey): HoleStateV1 {
@@ -266,10 +269,19 @@ export function App() {
   }
 
   function canReplaceResult(mode: OverpassCacheMode, response: OverpassResponse, source: CachedResponse["source"], context: RequestContext) {
-    if (mode !== "detail" || !normalized?.holes.length || activeContext?.cacheKey !== context.cacheKey) return true;
+    if (mode !== "detail") return true;
     const next = normalizeGolfCourse(response, source);
+    const selected = next.courseCandidates.find(({ source }) => source.sourceKey === context.selectedCourseKey);
+    const matches = response.elements.filter((element) => `${element.type}/${element.id}` === context.selectedCourseKey);
+    if (!selected || matches.length !== 1) {
+      setState({ kind: "invalid", message: "Selected course evidence is missing or ambiguous. Search courses again and select a course, or retry loading its data." });
+      if (loadedResult?.mode === "detail") setRefreshStatus("Course or hole identities changed. Existing course and project were retained. Export your project before loading changed course data.");
+      return false;
+    }
+    if (!normalized?.holes.length || activeContext?.cacheKey !== context.cacheKey
+      || activeContext.selectedCourseKey !== context.selectedCourseKey) return true;
     const nextHoleKeys = new Set(next.holes.map((hole) => hole.source.sourceKey));
-    if (next.courseCandidates[0]?.source.sourceKey !== courseSourceKey
+    if (selected.source.sourceKey !== courseSourceKey
       || normalized.holes.some((hole) => !nextHoleKeys.has(hole.source.sourceKey))) {
       setState({ kind: "invalid", message: "Updated course data could not replace the loaded course." });
       setRefreshStatus("Course or hole identities changed. Existing course and project were retained. Export your project before loading changed course data.");
@@ -291,7 +303,7 @@ export function App() {
     const next = mode === "detail" ? normalizeGolfCourse(response, source) : null;
     const sameCourse = mode === "detail" && loadedResult?.mode === "detail"
       && activeContext?.cacheKey === context.cacheKey
-      && next?.courseCandidates[0]?.source.sourceKey === courseSourceKey;
+      && context.selectedCourseKey === courseSourceKey;
     if (!sameCourse) {
       setSelectedHoleKey(next?.holes[0]?.source.sourceKey ?? "");
       setProjectHoles({});
@@ -346,6 +358,7 @@ export function App() {
     timeout: number,
     options: RequestOptions = {},
   ) {
+    const context: RequestContext = { mode, bbox, query, cacheKey, timeout, selectedCourseKey: options.selectedCourseKey };
     const id = ++requestIdentity.current;
     controller.current?.abort();
     const activeController = new AbortController();
@@ -361,7 +374,7 @@ export function App() {
         const cache = await overpassCache.read({ key: cacheKey, mode, query, bbox, signal: activeController.signal });
         if (requestIdentity.current !== id) return;
         if (cache.kind === "hit") {
-          if (displayResult(mode, true, cache.response, cache.cached.source, { mode, bbox, query, cacheKey, timeout }, cache.cached.rawResponse)) {
+          if (displayResult(mode, true, cache.response, cache.cached.source, context, cache.cached.rawResponse)) {
             setRefreshStatus("Course data loaded from durable cache.");
           }
           return;
@@ -381,7 +394,7 @@ export function App() {
         classifyFailure(result.failure);
         if (stale) {
           setStaleCandidate({
-            context: { mode, bbox, query, cacheKey, timeout },
+            context,
             cached: stale.cached,
             response: stale.response,
             recordDate: stale.cached.source.completedAt,
@@ -405,7 +418,6 @@ export function App() {
         return;
       }
       const source = sourceMetadata(query, bbox);
-      const context = { mode, bbox, query, cacheKey, timeout };
       if (!canReplaceResult(mode, response, source, context)) return;
       try {
         const cacheResult = await overpassCache.write({
@@ -460,7 +472,7 @@ export function App() {
   function loadDetail(element: OverpassElement) {
     const bbox = parseCandidateBounds(element.bounds);
     if (!bbox || loading) return;
-    void runRequest("detail", bbox, buildDetailQuery(bbox), detailCacheKey(bbox), 45);
+    void runRequest("detail", bbox, buildDetailQuery(bbox), detailCacheKey(bbox), 45, { selectedCourseKey: `${element.type}/${element.id}` });
   }
 
   function refreshCourseData() {
@@ -472,12 +484,12 @@ export function App() {
       setRefreshStatus(`Refresh cooldown active. Please wait ${Math.ceil(remaining / 1000)} seconds.`);
       return;
     }
-    void runRequest(context.mode, context.bbox, context.query, context.cacheKey, context.timeout, { bypassCache: true, manualRefresh: true });
+    void runRequest(context.mode, context.bbox, context.query, context.cacheKey, context.timeout, { bypassCache: true, manualRefresh: true, selectedCourseKey: context.selectedCourseKey });
   }
 
   function renderStaleData() {
     if (!staleCandidate) return;
-    displayResult(
+    const displayed = displayResult(
       staleCandidate.context.mode,
       true,
       staleCandidate.response,
@@ -486,7 +498,7 @@ export function App() {
       staleCandidate.cached.rawResponse,
       "stale-consented",
     );
-    setWarning(`Showing stale OpenStreetMap data from ${staleCandidate.recordDate}. Refresh when Overpass is available.`);
+    if (displayed) setWarning(`Showing stale OpenStreetMap data from ${staleCandidate.recordDate}. Refresh when Overpass is available.`);
     setStaleCandidate(null);
   }
 
@@ -592,6 +604,7 @@ export function App() {
               <section className="map-workspace" aria-labelledby="map-workspace-title">
                 <div className="map-selection">
                   <h3 id="map-workspace-title">Selected-hole map</h3>
+                  {selectedCourse && <p>Selected course: {String(selectedCourse.source.tags.name ?? courseSourceKey)} ({courseSourceKey})</p>}
                   {normalized && normalized.holes.length > 0 && (
                     <label>Hole
                       <select value={selectedHoleKey} onChange={(event) => setSelectedHoleKey(event.target.value)}>
