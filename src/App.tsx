@@ -58,6 +58,19 @@ type LoadedResult = Extract<ViewState, { kind: "success" | "empty" }>;
 const INITIAL_FIELDS = { south: "", west: "", north: "", east: "" };
 const REFRESH_COOLDOWN_MS = 5_000;
 
+// Compare authored content only: empty hole entries and object key order do not
+// represent edits. Selection, source metadata and export timestamps are transient.
+function authoredSnapshot(holes: Partial<Record<SourceKey, HoleStateV1>>, clubProfile: ClubProfileV2): string {
+  return JSON.stringify({
+    holes: Object.fromEntries(Object.entries(holes).filter(([, hole]) => hole && (hole.targets.length || hole.carries.length))),
+    clubProfile,
+  }, (_key, value: unknown) => value && typeof value === "object" && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value).sort(([left], [right]) => left.localeCompare(right)))
+    : value);
+}
+
+const EMPTY_AUTHORED_SNAPSHOT = authoredSnapshot({}, { clubs: [] });
+
 type RequestOptions = {
   bypassCache?: boolean;
   manualRefresh?: boolean;
@@ -133,6 +146,7 @@ export function App() {
   const [selectedHoleKey, setSelectedHoleKey] = useState("");
   const [projectHoles, setProjectHoles] = useState<Partial<Record<SourceKey, HoleStateV1>>>({});
   const [clubProfile, setClubProfile] = useState<ClubProfileV2>({ clubs: [] });
+  const [projectBaseline, setProjectBaseline] = useState(EMPTY_AUTHORED_SNAPSHOT);
   const [projectErrors, setProjectErrors] = useState<ValidationError[]>([]);
   const [projectMessage, setProjectMessage] = useState("");
   const [sourceExportMessage, setSourceExportMessage] = useState("");
@@ -161,6 +175,22 @@ export function App() {
   const selectedCourse = normalized?.courseCandidates.find(({ source }) => source.sourceKey === activeContext?.selectedCourseKey);
   const courseSourceKey = selectedCourse?.source.sourceKey ?? null;
   const holeKeys = normalized?.holes.map(({ source }) => source.sourceKey) ?? [];
+  const projectSnapshot = authoredSnapshot(projectHoles, clubProfile);
+  const projectDirty = projectSnapshot !== projectBaseline;
+  // Requests and file reads may finish after the user edits the visible project.
+  const currentWorkspace = useRef({ loadedResult, projectSnapshot, projectDirty });
+  currentWorkspace.current = { loadedResult, projectSnapshot, projectDirty };
+  const importIdentity = useRef(0);
+
+  useEffect(() => {
+    if (!projectDirty) return;
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeLeaving);
+    return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
+  }, [projectDirty]);
 
   function holeProject(key: SourceKey): HoleStateV1 {
     return projectHoles[key] ?? { targets: [], carries: [] };
@@ -183,6 +213,7 @@ export function App() {
     anchor.download = PROJECT_FILENAME;
     document.body.appendChild(anchor);
     anchor.click();
+    setProjectBaseline(projectSnapshot);
     requestAnimationFrame(() => {
       URL.revokeObjectURL(url);
       anchor.remove();
@@ -213,15 +244,11 @@ export function App() {
   }
 
   async function importProject(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
     if (!file || !courseSourceKey) return;
-    const hasState = clubProfile.clubs.length > 0
-      || Object.values(projectHoles).some((hole) => hole && (hole.targets.length > 0 || hole.carries.length > 0));
-    if (hasState && !window.confirm("Importing will replace your current project. Continue?")) {
-      event.target.value = "";
-      importInput.current?.focus();
-      return;
-    }
+    const id = ++importIdentity.current;
     setProjectErrors([]);
     setProjectMessage("");
     if (file.size > PROJECT_MAX_BYTES) {
@@ -233,8 +260,14 @@ export function App() {
     try {
       text = await file.text();
     } catch {
+      if (id !== importIdentity.current) return;
       setProjectErrors([{ code: "INVALID_JSON", path: "$", message: "File could not be read." }]);
       requestAnimationFrame(() => projectErrorHeading.current?.focus());
+      return;
+    }
+    if (id !== importIdentity.current) return;
+    if (currentWorkspace.current.loadedResult !== loadedResult) {
+      setProjectMessage("Course data changed while reading the file. Current project retained; import again when ready.");
       return;
     }
     const validated = parseProjectText(text);
@@ -249,10 +282,15 @@ export function App() {
       requestAnimationFrame(() => projectErrorHeading.current?.focus());
       return;
     }
+    if ((currentWorkspace.current.projectDirty || currentWorkspace.current.projectSnapshot !== EMPTY_AUTHORED_SNAPSHOT)
+      && !window.confirm("Importing will replace your current project. Continue?")) {
+      importInput.current?.focus();
+      return;
+    }
     setProjectHoles(validated.project.holes);
     setClubProfile(validated.project.clubProfile);
+    setProjectBaseline(authoredSnapshot(validated.project.holes, validated.project.clubProfile));
     setProjectMessage("Project imported successfully.");
-    event.target.value = "";
     requestAnimationFrame(() => projectNotice.current?.focus());
   }
 
@@ -299,15 +337,23 @@ export function App() {
     rawResponse?: string,
     consentState: SourceConsentState = "fresh",
   ) {
-    if (!canReplaceResult(mode, response, source, context)) return false;
+    if (!canReplaceResult(mode, response, source, context)) return "invalid";
     const next = mode === "detail" ? normalizeGolfCourse(response, source) : null;
     const sameCourse = mode === "detail" && loadedResult?.mode === "detail"
       && activeContext?.cacheKey === context.cacheKey
       && context.selectedCourseKey === courseSourceKey;
     if (!sameCourse) {
+      if (currentWorkspace.current.projectDirty
+        && !window.confirm("Discard unsaved project changes and replace the loaded course? Cancel keeps your current project and selection.")) {
+        setState({ kind: "cancelled" });
+        setRefreshStatus("Replacement cancelled. Existing course, project and selection were retained.");
+        return "retained";
+      }
+      importIdentity.current += 1;
       setSelectedHoleKey(next?.holes[0]?.source.sourceKey ?? "");
       setProjectHoles({});
       setClubProfile({ clubs: [] });
+      setProjectBaseline(EMPTY_AUTHORED_SNAPSHOT);
       setProjectErrors([]);
       setProjectMessage("");
     }
@@ -324,7 +370,7 @@ export function App() {
       : { kind: "empty", mode, cached, response, source };
     setLoadedResult(result);
     setState(result);
-    return true;
+    return "displayed";
   }
 
   function cacheKeyForCurrentResult(): string | null {
@@ -374,7 +420,9 @@ export function App() {
         const cache = await overpassCache.read({ key: cacheKey, mode, query, bbox, signal: activeController.signal });
         if (requestIdentity.current !== id) return;
         if (cache.kind === "hit") {
-          if (displayResult(mode, true, cache.response, cache.cached.source, context, cache.cached.rawResponse)) {
+          const displayed = displayResult(mode, true, cache.response, cache.cached.source, context, cache.cached.rawResponse);
+          if (displayed === "retained") return;
+          if (displayed === "displayed") {
             setRefreshStatus("Course data loaded from durable cache.");
             return;
           }
@@ -437,7 +485,7 @@ export function App() {
         }
       }
       if (requestIdentity.current !== id) return;
-      if (displayResult(mode, false, response, source, context, result.rawResponse)) {
+      if (displayResult(mode, false, response, source, context, result.rawResponse) === "displayed") {
         setRefreshStatus(options.manualRefresh ? "Refresh complete." : "Course data loaded from OpenStreetMap.");
       }
     } catch (error) {
@@ -500,7 +548,7 @@ export function App() {
       staleCandidate.cached.rawResponse,
       "stale-consented",
     );
-    if (displayed) setWarning(`Showing stale OpenStreetMap data from ${staleCandidate.recordDate}. Refresh when Overpass is available.`);
+    if (displayed === "displayed") setWarning(`Showing stale OpenStreetMap data from ${staleCandidate.recordDate}. Refresh when Overpass is available.`);
     setStaleCandidate(null);
   }
 
@@ -632,7 +680,8 @@ export function App() {
                 {normalized && normalized.holes.length > 0 && (
                   <section className="project-io" aria-labelledby="project-io-title">
                     <h3 id="project-io-title">Local project file</h3>
-                    <p className="hint">Project files contain user-authored targets, carry settings, and the club profile. Import replaces current project state when valid. Loading a different course clears unsaved profile data.</p>
+                    <p role="status" aria-live="polite">{projectDirty ? "Unsaved project changes." : "No unsaved project changes."}</p>
+                    <p className="hint">Project files contain user-authored targets, carry settings, and the club profile. Import replaces current project state when valid. Export starts a download and marks current edits as exported; confirm the file was saved. Projects stay in memory until exported. Unsaved changes prompt before course replacement. Browser navigation warnings may be suppressed and cannot guarantee recovery.</p>
                     <div className="actions">
                       <button type="button" onClick={exportProject} disabled={!courseSourceKey}>Export project</button>
                       <label className="file-label">Import project file (.json)

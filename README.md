@@ -23,6 +23,17 @@ The MVP must not load third-party basemap tiles by default. OSM-derived course
 geometry remains subject to OSM attribution requirements; see
 `ATTRIBUTION.md` and `docs/tile-provider-strategy.md`.
 
+Targets, carries and clubs stay in memory until project JSON export. The local
+project panel marks changes since the last successful import or export action;
+returning to that authored content clears the warning. Export starts a download
+and establishes a baseline, but the browser cannot confirm that you saved the
+file. Raw GIS source export does not save authored work. Unsaved changes require
+confirmation before search results or another course replace the workspace;
+cancel retains the project and selection. Same-course refresh retains edits.
+While changes are unsaved, the app requests a browser navigation/reload warning.
+Browsers control this warning and may suppress it (especially on mobile or
+without user interaction); it cannot guarantee recovery. There is no autosave.
+
 ## Local Setup
 
 Use Node.js 24 LTS and npm 11. The checked-in `.nvmrc` and `package.json`
