@@ -21,6 +21,10 @@ The merged React/TypeScript application supports:
   course without course-data requests, using the same planning tools.
 - A selected-hole SVG map with distance measurement, editable targets and
   carries, fairway-width estimates, and club profiles with dispersion guides.
+  A local mapped-risk panel compares existing targets against associated mapped
+  golf-water polygons using 512 fixed, area-weighted samples. Missing usable
+  water geometry and off-map guides are unavailable. Percentages describe sampled
+  geometric overlap, not shot probability; small areas between samples may be missed.
 - Project JSON export/import for authored targets, carries and clubs, separate
   from raw GIS source downloads containing the loaded Overpass response and
   provenance.

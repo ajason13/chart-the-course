@@ -10,6 +10,7 @@ import type { SourceMetadata } from "./overpass";
 import { carryRings, teeOrigins } from "./carry";
 import { dispersionEllipse } from "./dispersion";
 import { estimateFairwayWidth, roundHalfUpNonnegative } from "./fairwayWidth";
+import { scoreTargetRisks } from "./riskScore";
 import { generateProjectId, type CarryOriginV1, type ClubProfileV2, type ClubV2, type HoleStateV1, type TargetV1 } from "./project";
 import {
   INNER_MAX_X,
@@ -255,6 +256,13 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
     "club-unavailable": "Add or select a club for the dispersion guide.",
     "degenerate-target-line": "Dispersion unavailable because the origin and target are too close together.",
   };
+  const riskComparison = scoreTargetRisks({
+    club: selectedClub,
+    origin: dispersionOrigin,
+    hole,
+    projection,
+    targets: project.targets,
+  });
   const fairwayWidth = estimateFairwayWidth(hole, fairwayYards);
   const fairwayOverlay = fairwayWidth.start && fairwayWidth.end ? {
     start: projectCoordinate(projection, fairwayWidth.start), end: projectCoordinate(projection, fairwayWidth.end),
@@ -531,6 +539,35 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
             : dispersion.offMap ? <p className="warning">Part of this dispersion guide is outside the map view.</p>
               : <p>{selectedClub!.label} dispersion guide shown.</p>}
         </div>
+      </section>
+      <section className="project-panel risk-panel" aria-labelledby="risk-title">
+        <h4 id="risk-title">Mapped-risk indicator</h4>
+        <p className="hint">This comparison uses the selected dispersion origin and club.</p>
+        <div className="risk-status" role="status" aria-live="polite" aria-atomic="true">
+          {riskComparison.candidates.length === 0
+            ? <p>Add a target to compare mapped-risk indicators.</p>
+            : riskComparison.warnings.includes("missing-risk-geometry")
+              ? <p className="warning">No usable mapped golf-water geometry is available for this hole.</p>
+              : riskComparison.warnings.some((warning) => ["projection-unavailable", "origin-unavailable", "club-unavailable"].includes(warning))
+                ? <p>{"kind" in dispersion ? `${dispersionStatus[dispersion.kind]} Mapped-risk comparison is unavailable.` : "Mapped-risk comparison is unavailable."}</p>
+                : <p>{riskComparison.lowestRiskTargetId === null
+                  ? "Mapped-risk comparison is unavailable."
+                  : "Mapped-risk comparison shown."}</p>}
+          {riskComparison.warnings.includes("irregular-risk-polygon") && <p className="warning">Some mapped golf-water outlines were not usable.</p>}
+          {riskComparison.candidates.length > 0 && <ul className="risk-list">
+            {riskComparison.candidates.map((candidate) => <li key={candidate.targetId}>
+              <strong>{candidate.targetLabel}<span className="sr-only">, target {candidate.targetId}</span></strong>
+              {candidate.penalty !== null
+                ? <p>{candidate.targetId === riskComparison.lowestRiskTargetId && <strong>Lowest mapped-overlap target. </strong>}
+                  Mapped golf-water overlap: {candidate.penalty}%. {candidate.status} mapped-risk indicator.</p>
+                : candidate.warnings.includes("off-map")
+                  ? <p className="warning">{candidate.targetLabel}: mapped-risk overlap is unavailable because this dispersion guide extends outside the map view.</p>
+                  : <p>{candidate.targetLabel}: mapped-risk overlap is unavailable.</p>}
+            </li>)}
+          </ul>}
+        </div>
+        <p className="hint">Percentages estimate geometric overlap using 512 fixed, area-weighted samples (8 rings × 64 angles), not shot probability. Thin or small water areas between samples can be missed; 0% does not establish safety.</p>
+        <p className="hint">This local indicator considers only mapped golf-water geometry. It is not a shot recommendation, coaching, safety, or rules determination. Mapped geometry may be incomplete or inaccurate. Verify yardages, hazards, boundaries, and local course rules before play.</p>
       </section>
       <section className="project-panel" aria-labelledby="targets-title">
         <div className="map-heading">
