@@ -81,7 +81,7 @@ test("discovers candidates, loads detail explicitly, caches it, and shows attrib
   expect(detailRequests).toBe(0);
 
   await page.getByRole("button", { name: "Open course" }).click();
-  await expect(page.getByText(/^Course data loaded(?: from durable cache)?\.$/)).toBeVisible();
+  await expect(page.getByText(/^Course data loaded(?: from cache)?\.$/)).toBeVisible();
   await page.getByText("Source diagnostics", { exact: true }).click();
   await expect(page.locator(".raw-list code").getByText("way/9000060001", { exact: true })).toBeVisible();
   expect(detailRequests).toBe(1);
@@ -90,9 +90,131 @@ test("discovers candidates, loads detail explicitly, caches it, and shows attrib
   await fillBounds(page);
   await page.getByLabel(/Course name/).fill("Synthetic.*");
   await page.getByRole("button", { name: "Search courses" }).click();
-  await expect(page.getByText(/course candidates loaded from durable cache/)).toBeVisible();
+  await expect(page.getByText(/course candidates loaded from cache/)).toBeVisible();
   expect(discoveryRequests).toBe(1);
 });
+
+test("expired detail requires explicit consent or cancellation and exports exact stale evidence", async ({ page }) => {
+  const completedAt = "2026-10-01T00:00:00.000Z";
+  const ttl = 7 * 24 * 60 * 60 * 1000;
+  let detailRequests = 0;
+  await page.clock.setFixedTime(new Date(completedAt));
+  await isolateNetwork(page, async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    if (!query.includes("purpose:golf-course-detail")) return route.fulfill({ json: discovery });
+    detailRequests += 1;
+    await route.fulfill(detailRequests === 1 ? { json: ctc006Detail } : { status: 500 });
+  });
+  const search = async () => {
+    await fillBounds(page);
+    await page.getByRole("button", { name: "Search courses", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Open course", exact: true })).toBeEnabled();
+  };
+  const open = () => page.getByRole("button", { name: "Open course", exact: true }).click();
+  await page.goto("/");
+  await search();
+  await open();
+  await expect(page.getByRole("heading", { name: "Selected-hole map", exact: true })).toBeVisible();
+  const original = await downloadedJson(page, "Download Raw GIS Source (ODbL)");
+  expect(original.completedAt).toBe(completedAt);
+  expect(original.consentState).toBe("fresh");
+
+  // Just before expiry, a new document must reuse durable detail without a request.
+  await page.clock.setFixedTime(new Date(Date.parse(completedAt) + ttl - 1));
+  await page.reload();
+  await search();
+  await open();
+  await expect(page.getByText("Course data loaded from cache.", { exact: true }).first()).toBeVisible();
+  expect(detailRequests).toBe(1);
+
+  // Exact expiry forces retrieval; failure must not silently render stored detail.
+  await page.clock.setFixedTime(new Date(Date.parse(completedAt) + ttl));
+  await page.reload();
+  await search();
+  await open();
+  const consent = page.getByRole("region", { name: "Stored course data available" });
+  const map = page.getByRole("heading", { name: "Selected-hole map", exact: true });
+  await expect(consent).toBeVisible();
+  await expect(consent).toContainText(completedAt);
+  await expect(map).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)" })).toHaveCount(0);
+  await consent.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(consent).toHaveCount(0);
+  await expect(map).toHaveCount(0);
+  expect(detailRequests).toBe(2);
+
+  await open();
+  await expect(consent).toBeVisible();
+  await consent.getByRole("button", { name: "Render stored course data" }).click();
+  await expect(map).toBeVisible();
+  await expect(consent).toHaveCount(0);
+  await expect(page.locator(".status .warning")).toContainText(`Showing stale OpenStreetMap data from ${completedAt}`);
+  const exported = await downloadedJson(page, "Download Raw GIS Source (ODbL)");
+  expect(exported).toEqual({
+    ...original,
+    exportedAt: exported.exportedAt,
+    consentState: "stale-consented",
+    isStaleSource: true,
+    sourceAgeDays: 7,
+  });
+  expect(detailRequests).toBe(3);
+});
+
+for (const failure of ["missing", "blocked", "write failure"] as const) {
+  test(`keeps planning usable with accurate non-durable fallback after IndexedDB ${failure}`, async ({ page }) => {
+    await page.addInitScript((failure) => {
+      if (failure === "missing") {
+        Object.defineProperty(window, "indexedDB", { value: undefined });
+      } else if (failure === "blocked") {
+        // Deliver the open request's blocked event without relying on another tab.
+        IDBFactory.prototype.open = function () {
+          const request = {} as IDBOpenDBRequest;
+          queueMicrotask(() => request.onblocked?.call(request, new Event("blocked") as IDBVersionChangeEvent));
+          return request;
+        };
+      } else {
+        IDBObjectStore.prototype.put = function () {
+          throw new DOMException("Synthetic quota failure", "QuotaExceededError");
+        };
+      }
+    }, failure);
+    let requests = 0;
+    await isolateNetwork(page, async (route) => {
+      requests += 1;
+      const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+      await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? ctc006Detail : discovery });
+    });
+    await page.goto("/");
+    await fillBounds(page);
+    await page.getByRole("button", { name: "Search courses", exact: true }).click();
+    const warning = page.locator(".status .warning");
+    await expect(warning).toContainText("non-durable memory cache for this session");
+    await page.getByRole("button", { name: "Open course", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Selected-hole map", exact: true })).toBeVisible();
+    await expect(warning).toContainText("non-durable memory cache for this session");
+    await page.getByRole("button", { name: "Add club", exact: true }).click();
+    const project = await downloadedJson(page, "Export project");
+    expect(project.clubProfile.clubs).toHaveLength(1);
+
+    // Reuse the session cache with its warning, without claiming durability.
+    await page.getByRole("button", { name: "Search courses", exact: true }).click();
+    await expect(page.getByText(/course candidates loaded from cache/)).toBeVisible();
+    await expect(warning).toContainText("non-durable memory cache for this session");
+    await page.getByRole("button", { name: "Open course", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Selected-hole map", exact: true })).toBeVisible();
+    await expect(warning).toContainText("non-durable memory cache for this session");
+    expect(requests).toBe(2);
+    await expect(page.locator(".status")).not.toContainText("from durable cache");
+
+    // Memory fallback cannot survive a document reload.
+    await page.reload();
+    await fillBounds(page);
+    await page.getByRole("button", { name: "Search courses", exact: true }).click();
+    await expect(page.getByText(/course candidates loaded/)).toBeVisible();
+    await expect(warning).toContainText("non-durable memory cache for this session");
+    expect(requests).toBe(3);
+  });
+}
 
 for (const width of [1280, 390]) {
   test(`course planning leads expandable source evidence at ${width}px`, async ({ page }, testInfo) => {
@@ -262,9 +384,9 @@ for (const outcome of ["hit", "miss", "warning"]) {
     await page.getByRole("button", { name: "Cancel request" }).click();
     await expect(page.getByText("Request cancelled.", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Open course" }).click();
-    await expect(page.getByText(/^Course data loaded(?: from durable cache)?\.$/)).toBeVisible();
+    await expect(page.getByText(/^Course data loaded(?: from cache)?\.$/)).toBeVisible();
     await releaseCacheGate(page);
-    await expect(page.getByText(/^Course data loaded(?: from durable cache)?\.$/)).toBeVisible();
+    await expect(page.getByText(/^Course data loaded(?: from cache)?\.$/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Stored course data available" })).toHaveCount(0);
     await expect(page.locator(".status .warning")).toHaveCount(0);
     expect(requests).toBe(2);
@@ -333,11 +455,11 @@ test("cancelled stale fallback cannot restore its consent prompt after a newer s
   await expect(page.getByRole("heading", { name: "Stored course data available" })).toHaveCount(0);
   await page.getByRole("button", { name: "Cancel request" }).click();
   await page.getByRole("button", { name: "Open course" }).click();
-  await expect(page.getByText(/^Course data loaded(?: from durable cache)?\.$/)).toBeVisible();
+  await expect(page.getByText(/^Course data loaded(?: from cache)?\.$/)).toBeVisible();
   releaseFailure();
   await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   await expect(page.getByRole("heading", { name: "Stored course data available" })).toHaveCount(0);
-  await expect(page.getByText(/^Course data loaded(?: from durable cache)?\.$/)).toBeVisible();
+  await expect(page.getByText(/^Course data loaded(?: from cache)?\.$/)).toBeVisible();
 });
 
 test("obsolete refresh cooldown expires without replacing the current cache status", async ({ page }) => {
@@ -353,10 +475,10 @@ test("obsolete refresh cooldown expires without replacing the current cache stat
   await expect.poll(() => page.evaluate(() => (window as unknown as { cacheGate: { pending: boolean } }).cacheGate.pending)).toBe(true);
   await page.getByRole("button", { name: "Cancel request" }).click();
   await page.getByRole("button", { name: "Search courses" }).click();
-  await expect(page.getByText("Course data loaded from durable cache.")).toBeVisible();
+  await expect(page.getByText("Course data loaded from cache.")).toBeVisible();
   await releaseCacheGate(page);
   await page.clock.fastForward(5_000);
-  await expect(page.getByText("Course data loaded from durable cache.")).toBeVisible();
+  await expect(page.getByText("Course data loaded from cache.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Refresh course data" })).toBeEnabled();
 });
 
@@ -642,7 +764,10 @@ async function downloadedJson(page: Page, button: string) {
   await page.getByRole("button", { name: button, exact: true }).click();
   const download = await downloading;
   expect(await download.failure()).toBeNull();
-  return JSON.parse(await page.evaluate(() => (window as typeof window & { __ctcLastBlob: Promise<string> }).__ctcLastBlob));
+  const stream = await download.createReadStream();
+  let text = "";
+  for await (const chunk of stream!) text += chunk.toString();
+  return JSON.parse(text);
 }
 
 for (const width of [1280, 390]) {
