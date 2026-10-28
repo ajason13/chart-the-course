@@ -100,10 +100,10 @@ function stateMessage(state: ViewState): string {
     case "idle": return "Enter a bounded location and submit when ready.";
     case "demo": return "Synthetic demo loaded. No course data was requested from the network.";
     case "invalid": return state.message;
-    case "loading": return `Loading ${state.mode} results.`;
+    case "loading": return state.mode === "discovery" ? "Searching courses." : "Loading course data.";
     case "cancelled": return "Request cancelled.";
-    case "empty": return `No ${state.mode} results were returned${state.cached ? " from durable cache" : ""}.`;
-    case "success": return `${state.response.elements.length} raw ${state.mode} entities loaded${state.cached ? " from durable cache" : ""}.`;
+    case "empty": return `No ${state.mode === "discovery" ? "courses were" : "course data was"} returned${state.cached ? " from durable cache" : ""}.`;
+    case "success": return `${state.mode === "discovery" ? `${state.response.elements.length} course candidates loaded` : "Course data loaded"}${state.cached ? " from durable cache" : ""}.`;
     case "rate-limit": return state.retryAfterMs && state.retryAfterMs > 60_000
       ? "Overpass requested a longer rate-limit wait than this app will hold. Try again later."
       : "Overpass rate-limited this request. Try again later.";
@@ -178,6 +178,9 @@ export function App() {
 
   const selectedCourse = normalized?.courseCandidates.find(({ source }) => source.sourceKey === activeContext?.selectedCourseKey);
   const courseSourceKey = selectedCourse?.source.sourceKey ?? null;
+  useEffect(() => {
+    if (courseSourceKey) workspaceHeading.current?.focus();
+  }, [courseSourceKey]);
   const holeKeys = normalized?.holes.map(({ source }) => source.sourceKey) ?? [];
   const projectSnapshot = authoredSnapshot(projectHoles, clubProfile);
   const projectDirty = projectSnapshot !== projectBaseline;
@@ -605,7 +608,7 @@ export function App() {
       <header>
         <p className="eyebrow">Open-source yardage book builder</p>
         <h1>Chart the Course</h1>
-        <p className="lede">Search raw OpenStreetMap golf-course entities inside a small manually entered bounding box.</p>
+        <p className="lede">Find a course within manually entered location bounds, choose a hole, and plan on its OpenStreetMap geometry.</p>
       </header>
 
       <section className="search-panel" aria-labelledby="search-title">
@@ -661,11 +664,10 @@ export function App() {
       {loadedResult && (
         <section className="results" aria-labelledby="results-title">
           <div>
-            <p className="eyebrow">{isDemo ? "Bundled synthetic demo" : `${loadedResult.mode} response`}</p>
-            <h2 id="results-title">{isDemo ? "Synthetic course entities" : "Raw OSM entities"}</h2>
+            <p className="eyebrow">{isDemo ? "Bundled synthetic demo" : loadedResult.mode === "detail" ? "Course planning" : "Search results"}</p>
+            <h2 id="results-title">{loadedResult.mode === "detail" ? (selectedCourse ? String(selectedCourse.source.tags.name ?? courseSourceKey) : "Course planning") : "Courses found"}</h2>
             {isDemo && <p>Synthetic demo geometry, not a real course or live OpenStreetMap evidence. Demo projects use stable synthetic IDs; open this demo again before importing them.</p>}
           </div>
-          <EntitySummary response={loadedResult.response} />
           {loadedResult.mode === "discovery" && (
             <ul className="candidate-list">
               {loadedResult.response.elements.map((element) => {
@@ -674,7 +676,7 @@ export function App() {
                   <li key={`${element.type}-${element.id}`}>
                     <div><strong>{elementName(element)}</strong><span>{element.type} {element.id}</span></div>
                     <button type="button" disabled={!bounds || loading} onClick={() => loadDetail(element)}>
-                      {bounds ? "Load raw detail" : "Detail unavailable"}
+                      {bounds ? "Open course" : "Course data unavailable"}
                     </button>
                   </li>
                 );
@@ -683,9 +685,6 @@ export function App() {
           )}
           {loadedResult.mode === "detail" && (
             <>
-              <ul className="raw-list">
-                {loadedResult.response.elements.map((element) => <li key={`${element.type}-${element.id}`}><code>{element.type}/{element.id}</code> {elementName(element)}</li>)}
-              </ul>
               <section className="map-workspace" aria-labelledby="map-workspace-title">
                 <div className="map-selection">
                   <h3 id="map-workspace-title" ref={workspaceHeading} tabIndex={-1}>Selected-hole map</h3>
@@ -748,6 +747,15 @@ export function App() {
           )}
           <details>
             <summary>Source diagnostics</summary>
+            <EntitySummary response={loadedResult.response} />
+            {loadedResult.mode === "detail" && (
+              <>
+                <h3>{isDemo ? "Synthetic course entities" : "Raw OSM entities"}</h3>
+                <ul className="raw-list" aria-label={isDemo ? "Synthetic course entities" : "Raw OSM entities"}>
+                  {loadedResult.response.elements.map((element) => <li key={`${element.type}-${element.id}`}><code>{element.type}/{element.id}</code> {elementName(element)}</li>)}
+                </ul>
+              </>
+            )}
             <dl className="diagnostics">
               <div><dt>Endpoint</dt><dd>{loadedResult.source.endpoint}</dd></div>
               <div><dt>Bbox</dt><dd>{loadedResult.source.bbox}</dd></div>

@@ -75,13 +75,14 @@ test("discovers candidates, loads detail explicitly, caches it, and shows attrib
   await page.getByRole("button", { name: "Search courses" }).click();
 
   await expect(page.getByText("Synthetic Municipal Course")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Detail unavailable" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Course data unavailable" })).toBeDisabled();
   await expect(page.getByText(/Data © OpenStreetMap contributors/)).toBeVisible();
   expect(discoveryRequests).toBe(1);
   expect(detailRequests).toBe(0);
 
-  await page.getByRole("button", { name: "Load raw detail" }).click();
-  await expect(page.getByText(/raw detail entities loaded/)).toBeVisible();
+  await page.getByRole("button", { name: "Open course" }).click();
+  await expect(page.getByText(/^Course data loaded(?: from durable cache)?\.$/)).toBeVisible();
+  await page.getByText("Source diagnostics", { exact: true }).click();
   await expect(page.locator(".raw-list code").getByText("way/9000060001", { exact: true })).toBeVisible();
   expect(detailRequests).toBe(1);
 
@@ -89,9 +90,66 @@ test("discovers candidates, loads detail explicitly, caches it, and shows attrib
   await fillBounds(page);
   await page.getByLabel(/Course name/).fill("Synthetic.*");
   await page.getByRole("button", { name: "Search courses" }).click();
-  await expect(page.getByText(/raw discovery entities loaded from durable cache/)).toBeVisible();
+  await expect(page.getByText(/course candidates loaded from durable cache/)).toBeVisible();
   expect(discoveryRequests).toBe(1);
 });
+
+for (const width of [1280, 390]) {
+  test(`course planning leads expandable source evidence at ${width}px`, async ({ page }, testInfo) => {
+    let detailQuery = "";
+    let requests = 0;
+    await isolateNetwork(page, async (route) => {
+      requests += 1;
+      const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+      if (query.includes("purpose:golf-course-detail")) {
+        detailQuery = query;
+        await route.fulfill({ json: ctc006Detail });
+      } else await route.fulfill({ json: discovery });
+    });
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/");
+    await fillBounds(page);
+    await page.getByRole("button", { name: "Search courses", exact: true }).click();
+    await page.getByRole("button", { name: "Open course", exact: true }).click();
+    const heading = page.getByRole("heading", { name: "Selected-hole map", exact: true });
+    await expect(heading).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("combobox", { name: "Hole", exact: true })).toBeFocused();
+    const workspace = page.getByRole("region", { name: "Selected-hole map", exact: true });
+    const diagnostics = page.getByText("Source diagnostics", { exact: true });
+    const raw = page.getByRole("list", { name: "Raw OSM entities", includeHidden: true });
+    await expect(page.getByTestId("hole-vector-map")).toBeVisible();
+    await expect(raw).toBeHidden();
+    await expect(page.getByText(/Selected course: Synthetic CTC-006 Course/)).toBeVisible();
+    await expect(page.getByText(/Data © OpenStreetMap contributors/)).toBeVisible();
+    await expect(page.getByText("All normalization warnings (0)", { exact: true })).toBeVisible();
+    expect(await workspace.evaluate((element) => {
+      const summary = [...document.querySelectorAll("summary")].find((node) => node.textContent === "Source diagnostics")!;
+      return Boolean(element.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING);
+    })).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await heading.evaluate((element) => element.scrollIntoView({ block: "start" }));
+    await page.screenshot({ path: testInfo.outputPath(`planning-${width}.png`) });
+    await assertAxe(page);
+    await diagnostics.focus();
+    await page.keyboard.press("Enter");
+    await expect(raw).toBeVisible();
+    await expect(raw.getByRole("listitem")).toHaveCount(ctc006Detail.elements.length);
+    await expect(raw.locator("code").first()).toHaveText("way/9000060001");
+    const metadata = diagnostics.locator("..").locator(".diagnostics");
+    await expect(metadata.locator("pre")).toHaveText(detailQuery);
+    await expect(metadata).toContainText(endpoint);
+    await expect(metadata).toContainText("35,-80,35.01,-79.99");
+    await expect(metadata).toContainText("Completed");
+    await diagnostics.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath(`diagnostics-${width}.png`) });
+    await assertAxe(page);
+    await page.keyboard.press("Space");
+    await expect(raw).toBeHidden();
+    await expect(diagnostics).toBeFocused();
+    expect(requests).toBe(2);
+  });
+}
 
 test("makes no requests on keystrokes, blocks duplicate submit, and cancels explicitly", async ({ page }) => {
   let requests = 0;
@@ -200,13 +258,13 @@ for (const outcome of ["hit", "miss", "warning"]) {
     await page.getByRole("button", { name: "Search courses" }).click();
     await expect.poll(() => page.evaluate(() => (window as unknown as { cacheGate: { pending: boolean } }).cacheGate.pending)).toBe(true);
     await expect(page.getByRole("button", { name: "Search courses" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Load raw detail" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Open course" })).toBeDisabled();
     await page.getByRole("button", { name: "Cancel request" }).click();
     await expect(page.getByText("Request cancelled.", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Load raw detail" }).click();
-    await expect(page.getByText(/raw detail entities loaded/)).toBeVisible();
+    await page.getByRole("button", { name: "Open course" }).click();
+    await expect(page.getByText(/^Course data loaded(?: from durable cache)?\.$/)).toBeVisible();
     await releaseCacheGate(page);
-    await expect(page.getByText(/raw detail entities loaded/)).toBeVisible();
+    await expect(page.getByText(/^Course data loaded(?: from durable cache)?\.$/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Stored course data available" })).toHaveCount(0);
     await expect(page.locator(".status .warning")).toHaveCount(0);
     expect(requests).toBe(2);
@@ -234,20 +292,20 @@ for (const fail of [false, true]) {
     if (fail) {
       await page.getByLabel(/Course name/).fill("Newer search");
       await page.getByRole("button", { name: "Search courses" }).click();
-      await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible();
+      await expect(page.getByText(/course candidates loaded/)).toBeVisible();
     }
     await releaseCacheGate(page);
     if (fail) {
-      await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible();
+      await expect(page.getByText(/course candidates loaded/)).toBeVisible();
       await expect(page.locator(".status .warning")).toHaveCount(0);
       return;
     }
     await expect(page.getByText("Request cancelled.", { exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Raw OSM entities" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Courses found" })).toHaveCount(0);
     await expect(page.locator(".status .warning")).toHaveCount(0);
     await page.getByLabel(/Course name/).fill("Newer search");
     await page.getByRole("button", { name: "Search courses" }).click();
-    await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible();
+    await expect(page.getByText(/course candidates loaded/)).toBeVisible();
   });
 }
 
@@ -266,7 +324,7 @@ test("cancelled stale fallback cannot restore its consent prompt after a newer s
   await page.goto("/");
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible();
+  await expect(page.getByText(/course candidates loaded/)).toBeVisible();
   await page.clock.setFixedTime(Date.now() + 8 * 24 * 60 * 60 * 1000);
   await page.getByRole("button", { name: "Search courses" }).click();
   await expect(page.getByRole("heading", { name: "Stored course data available" })).toBeVisible();
@@ -274,12 +332,12 @@ test("cancelled stale fallback cannot restore its consent prompt after a newer s
   await expect.poll(() => searches).toBe(3);
   await expect(page.getByRole("heading", { name: "Stored course data available" })).toHaveCount(0);
   await page.getByRole("button", { name: "Cancel request" }).click();
-  await page.getByRole("button", { name: "Load raw detail" }).click();
-  await expect(page.getByText(/raw detail entities loaded/)).toBeVisible();
+  await page.getByRole("button", { name: "Open course" }).click();
+  await expect(page.getByText(/^Course data loaded(?: from durable cache)?\.$/)).toBeVisible();
   releaseFailure();
   await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   await expect(page.getByRole("heading", { name: "Stored course data available" })).toHaveCount(0);
-  await expect(page.getByText(/raw detail entities loaded/)).toBeVisible();
+  await expect(page.getByText(/^Course data loaded(?: from durable cache)?\.$/)).toBeVisible();
 });
 
 test("obsolete refresh cooldown expires without replacing the current cache status", async ({ page }) => {
@@ -289,7 +347,7 @@ test("obsolete refresh cooldown expires without replacing the current cache stat
   await page.goto("/");
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible();
+  await expect(page.getByText(/course candidates loaded/)).toBeVisible();
   await armCacheGate(page, "write");
   await page.getByRole("button", { name: "Refresh course data" }).click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { cacheGate: { pending: boolean } }).cacheGate.pending)).toBe(true);
@@ -346,7 +404,7 @@ for (const scenario of [
 for (const scenario of [
   { name: "malformed JSON", body: "{", expected: /malformed JSON/ },
   { name: "invalid shape", body: '{"elements":[{"type":"area","id":1}]}', expected: /invalid entity shape/ },
-  { name: "empty response", body: '{"elements":[]}', expected: /No discovery results/ },
+  { name: "empty response", body: '{"elements":[]}', expected: /No courses/ },
 ]) {
   test(`shows ${scenario.name} state`, async ({ page }) => {
     await isolateNetwork(page, async (route) => route.fulfill({ body: scenario.body, contentType: "application/json" }));
@@ -367,7 +425,7 @@ test("retries one transient network failure without endpoint failover", async ({
   await page.goto("/");
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await expect(page.getByText(/raw discovery entities loaded/)).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText(/course candidates loaded/)).toBeVisible({ timeout: 5000 });
   expect(requests).toBe(2);
 });
 
@@ -385,7 +443,8 @@ test("refreshes loaded course data with cooldown and durable cache replacement",
   await page.goto("/");
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await page.getByRole("button", { name: "Open course" }).click();
+  await page.getByText("Source diagnostics", { exact: true }).click();
   await expect(page.getByText("way/9000000101")).toBeVisible();
 
   const refresh = page.getByRole("button", { name: "Refresh course data" });
@@ -398,7 +457,8 @@ test("refreshes loaded course data with cooldown and durable cache replacement",
   await page.reload();
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await page.getByRole("button", { name: "Open course" }).click();
+  await page.getByText("Source diagnostics", { exact: true }).click();
   await expect(page.getByText("way/9000000102")).toBeVisible();
   expect(detailRequests).toBe(2);
 });
@@ -431,7 +491,7 @@ async function prepareGuardWorkspace(page: Page, discoveryResponse?: (route: Rou
   await page.goto("/");
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await page.getByRole("button", { name: "Open course" }).click();
   await expect(page.getByTestId("hole-vector-map")).toBeVisible();
 }
 
@@ -504,7 +564,7 @@ for (const cached of [true, false]) {
     const submitting = page.getByRole("button", { name: "Search courses", exact: true }).click();
     if (!cached) {
       await submitting;
-      await expect(page.getByText("Loading discovery results.", { exact: true })).toBeVisible();
+      await expect(page.getByText("Searching courses.", { exact: true })).toBeVisible();
       // Edits made after request start must still be protected at commit time.
       await page.getByLabel("Club name", { exact: true }).fill("Retain this club");
       await page.getByLabel("Club name", { exact: true }).blur();
@@ -526,9 +586,9 @@ for (const cached of [true, false]) {
     await page.getByRole("button", { name: "Add carry", exact: true }).click();
     page.once("dialog", (confirmation) => confirmation.accept());
     await page.getByRole("button", { name: "Search courses", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Load raw detail", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Open course", exact: true })).toBeVisible();
     await expect(page.getByTestId("hole-vector-map")).toHaveCount(0);
-    await page.getByRole("button", { name: "Load raw detail", exact: true }).click();
+    await page.getByRole("button", { name: "Open course", exact: true }).click();
     await expectProjectDirty(page, false);
     await expect(page.getByText("No clubs added.", { exact: true })).toBeVisible();
     await expect(hole).toHaveValue("way/9000060101");
@@ -669,7 +729,7 @@ test("switching live course to synthetic demo protects unsaved work and clears s
   await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)", exact: true })).toBeEnabled();
   page.once("dialog", (dialog) => dialog.accept());
   await demo.click();
-  await expect(page.getByRole("heading", { name: "Synthetic course entities", exact: true })).toBeVisible();
+  await expect(page.getByText(/^Synthetic demo geometry, not a real course or live OpenStreetMap evidence/)).toBeVisible();
   await expect(page.getByRole("combobox", { name: /^Hole/ })).toHaveValue("way/9000060101");
   await expect(page.getByText("No clubs added.", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)", exact: true })).toBeDisabled();
@@ -678,11 +738,11 @@ test("switching live course to synthetic demo protects unsaved work and clears s
   page.once("dialog", (dialog) => dialog.dismiss());
   await page.getByRole("button", { name: "Search courses", exact: true }).click();
   await expect(page.getByText("Replacement cancelled. Existing course, project and selection were retained.", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Synthetic course entities", exact: true })).toBeVisible();
+  await expect(page.getByText(/^Synthetic demo geometry, not a real course or live OpenStreetMap evidence/)).toBeVisible();
   await expect(page.getByLabel("Club name", { exact: true })).toHaveValue("Club 1");
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Search courses", exact: true }).click();
-  await page.getByRole("button", { name: "Load raw detail", exact: true }).click();
+  await page.getByRole("button", { name: "Open course", exact: true }).click();
   await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)", exact: true })).toBeEnabled();
   await expect(page.getByText("Course data © OpenStreetMap contributors.")).toBeVisible();
 });
@@ -703,8 +763,8 @@ test("synthetic demo supersedes a pending course-data request", async ({ page })
   await requested;
   await page.getByRole("button", { name: "Open synthetic demo", exact: true }).click();
   release();
-  await expect(page.getByRole("heading", { name: "Synthetic course entities", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Load raw detail", exact: true })).toHaveCount(0);
+  await expect(page.getByText(/^Synthetic demo geometry, not a real course or live OpenStreetMap evidence/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open course", exact: true })).toHaveCount(0);
   await expect(page.getByTestId("hole-vector-map")).toBeVisible();
 });
 
@@ -748,7 +808,7 @@ for (const scenario of ["success", "HTTP failure", "network failure", "malformed
     await page.goto("/");
     await fillBounds(page);
     await page.getByRole("button", { name: "Search courses" }).click();
-    await page.getByRole("button", { name: "Load raw detail" }).click();
+    await page.getByRole("button", { name: "Open course" }).click();
     const hole = page.getByRole("combobox", { name: /^Hole/ });
     await hole.selectOption("way/9000060102");
     const map = page.getByTestId("hole-vector-map");
@@ -768,7 +828,7 @@ for (const scenario of ["success", "HTTP failure", "network failure", "malformed
     const oldSource = await downloadedJson(page, "Download Raw GIS Source (ODbL)");
 
     await page.getByRole("button", { name: "Refresh course data", exact: true }).click();
-    await expect(page.getByText("Loading detail results.")).toBeVisible();
+    await expect(page.getByText("Loading course data.")).toBeVisible();
     await expect(hole).toHaveValue("way/9000060102");
     await expect(page.getByLabel("Club name")).toHaveValue("Unsaved profile");
     if (scenario === "cancellation") {
@@ -826,7 +886,7 @@ test("exports raw GIS source only for loaded detail data", async ({ page }) => {
   await page.getByRole("button", { name: "Search courses" }).click();
   await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)" })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await page.getByRole("button", { name: "Open course" }).click();
   const sourceButton = page.getByRole("button", { name: "Download Raw GIS Source (ODbL)" });
   await expect(sourceButton).toBeVisible();
   await expect(sourceButton).toBeEnabled();
@@ -865,12 +925,12 @@ test("supports keyboard flow, mobile layout, and axe scans across states", async
   await assertAxe(page);
   await fillBounds(page);
   await page.getByLabel("East").press("Enter");
-  await expect(page.getByText("Loading discovery results.")).toBeVisible();
+  await expect(page.getByText("Searching courses.")).toBeVisible();
   await assertAxe(page);
   resolveRequest?.();
   await expect(page.getByText("Synthetic Municipal Course")).toBeVisible();
   await assertAxe(page);
-  const detailButton = page.getByRole("button", { name: "Load raw detail" });
+  const detailButton = page.getByRole("button", { name: "Open course" });
   await expect(detailButton).toBeVisible();
   expect(await detailButton.evaluate((button) => button.getBoundingClientRect().right <= window.innerWidth)).toBe(true);
 
@@ -899,7 +959,7 @@ test("renders and measures the selected hole with pointer, keyboard, mobile, and
   await page.goto("/");
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await page.getByRole("button", { name: "Open course" }).click();
 
   const map = page.getByTestId("hole-vector-map");
   await expect(map).toBeVisible();
@@ -954,7 +1014,7 @@ test("manages targets, carry arcs, and strict local project exchange", async ({ 
   await page.goto("/");
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await page.getByRole("button", { name: "Open course" }).click();
 
   const map = page.getByTestId("hole-vector-map");
   await page.getByRole("button", { name: "Add target" }).click();
@@ -1014,7 +1074,7 @@ test("keeps club profile and dispersion selections transient across reload", asy
   await page.goto("/");
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await page.getByRole("button", { name: "Open course" }).click();
   const map = page.getByTestId("hole-vector-map");
   await page.getByRole("button", { name: "Add target" }).click();
   await map.click({ position: { x: 180, y: 180 } });
@@ -1030,7 +1090,7 @@ test("keeps club profile and dispersion selections transient across reload", asy
   await page.reload();
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await page.getByRole("button", { name: "Open course" }).click();
   await expect(page.getByText("No clubs added.")).toBeVisible();
   await expect(page.getByTestId("hole-vector-map").locator('[data-layer="dispersion"] polygon')).toHaveCount(0);
 });
@@ -1043,7 +1103,7 @@ test("keeps fairway-width selection transient without duplicating its status reg
   await page.goto("/");
   await fillBounds(page);
   await page.getByRole("button", { name: "Search courses" }).click();
-  await page.getByRole("button", { name: "Load raw detail" }).click();
+  await page.getByRole("button", { name: "Open course" }).click();
 
   const map = page.getByTestId("hole-vector-map");
   await page.getByRole("button", { name: "Add target" }).click();
@@ -1082,9 +1142,9 @@ for (const stale of [false, true]) {
     const search = async () => {
       await fillBounds(page);
       await page.getByRole("button", { name: "Search courses" }).click();
-      await expect(page.getByRole("button", { name: "Load raw detail" })).toHaveCount(2);
+      await expect(page.getByRole("button", { name: "Open course" })).toHaveCount(2);
     };
-    const choose = async (index: number) => page.getByRole("button", { name: "Load raw detail" }).nth(index).click();
+    const choose = async (index: number) => page.getByRole("button", { name: "Open course" }).nth(index).click();
     await page.goto("/");
     await search();
     await choose(1);
@@ -1151,10 +1211,10 @@ for (const evidence of ["missing", "duplicate"]) {
     await page.goto("/");
     await fillBounds(page);
     await page.getByRole("button", { name: "Search courses" }).click();
-    await page.getByRole("button", { name: "Load raw detail" }).click();
+    await page.getByRole("button", { name: "Open course" }).click();
     await expect(page.getByText(/Selected course evidence is missing or ambiguous/)).toBeVisible();
     await expect(page.getByRole("button", { name: "Export project", exact: true })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Load raw detail" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Open course" })).toBeEnabled();
   });
 }
 
@@ -1175,10 +1235,10 @@ for (const cachedEvidence of ["missing", "duplicate"]) {
     await page.goto("/");
     await fillBounds(page);
     await page.getByRole("button", { name: "Search courses" }).click();
-    await page.getByRole("button", { name: "Load raw detail" }).nth(0).click();
+    await page.getByRole("button", { name: "Open course" }).nth(0).click();
     await expect(page.getByText(/Selected course:.*\(way\/9000060000\)/)).toBeVisible();
     await page.getByRole("button", { name: "Search courses" }).click();
-    await page.getByRole("button", { name: "Load raw detail" }).nth(1).click();
+    await page.getByRole("button", { name: "Open course" }).nth(1).click();
     await expect(page.getByText(/Selected course:.*\(way\/9000060001\)/)).toBeVisible();
     expect(detailRequests).toBe(2);
     await expect(page.getByRole("button", { name: "Export project", exact: true })).toBeEnabled();
