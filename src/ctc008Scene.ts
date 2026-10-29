@@ -25,6 +25,8 @@ import {
 } from "./normalize";
 import type { OverpassResponse, SourceMetadata } from "./overpass";
 import type { HoleStateV1 } from "./project";
+import { LETTER_WIDTH_PT, LETTER_HEIGHT_PT, PAGE_MARGIN_PT, MAP_REGION } from "./pdfLayout";
+export { LETTER_WIDTH_PT, LETTER_HEIGHT_PT, PAGE_MARGIN_PT, MAP_REGION } from "./pdfLayout";
 
 export const CTC008_COURSE_SOURCE_KEY = "way/9000060001" as const;
 export const CTC008_HOLE_SOURCE_KEY = "way/9000060101" as const;
@@ -35,10 +37,6 @@ export const CTC008_ATTRIBUTION = "Course geometry and map data © OpenStreetMap
 export const CTC008_ATTRIBUTION_URL = "https://www.openstreetmap.org/copyright" as const;
 export const CTC008_FILENAME_FALLBACK = "ctc-yardage-prototype-invalid-timestamp.pdf" as const;
 
-export const LETTER_WIDTH_PT = 612;
-export const LETTER_HEIGHT_PT = 792;
-export const PAGE_MARGIN_PT = 36;
-export const MAP_REGION = { x: 36, y: 96, width: 540, height: 390 } as const;
 export const MAP_SCALE = Math.min(MAP_REGION.width / VIEWBOX_WIDTH, MAP_REGION.height / VIEWBOX_HEIGHT);
 export const MAP_TRANSLATE_X = MAP_REGION.x + (MAP_REGION.width - VIEWBOX_WIDTH * MAP_SCALE) / 2;
 export const MAP_TRANSLATE_Y = MAP_REGION.y;
