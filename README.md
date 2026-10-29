@@ -44,12 +44,24 @@ export, then open the demo again before importing its project; its synthetic
 course and hole IDs remain stable. Unsaved-change confirmation also applies
 when switching between a live course and the demo.
 
-Geometry support is limited: node/way geometry is normalized, but relation
-geometry is unsupported. Features associate with holes through numeric `ref`
-tags; missing or ambiguous refs can leave features unassociated. Missing tees,
-greens or usable geometry may prevent estimates or map rendering. Coverage
-depends on the source data; dispersion guides are not shot recommendations or
-confidence estimates.
+Geometry support is limited to validated point/line/simple-ring geometry;
+relation topology and course/hole membership remain unsupported. Whole routes
+and features must be strictly inside the selected facility boundary and outside
+other returned facilities before numeric `ref` tags can associate features.
+Missing/invalid boundaries, boundary contact, overlapping facilities or conflicting
+source records leave scope unresolved; request bounds do not establish ownership.
+Facility containment is inferred, and a bounded response may omit neighbors or
+playing-course membership. Duplicate hole numbers are never resolved by order.
+
+Missing-ref tees at route starts, greens at route ends and fairways intersecting
+route interiors appear as inferred or shared candidates. Other in-scope geometry
+appears as clipped course context. **Feature association evidence** distinguishes
+these display-only layers from source-ref assertions. Candidates/context do not
+change map fit, tee origins, fairway width or mapped-water calculations. Invalid,
+unmatched or duplicate explicit refs never fall back to candidates. Missing tees,
+greens or usable geometry may prevent estimates or map rendering; unavailable
+mapped evidence does not mean no hazards exist. Coverage depends on the source
+data; dispersion guides are not shot recommendations or confidence estimates.
 
 The default map is blank/vector-only with no third-party basemap tiles.
 OSM-derived geometry still requires attribution; see
@@ -144,7 +156,7 @@ overlap and active-project PDF export remain tracked work, not shipped features.
 For development, read [repository guidance](AGENTS.md),
 [contributing](CONTRIBUTING.md) and the [Codex session entry point](docs/codex-sessions.md).
 The [course geometry contract](docs/course-geometry-contract.md) records research,
-recommended support and explicit deferrals for the geometry follow-ups; it does
+adopted support and explicit deferrals for the geometry follow-ups; it does
 not describe shipped behavior.
 Focused policies cover [security](SECURITY.md),
 [reference reuse](docs/reference-project-reuse-policy.md) and

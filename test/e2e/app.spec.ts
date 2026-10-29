@@ -1093,7 +1093,7 @@ test("renders and measures the selected hole with pointer, keyboard, mobile, and
   for (const layer of ["vegetation", "generic-water", "golf-water", "rough", "fairway", "bunker", "green", "tee", "route", "measurement", "fairway-width", "dispersion"]) {
     await expect(map.locator(`[data-layer="${layer}"]`)).toHaveCount(1);
   }
-  await expect(map.locator('[data-layer="vegetation"] circle')).toHaveCount(0);
+  await expect(map.locator('[data-layer="vegetation"] circle')).toHaveCount(1); // in-scope context, clipped without affecting fit
   await expect(page.getByRole("heading", { name: "Fairway width" })).toBeVisible();
   await page.getByRole("button", { name: "220 yd" }).click();
   await expect(page.getByText(/at 220 yd/i)).toBeVisible();
@@ -1494,7 +1494,7 @@ for (const genericWater of [false, true]) {
     const waterRing = [[51.44, -40], [131.44, -40], [131.44, 40], [51.44, 40], [51.44, -40]]
       .map(([x, y]) => coordinate(x, y));
     const detail = { elements: [
-      discovery.elements[0],
+      { ...discovery.elements[0], geometry: [[-100,-100],[400,-100],[400,100],[-100,100],[-100,-100]].map(([x,y])=>coordinate(x,y)) },
       { type: "way", id: 1, tags: { golf: "hole", ref: "1" }, geometry: [coordinate(0, 0), coordinate(300, 0)] },
       { type: "node", id: 2, tags: { golf: "tee", ref: "1" }, ...coordinate(0, 0) },
       { type: "way", id: 3, tags: genericWater ? { natural: "water", ref: "1" } : { golf: "water_hazard", ref: "1" }, geometry: waterRing },
@@ -1562,3 +1562,84 @@ for (const genericWater of [false, true]) {
     expect(requests).toBe(2); // Reload reuses source cache, never authored state.
   });
 }
+
+for (const shared of [false, true]) {
+  test(`renders ${shared ? "shared" : "inferred"} missing-ref candidates only as display evidence`, async ({ page }) => {
+    const detail = structuredClone(ctc006Detail) as OverpassResponse;
+    for (const element of detail.elements) if (element.tags?.golf !== "hole" && element.tags) delete element.tags.ref;
+    // Existing triangular tee does not contain the route start; use an explicit
+    // synthetic interior-start case rather than assuming ref implies proximity.
+    const tee = detail.elements.find(e => e.tags?.golf === "tee")!;
+    tee.geometry = [{lat:35.0008,lon:-79.9993},{lat:35.0013,lon:-79.9993},
+      {lat:35.0013,lon:-79.9987},{lat:35.0008,lon:-79.9987},{lat:35.0008,lon:-79.9993}];
+    if (shared) {
+      const route = structuredClone(detail.elements.find(e => e.tags?.golf === "hole")!);
+      route.id = 9900000047;
+      route.tags = { ...route.tags, ref: "2" };
+      detail.elements.push(route);
+    }
+    let invalidScope = false;
+    await isolateNetwork(page, async route => {
+      const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+      const response = structuredClone(detail);
+      if (invalidScope) response.elements = response.elements.filter(e => e.tags?.leisure !== "golf_course");
+      await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? response : discovery });
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await fillBounds(page);
+    await page.getByRole("button", { name: "Search courses", exact: true }).click();
+    await page.getByRole("button", { name: "Open course", exact: true }).click();
+    const map = page.getByTestId("hole-vector-map");
+    await expect(map).toBeVisible();
+    const basis = shared ? "shared-candidate" : "inferred-candidate";
+    await expect(map.locator(`[data-association="${basis}"]`)).toHaveCount(3);
+    await expect(map.locator('[data-association="course-context"]')).toHaveCount(6);
+    await expect(page.getByText("No tee geometry available for this hole.", { exact: true })).toBeVisible();
+    await expect(page.locator(".fairway-width-status")).toContainText("No usable fairway polygon");
+    await page.getByText("Feature association evidence", { exact: true }).click();
+    await expect(page.locator(".association-evidence")).toContainText(shared ? "Shared/ambiguous candidate" : "Inferred candidate");
+    await expect(page.locator(".association-evidence")).toContainText("excluded from tee origins, fairway width and mapped-water calculations");
+    expect(await map.locator('[data-association]').first().locator('..').getAttribute('clip-path')).toMatch(/^url\(#/);
+    await assertAxe(page);
+    await map.focus();
+    await map.press("Enter");
+    await map.press("ArrowRight");
+    await map.press("Enter");
+    await expect(page.locator(".hole-map-panel > p.measurement-result")).toHaveText(/^Distance:/);
+    await page.getByRole("button", { name: "Add target", exact: true }).click();
+    await map.press("Enter");
+    const project = await downloadedJson(page,"Export project");
+    expect(Object.values((project as ProjectV2).holes).flatMap(h => h?.targets ?? [])).toHaveLength(1);
+    await page.getByRole("button", { name: "Add club", exact: true }).click();
+    await expect(page.getByText("No usable mapped golf-water geometry is available for this hole.", { exact: true })).toBeVisible();
+    // Same-course scope loss cannot discard authored state or the selected hole.
+    invalidScope = true;
+    await page.getByRole("button", { name: "Refresh course data", exact: true }).click();
+    await expect(page.getByText(/Existing course and project were retained/)).toBeVisible();
+    await expect(map).toBeVisible();
+    const retained = await downloadedJson(page,"Export project");
+    expect(retained.holes).toEqual(project.holes);
+    expect(retained.clubProfile.clubs).toHaveLength(1);
+  });
+}
+
+test("withholds overlapping facility geometry and exposes unavailable-scope diagnostics", async ({ page }) => {
+  const detail = structuredClone(ctc006Detail) as OverpassResponse;
+  const facility = structuredClone(detail.elements.find(e=>e.tags?.leisure === "golf_course")!);
+  facility.id = 9900000047;
+  detail.elements.push(facility);
+  await isolateNetwork(page, async route => {
+    const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
+    await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? detail : discovery });
+  });
+  await page.goto("/");
+  await fillBounds(page);
+  await page.getByRole("button", { name: "Search courses", exact: true }).click();
+  await page.getByRole("button", { name: "Open course", exact: true }).click();
+  await expect(page.getByText(/No in-scope holes are available/)).toBeVisible();
+  await expect(page.getByTestId("hole-vector-map")).toHaveCount(0);
+  await page.getByText("Normalization diagnostics", { exact: true }).click();
+  await expect(page.getByText("HOLE_SCOPE_UNRESOLVED: way/9000060101", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)", exact: true })).toBeEnabled();
+});

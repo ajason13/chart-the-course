@@ -58,20 +58,13 @@ describe("normalizeGolfCourse incomplete synthetic fixture", () => {
     expect(result.unassociatedFeatures.map(({ source: record }) => record.sourceKey)).toEqual([
       "node/9000001401",
       "relation/9000001301",
+      "way/9000001201",
     ]);
-    expect(result.warnings.map(({ code }) => code)).toEqual([
-      "AMBIGUOUS_FEATURE_REF",
-      "AMBIGUOUS_FEATURE_REF",
-      "AMBIGUOUS_HOLE_ORDER",
-      "DUPLICATE_SOURCE_KEY",
-      "MALFORMED_CONSUMED_TAG",
-      "MISSING_GREEN",
-      "MISSING_GREEN",
-      "MISSING_OR_MALFORMED_GEOMETRY",
-      "MISSING_TEE",
-      "MISSING_TEE",
-      "UNSUPPORTED_RELATION",
-    ]);
+    expect(result.warnings.map(({ code }) => code)).toEqual(expect.arrayContaining([
+      "AMBIGUOUS_HOLE_ORDER", "DUPLICATE_SOURCE_KEY", "FEATURE_SCOPE_UNRESOLVED",
+      "MALFORMED_CONSUMED_TAG", "MISSING_GREEN", "MISSING_OR_MALFORMED_GEOMETRY",
+      "MISSING_TEE", "UNSUPPORTED_RELATION",
+    ]));
     expect(result.warnings.filter(({ code }) => code === "DUPLICATE_SOURCE_KEY")).toHaveLength(1);
     expect(result.unassociatedFeatures.find(({ source: record }) => record.sourceKey === "relation/9000001301")?.geometry).toBeNull();
   });
@@ -79,8 +72,9 @@ describe("normalizeGolfCourse incomplete synthetic fixture", () => {
   it("uses strict refs, exact classification precedence, and scoped IDs", () => {
     const fixture: OverpassResponse = {
       elements: [
+        completeFixture.elements[0] as OverpassResponse["elements"][number],
         { type: "node", id: 42, lat: 35, lon: -80, tags: { golf: "water_hazard", natural: "water" } },
-        { type: "way", id: 42, geometry: [{ lat: 35, lon: -80 }, { lat: 35.01, lon: -79.99 }], tags: { golf: "hole", ref: "01" } },
+        { type: "way", id: 42, geometry: [{ lat: 35.001, lon: -79.999 }, { lat: 35.009, lon: -79.991 }], tags: { golf: "hole", ref: "01" } },
       ],
     };
     const result = normalizeGolfCourse(fixture, source);

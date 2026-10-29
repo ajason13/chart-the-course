@@ -173,8 +173,8 @@ export function App() {
   const loading = state.kind === "loading";
   const normalized = useMemo(() =>
     loadedResult?.mode === "detail"
-      ? normalizeGolfCourse(loadedResult.response, loadedResult.source)
-      : null, [loadedResult]);
+      ? normalizeGolfCourse(loadedResult.response, loadedResult.source, activeContext?.selectedCourseKey)
+      : null, [loadedResult, activeContext?.selectedCourseKey]);
 
   const selectedCourse = normalized?.courseCandidates.find(({ source }) => source.sourceKey === activeContext?.selectedCourseKey);
   const courseSourceKey = selectedCourse?.source.sourceKey ?? null;
@@ -315,7 +315,7 @@ export function App() {
 
   function canReplaceResult(mode: OverpassCacheMode, response: OverpassResponse, source: CachedResponse["source"], context: RequestContext) {
     if (mode !== "detail") return true;
-    const next = normalizeGolfCourse(response, source);
+    const next = normalizeGolfCourse(response, source, context.selectedCourseKey);
     const selected = next.courseCandidates.find(({ source }) => source.sourceKey === context.selectedCourseKey);
     const matches = response.elements.filter((element) => `${element.type}/${element.id}` === context.selectedCourseKey);
     if (!selected || matches.length !== 1) {
@@ -346,7 +346,7 @@ export function App() {
     synthetic = false,
   ) {
     if (!canReplaceResult(mode, response, source, context)) return "invalid";
-    const next = mode === "detail" ? normalizeGolfCourse(response, source) : null;
+    const next = mode === "detail" ? normalizeGolfCourse(response, source, context.selectedCourseKey) : null;
     const sameCourse = mode === "detail" && loadedResult?.mode === "detail"
       && activeContext?.cacheKey === context.cacheKey
       && context.selectedCourseKey === courseSourceKey;
@@ -711,7 +711,8 @@ export function App() {
                         clubProfile={clubProfile} onClubProfileChange={setClubProfile} />
                     ))}
                   </>
-                ) : <p className="map-empty" role="status">No normalized holes are available to render.</p>}
+                ) : <p className="map-empty" role="status">No in-scope holes are available to render. Course association requires valid geometry strictly inside the selected facility and outside other returned facilities; bbox is not ownership.</p>}
+                {normalized && normalized.holes.length === 0 && <details><summary>Normalization diagnostics</summary><ul>{normalized.warnings.map(w => <li key={`${w.code}-${w.affectedIdentity}`}>{w.code}: {w.affectedIdentity}</li>)}</ul></details>}
                 {normalized && normalized.holes.length > 0 && (
                   <section className="project-io" aria-labelledby="project-io-title">
                     <h3 id="project-io-title">Local project file</h3>

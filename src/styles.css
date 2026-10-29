@@ -125,3 +125,8 @@ pre { background: #18221c; border-radius: 5px; color: #eef4ed; font-size: .8rem;
   .map-heading button, .map-selection label { width: 100%; }
   .dispersion-controls { grid-template-columns: 1fr; }
 }
+
+/* Non-analytic geometry remains visually distinct as well as text-labeled. */
+.association-course-context { opacity: 0.35; }
+.association-inferred-candidate { stroke-dasharray: 8 4; opacity: 0.75; }
+.association-shared-candidate { stroke-dasharray: 2 4; opacity: 0.6; }

@@ -1,4 +1,4 @@
-// Research observations for #46, not an implementation of the proposed policy.
+// Synthetic #46 evidence, with #47 scope-first association expectations.
 // Run with Node 24: node docs/research/course-geometry.mjs
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -10,7 +10,7 @@ const source = {
   copyrightUrl: 'https://www.openstreetmap.org/copyright',
 };
 const fixture = JSON.parse(readFileSync(new URL('../../fixtures/overpass/synthetic-golf-course-ctc006.json', import.meta.url)));
-const normalize = (elements) => normalizeGolfCourse({ elements }, source);
+const normalize = (elements) => normalizeGolfCourse({ elements }, source, 'way/9000060001');
 const associated = (result) => result.holes.reduce((sum, hole) => sum + hole.features.length, 0);
 const baseline = normalize(fixture.elements);
 assert.equal(associated(baseline), 8);
@@ -28,11 +28,10 @@ adjacent.push({ ...structuredClone(course), id: 9900000001, geometry: offset(cou
 adjacent.push({ ...structuredClone(hole), id: 9900000002, geometry: offset(hole.geometry) });
 adjacent.push({ ...structuredClone(tee), id: 9900000003, geometry: offset(tee.geometry) });
 const duplicate = normalize(adjacent);
-assert.equal(associated(duplicate), 0);
-// Remove the neighbor's route from the response: ref-only association now leaks
-// its tee into the original hole. Selecting a facility is not normalizer input.
+assert.equal(associated(duplicate), 8);
+// Removing the neighbor's route must not leak its tee into the selected hole.
 const incompleteNeighbor = normalize(adjacent.filter((element) => element.id !== 9900000002));
-assert(incompleteNeighbor.holes[0].features.some((feature) => feature.source.sourceKey === 'way/9900000003'));
+assert(!incompleteNeighbor.holes[0].features.some((feature) => feature.source.sourceKey === 'way/9900000003'));
 assert.deepEqual(normalize([...adjacent].reverse()), duplicate);
 
 const point = (x, y) => ({ lon: x / 100000, lat: y / 100000 });
@@ -48,7 +47,7 @@ const relation = {
   })),
 };
 const relationResult = normalize([...fixture.elements, relation]);
-const normalizedRelation = relationResult.holes[0].features.find((feature) => feature.source.sourceKey === 'relation/9900000100');
+const normalizedRelation = relationResult.unassociatedFeatures.find((feature) => feature.source.sourceKey === 'relation/9900000100');
 assert.equal(normalizedRelation.geometry, null);
 assert.deepEqual(normalizedRelation.source.rawMembers, relation.members);
 assert(relationResult.warnings.some((warning) => warning.code === 'UNSUPPORTED_RELATION'));
@@ -80,7 +79,7 @@ for (const [start, end] of sharedRoutes) {
 console.log(JSON.stringify({
   baselineAssociated: associated(baseline), missingRefsAssociated: associated(normalize(missingRefs)),
   duplicateNumberAssociated: associated(duplicate),
-  neighborTeeLeaksWithoutNeighborRoute: true,
+  neighborTeeLeaksWithoutNeighborRoute: false,
   reversedElementsInvariant: true, relationGeometry: normalizedRelation.geometry,
   relationMembersPreserved: true, missingMemberGeometry: null,
   analyticArea: { outerOnly: area(outer), withHoleAndSecondPart: 88 },
