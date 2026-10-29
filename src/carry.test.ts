@@ -61,3 +61,13 @@ describe("carry geometry", () => {
     expect(carryCoordinates({ lat: 35, lon: -80 }, 701)).toEqual({ kind: "invalid-distance" });
   });
 });
+
+it("renders relation tees without choosing an analytic origin, retaining target origins", async () => {
+  const { default: fixture } = await import("../fixtures/overpass/synthetic-golf-course-multipolygon.json");
+  const h = normalizeGolfCourse(fixture as OverpassResponse, source).holes[0];
+  expect(h.features.some(f=>f.kind==="tee" && f.geometry?.type==="multipolygon")).toBe(true);
+  expect(teeOrigins(h)).toEqual([]);
+  expect(resolveCarryOrigin({kind:"tee",sourceKey:"relation/9000070201"},h,[])).toEqual({kind:"origin-unavailable"});
+  const target={id:"t-0123456789ab",label:"origin",lat:35.003,lon:-79.997};
+  expect(resolveCarryOrigin({kind:"target",targetId:target.id},h,[target])).toEqual({lat:target.lat,lon:target.lon});
+});

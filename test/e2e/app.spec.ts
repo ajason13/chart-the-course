@@ -1643,3 +1643,66 @@ test("withholds overlapping facility geometry and exposes unavailable-scope diag
   await expect(page.getByText("HOLE_SCOPE_UNRESOLVED: way/9000060101", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Download Raw GIS Source (ODbL)", exact: true })).toBeEnabled();
 });
+
+for (const mobile of [false,true]) {
+  test(`preserves multipolygon interiors, relation tee limits and project/source exchange on ${mobile ? "mobile" : "desktop"}`, async ({page}) => {
+    const { default: detail } = await import("../../fixtures/overpass/synthetic-golf-course-multipolygon.json", { with: { type: "json" } });
+    await isolateNetwork(page,async route=>{
+      const query=new URLSearchParams(route.request().postData()??"").get("data")??"";
+      await route.fulfill({json:query.includes("purpose:golf-course-detail") ? detail : discovery});
+    });
+    if (mobile) await page.setViewportSize({width:390,height:844});
+    await page.goto("/");
+    await fillBounds(page);
+    await page.getByRole("button",{name:"Search courses",exact:true}).click();
+    await page.getByRole("button",{name:"Open course",exact:true}).click();
+    const map=page.getByTestId("hole-vector-map");
+    await expect(map).toBeVisible();
+    const fairway=map.locator('[data-layer="fairway"] > path');
+    await expect(fairway).toHaveCount(1);
+    await expect(map.locator('[data-layer="fairway"] polygon')).toHaveCount(0);
+    await expect(fairway).toHaveAttribute("fill-rule","evenodd");
+    // The browser's actual fill predicate must exclude the interior and the gap,
+    // while retaining both exterior parts; this catches visually filled holes.
+    const fill=await fairway.evaluate((path:SVGPathElement)=>{
+      const d=path.getAttribute("d")!;
+      const rings=d.split(" Z").filter(s=>s.trim()).map(s=>[...s.matchAll(/[ML]([\d.e+-]+),([\d.e+-]+)/g)].map(m=>({x:Number(m[1]),y:Number(m[2])})));
+      const center=(r:{x:number;y:number}[])=>{const points=r.slice(0,-1);return new DOMPoint(points.reduce((v,p)=>v+p.x,0)/points.length,points.reduce((v,p)=>v+p.y,0)/points.length);};
+      // Identify interior by bounding-box containment, independent of canonical order.
+      const bounds=rings.map(r=>({minX:Math.min(...r.map(p=>p.x)),maxX:Math.max(...r.map(p=>p.x)),minY:Math.min(...r.map(p=>p.y)),maxY:Math.max(...r.map(p=>p.y))}));
+      const inner=bounds.findIndex((b,i)=>bounds.some((o,j)=>j!==i && b.minX>o.minX && b.maxX<o.maxX && b.minY>o.minY && b.maxY<o.maxY));
+      const second=bounds.findIndex((_,i)=>i!==inner && !bounds.some((b,j)=>j!==i && b.minX>bounds[i].minX && b.maxX<bounds[i].maxX));
+      return {rings:rings.length,interior:path.isPointInFill(center(rings[inner])),second:path.isPointInFill(center(rings[second]))};
+    });
+    expect(fill).toEqual({rings:3,interior:false,second:true});
+    await expect(map.locator('[data-layer="tee"] > path')).toHaveCount(1);
+    await expect(page.getByText("No tee geometry available for this hole.",{exact:true})).toBeVisible();
+    await expect(page.getByText(/Relation tee is displayable/).first()).toBeVisible();
+    await map.focus();
+    await map.press("Enter");
+    await map.press("ArrowRight");
+    await map.press("Enter");
+    await expect(page.locator(".hole-map-panel > p.measurement-result")).toHaveText(/^Distance:/);
+    await page.getByRole("button",{name:"Add target",exact:true}).click();
+    await map.press("Enter");
+    await page.getByRole("button",{name:"Add carry",exact:true}).click();
+    await page.getByRole("button",{name:"Add club",exact:true}).click();
+    const project:ProjectV2=await downloadedJson(page,"Export project");
+    expect(project.courseSourceKey).toBe("way/9000060001");
+    const state=project.holes["way/9000060101"]!;
+    expect(state.targets).toHaveLength(1);
+    expect(state.carries[0].origin).toEqual({kind:"target",targetId:state.targets[0].id});
+    const source=await downloadedJson(page,"Download Raw GIS Source (ODbL)");
+    expect(source.rawResponse).toBe(JSON.stringify(detail));
+    expect(JSON.stringify(source)).not.toContain(state.targets[0].id);
+    page.once("dialog",dialog=>void dialog.accept());
+    await importProjectJson(page,{...project,holes:{},clubProfile:{clubs:[]}});
+    await expect(page.getByText("Project imported successfully.",{exact:true})).toBeVisible();
+    await importProjectJson(page,project);
+    await expect(page.getByLabel("Target label",{exact:true})).toHaveCount(1);
+    const restored=await downloadedJson(page,"Export project");
+    expect(restored).toEqual({...project,exportedAt:restored.exportedAt});
+    await assertAxe(page);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  });
+}

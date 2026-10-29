@@ -1,3 +1,4 @@
+import { geometryPaths } from "./simpleGeometry";
 import type {
   Coordinate,
   Geometry,
@@ -68,7 +69,7 @@ export function validCoordinate(value: unknown): value is Coordinate {
 }
 
 export function geometryCoordinates(geometry: Geometry): Coordinate[] {
-  return geometry.type === "point" ? [geometry.coordinate] : geometry.coordinates;
+  return geometryPaths(geometry).flat();
 }
 
 export function holeCoordinates(hole: NormalizedHole): Coordinate[] {

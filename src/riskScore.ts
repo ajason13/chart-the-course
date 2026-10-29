@@ -1,3 +1,4 @@
+import { areaParts, isAreaGeometry, usableSimpleGeometry } from "./simpleGeometry";
 import { resolveCarryOrigin } from "./carry";
 import { roundHalfUpNonnegative } from "./fairwayWidth";
 import {
@@ -84,29 +85,24 @@ function hasCrossingEdges(points: MeterPoint[]): boolean {
 }
 
 function usableRiskPolygons(hole: NormalizedHole, projection: Projection): {
-  polygons: MeterPoint[][];
+  polygons: { exterior: MeterPoint[]; interiors: MeterPoint[][] }[];
   warnings: RiskWarning[];
 } {
-  const polygons: MeterPoint[][] = [];
-  let irregular = false;
+  const polygons: { exterior: MeterPoint[]; interiors: MeterPoint[][] }[] = [];
+  let irregular = hole.riskGeometryUnavailable === true;
   for (const feature of hole.features) {
-    if (feature.kind !== "golf-water" || feature.geometry?.type !== "polygon") continue;
-    const coordinates = feature.geometry.coordinates;
-    if (coordinates.length < 4 || !coordinates.every(validCoordinate)
-      || coordinates[0].lat !== coordinates[coordinates.length - 1].lat
-      || coordinates[0].lon !== coordinates[coordinates.length - 1].lon) {
-      irregular = true;
-      continue;
-    }
-    const ring = coordinates.slice(0, -1).map((coordinate) => meterPoint(projection, coordinate));
-    if (!ring.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))
-      || ring.filter((point, index) => ring.slice(0, index).every((other) => !samePoint(point, other))).length < 3
+    if (feature.kind !== "golf-water") continue;
+    if (!isAreaGeometry(feature.geometry) || !usableSimpleGeometry(feature.geometry)) { irregular = true; continue; }
+    const parts = areaParts(feature.geometry).map(part => ({
+      exterior: part.exterior.slice(0, -1).map(c => meterPoint(projection, c)),
+      interiors: part.interiors.map(r => r.slice(0, -1).map(c => meterPoint(projection, c))),
+    }));
+    if (parts.flatMap(p => [p.exterior, ...p.interiors]).some(ring =>
+      !ring.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))
+      || ring.filter((point, index) => ring.slice(0, index).every(other => !samePoint(point, other))).length < 3
       || Math.abs(polygonArea(ring)) <= RISK_EPSILON_M * RISK_EPSILON_M
-      || hasCrossingEdges(ring)) {
-      irregular = true;
-      continue;
-    }
-    polygons.push(ring);
+      || hasCrossingEdges(ring))) { irregular = true; continue; }
+    polygons.push(...parts);
   }
   return { polygons, warnings: irregular ? ["irregular-risk-polygon"] : [] };
 }
@@ -167,7 +163,7 @@ export function scoreTargetRisks(input: RiskScoreInput): RiskComparison {
     return { candidates: targets.map((target) => unavailable(target, warnings)), lowestRiskTargetId: null, warnings };
   }
   const risks = usableRiskPolygons(input.hole, input.projection);
-  if (risks.polygons.length === 0) {
+  if (risks.polygons.length === 0 || risks.warnings.length > 0) {
     const warnings: RiskWarning[] = [...risks.warnings, "missing-risk-geometry"];
     return { candidates: targets.map((target) => unavailable(target, warnings)), lowestRiskTargetId: null, warnings };
   }
@@ -204,7 +200,7 @@ export function scoreTargetRisks(input: RiskScoreInput): RiskComparison {
           const svg = { x: point.x * input.projection!.scale, y: point.y * input.projection!.scale };
           if (svg.x < INNER_MIN_X || svg.x > INNER_MAX_X || svg.y < INNER_MIN_Y || svg.y > INNER_MAX_Y) offMap = true;
         }
-        if (risks.polygons.some((polygon) => containsPoint(polygon, point))) {
+        if (risks.polygons.some((polygon) => containsPoint(polygon.exterior, point) && !polygon.interiors.some(ring => containsPoint(ring, point)))) {
           overlapSamples += 1;
           weightedOverlap += weight;
         }

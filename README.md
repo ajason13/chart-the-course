@@ -44,8 +44,18 @@ export, then open the demo again before importing its project; its synthetic
 course and hole IDs remain stable. Unsaved-change confirmation also applies
 when switching between a live course and the demo.
 
-Geometry support is limited to validated point/line/simple-ring geometry;
-relation topology and course/hole membership remain unsupported. Whole routes
+Geometry supports validated points, lines, simple polygons and bounded,
+relation-tagged multipolygons assembled from complete outer/inner way members.
+Multiple exteriors and interior exclusions remain separate in the map, width
+estimates and mapped-water overlap. Missing/conflicting members, ambiguous joins,
+invalid or touching/nested topology and unsupported projections make the entire
+relation unavailable; no repair or extra fetching occurs. Per relation the limits
+are 1,000 members, 10,000 supplied coordinate positions and 256 rings. Duplicate
+member fills are suppressed with diagnostics while raw evidence is retained.
+Relation tees render but have no analytic origin pending a separate origin policy;
+target origins remain usable. Incomplete potentially applicable golf-water makes
+comparison unavailable even when other water is mapped. Other relation families,
+tag inheritance and course/hole membership remain unsupported. Whole routes
 and features must be strictly inside the selected facility boundary and outside
 other returned facilities before numeric `ref` tags can associate features.
 Missing/invalid boundaries, boundary contact, overlapping facilities or conflicting

@@ -92,3 +92,22 @@ describe("fairway width estimator", () => {
     expect([1.49, 1.5, 1.51].map(roundHalfUpNonnegative)).toEqual([1, 2, 2]);
   });
 });
+
+describe("multipolygon fairway occupied intervals", () => {
+  const selected = (x: number) => {
+    const h = hole([[x,0],[x,320]], []);
+    h.features.push({kind:"fairway",classifiedBy:["golf","fairway"],source:{sourceKey:"relation/2",type:"relation",id:2,tags:{}},geometry:{type:"multipolygon",parts:[
+      {exterior:polygon(rectangle(-40,0,40,320)),interiors:[polygon(rectangle(-10,200,10,260))]},
+      {exterior:polygon(rectangle(60,0,80,320)),interiors:[]},
+    ]}});
+    return h;
+  };
+  it("does not invent width through an interior or span a gap", () => {
+    expect(estimateFairwayWidth(selected(0),250)).toMatchObject({warnings:expect.arrayContaining(["target-line-outside-fairway","split-fairway"])});
+    expect(estimateFairwayWidth(selected(0),250).widthMeters).toBeUndefined();
+    expect(estimateFairwayWidth(selected(50),250).widthMeters).toBeUndefined();
+    expect(estimateFairwayWidth(selected(-20),250).widthMeters).toBeCloseTo(30,4);
+    expect(estimateFairwayWidth(selected(70),250).widthMeters).toBeCloseTo(20,4);
+    expect(estimateFairwayWidth(selected(0),100).widthMeters).toBeCloseTo(80,4);
+  });
+});

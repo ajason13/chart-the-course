@@ -147,3 +147,46 @@ describe("normalizeGolfCourse incomplete synthetic fixture", () => {
     expect(result.warnings.find(({ code }) => code === "MULTIPLE_COURSE_CANDIDATES")?.severity).toBe("warning");
   });
 });
+
+describe("multipolygon normalization boundaries", () => {
+  it("retains member provenance, avoids duplicate fills and keeps distinct tagged members", async () => {
+    const { default: fixture } = await import("../fixtures/overpass/synthetic-golf-course-multipolygon.json");
+    const input = structuredClone(fixture) as OverpassResponse;
+    const before = structuredClone(input);
+    const result = normalizeGolfCourse(input,source,"way/9000060001");
+    const hole = result.holes[0];
+    expect(hole.features.filter(f=>f.geometry?.type==="multipolygon")).toHaveLength(2);
+    expect(hole.features.some(f=>f.source.sourceKey==="way/9000060301")).toBe(false);
+    expect(result.warnings.filter(w=>w.code==="DUPLICATE_MEMBER_FILL")).toHaveLength(2);
+    const relation = input.elements.find(e=>e.type==="relation" && e.tags?.golf==="fairway")!;
+    expect(hole.features.find(f=>f.source.id===relation.id)?.source.rawMembers).toEqual(relation.members);
+    expect(input).toEqual(before);
+    const reversed = structuredClone(input);
+    reversed.elements.reverse();
+    for (const e of reversed.elements) if(Array.isArray(e.members)) e.members.reverse();
+    const reversedResult = normalizeGolfCourse(reversed,source,"way/9000060001");
+    expect(reversedResult.holes.map(h=>h.features.map(f=>({key:f.source.sourceKey,geometry:f.geometry})))).toEqual(result.holes.map(h=>h.features.map(f=>({key:f.source.sourceKey,geometry:f.geometry}))));
+    const member = input.elements.find(e=>e.id===9000060301 && e.type==="way")!;
+    member.tags={golf:"rough",ref:"1"};
+    const distinct=normalizeGolfCourse(input,source,"way/9000060001");
+    expect(distinct.holes[0].features.some(f=>f.source.sourceKey==="way/9000060301")).toBe(true);
+    expect(distinct.warnings.some(w=>w.code==="DISTINCT_MEMBER_FEATURE")).toBe(true);
+  });
+
+  it("supports a relation facility and excludes its interior and inter-part gap", () => {
+    const p=(x:number,y:number)=>({lat:y/100000,lon:x/100000});
+    const ring=(x:number,y:number,n:number)=>[p(x,y),p(x+n,y),p(x+n,y+n),p(x,y+n),p(x,y)];
+    const facility={type:"relation" as const,id:1,tags:{leisure:"golf_course",type:"multipolygon"},members:[
+      {type:"way",ref:11,role:"outer",geometry:ring(0,0,20)},
+      {type:"way",ref:12,role:"inner",geometry:ring(5,5,5)},
+      {type:"way",ref:13,role:"outer",geometry:ring(30,0,20)},
+    ]};
+    const response={elements:[facility,...[[1,1],[6,6],[25,1],[31,1]].map(([x,y],i)=>({type:"way" as const,id:20+i,tags:{golf:"hole",ref:String(i+1)},geometry:[p(x,y),p(x+1,y+1)]}))]};
+    expect(normalizeGolfCourse(response,source,"relation/1").holes.map(h=>h.number)).toEqual([1,4]);
+    const bad={type:"relation" as const,id:40,tags:{type:"multipolygon",golf:"water_hazard",ref:"1"},members:[{type:"way",ref:99,role:"outer"}]};
+    const result=normalizeGolfCourse({elements:[...response.elements,bad]},source,"relation/1");
+    expect(result.holes[0].riskGeometryUnavailable).toBe(true);
+    expect(result.holes[1].riskGeometryUnavailable).toBeUndefined();
+    expect(result.warnings.some(w=>w.code==="INVALID_RELATION_TOPOLOGY")).toBe(true);
+  });
+});

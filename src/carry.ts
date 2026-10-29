@@ -25,7 +25,7 @@ export type CarryRing = {
 export type CarryFailure = { kind: "origin-unavailable" | "invalid-distance" | "invalid-sample" };
 
 export function teeOrigins(hole: NormalizedHole): Array<{ sourceKey: SourceKey; coordinate: Coordinate }> {
-  return hole.features.filter(({ kind, geometry }) => kind === "tee" && geometry !== null)
+  return hole.features.filter(({ kind, geometry }) => kind === "tee" && geometry !== null && geometry.type !== "multipolygon")
     .map((feature) => ({ sourceKey: feature.source.sourceKey, coordinate: geometryCoordinates(feature.geometry!)[0] }))
     .filter(({ coordinate }) => validCoordinate(coordinate));
 }
