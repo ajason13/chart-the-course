@@ -1,7 +1,9 @@
 # Production planning-to-print contract
 
 Issue: [#49](https://github.com/ajason13/chart-the-course/issues/49).
-Status: **Proposed; awaiting the maintainer's explicit adoption decision.**
+Status: **Adopted by the maintainer on 2026-10-29**, recorded in [#49](https://github.com/ajason13/chart-the-course/issues/49#issuecomment-6504532399)
+after explicit approval of PR #78. Adoption covers this dependency tree and print
+contract for the separately reviewed implementation in #50/#51.
 Evidence checked 2026-10-29 against `51e92a4` (PR #77). This is a decision
 for implementation in #50/#51, not shipped PDF functionality or permission to
 publish a release. No dependency, persisted project schema, acquisition flow,
@@ -16,7 +18,7 @@ PDFKit and browser polyfills out of production. The existing
 CTC-008 prototype establish feasibility for fixed synthetic simple geometry;
 they do not establish active-project, multipolygon, Unicode or release support.
 
-The proposed adoption includes the following **locked closure**, including
+The approved adoption scope includes the following **locked closure**, including
 optional dependencies conservatively even when a restricted drawing path does
 not call them. Versions come from `package-lock.json`, SHA-256
 `60504b95d1cef9794f2e912bf4397424285ac36baa5654e9352421622ff8d0ab`.

@@ -132,6 +132,6 @@ dependency:
 - implement and verify CTC-020 in the same release as distributed/shared PDF
   export under CTC-008.
 
-The current scoped proposal is [issue #49's production PDF contract](../pdf-export-contract.md).
-It preserves this experiment as historical feasibility evidence; maintainer
-adoption and actual production implementation/evidence remain separate gates.
+The adopted decision is [issue #49's production PDF contract](../pdf-export-contract.md).
+It preserves this experiment as historical feasibility evidence; actual
+production implementation and evidence remain gated on #50/#51.
