@@ -143,6 +143,9 @@ overlap and active-project PDF export remain tracked work, not shipped features.
 
 For development, read [repository guidance](AGENTS.md),
 [contributing](CONTRIBUTING.md) and the [Codex session entry point](docs/codex-sessions.md).
+The [course geometry contract](docs/course-geometry-contract.md) records research,
+recommended support and explicit deferrals for the geometry follow-ups; it does
+not describe shipped behavior.
 Focused policies cover [security](SECURITY.md),
 [reference reuse](docs/reference-project-reuse-policy.md) and
 [legal disclaimers](docs/legal-disclaimers.md).
