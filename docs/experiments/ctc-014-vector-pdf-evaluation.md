@@ -122,7 +122,7 @@ shipping PDF behavior.
 Before direct jsPDF can move from experiment devDependency to production
 dependency:
 
-- obtain Claude final-audit acceptance of this evaluation;
+- obtain the repository-required fresh-context Codex licensing/security review;
 - open a separate reviewed adoption scope;
 - update `THIRD_PARTY_NOTICES.md`, production SBOM, license evidence, and
   security review for the exact adopted tree;
@@ -131,3 +131,7 @@ dependency:
   executable PDF content, annotations, forms, or imported HTML;
 - implement and verify CTC-020 in the same release as distributed/shared PDF
   export under CTC-008.
+
+The current scoped proposal is [issue #49's production PDF contract](../pdf-export-contract.md).
+It preserves this experiment as historical feasibility evidence; maintainer
+adoption and actual production implementation/evidence remain separate gates.

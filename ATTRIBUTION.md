@@ -41,6 +41,12 @@ OSM element type/ID summaries, and the OpenStreetMap copyright URL. It is a
 partial source-export capability only; final PDF adjacency and PDF
 acknowledgements remain gated on real CTC-008 PDF export behavior.
 
+The proposed [production PDF contract](docs/pdf-export-contract.md) defines
+the exact source snapshot pairing, printed references and synthetic-demo
+distinction for #49. Adoption requires the recorded maintainer decision;
+implementation and same-release evidence remain in #50/#51. This proposal does
+not establish that a local source download has been offered to PDF recipients.
+
 The raw GIS source export must include:
 
 - Raw GeoJSON or OSM XML response.

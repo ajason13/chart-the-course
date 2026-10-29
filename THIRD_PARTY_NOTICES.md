@@ -100,6 +100,12 @@ root package as `UNLICENSED` even though `package.json` declares Apache-2.0 and
 
 ## Future Production Dependencies
 
+The proposed [PDF dependency and export contract](docs/pdf-export-contract.md)
+records the exact candidate jsPDF closure and license choices for #49. It is
+not an addition to the production inventory above. The later adoption PR must
+update this inventory and distribute complete applicable license/notice texts
+after maintainer approval and verification of the actual emitted tree.
+
 Before adding MapLibre, Turf, PDF libraries, fonts, map tiles, geocoding
 providers, or analytics tooling, update this file with:
 
