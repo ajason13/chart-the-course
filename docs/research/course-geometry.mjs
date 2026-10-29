@@ -48,9 +48,11 @@ const relation = {
 };
 const relationResult = normalize([...fixture.elements, relation]);
 const normalizedRelation = relationResult.unassociatedFeatures.find((feature) => feature.source.sourceKey === 'relation/9900000100');
-assert.equal(normalizedRelation.geometry, null);
+assert.equal(normalizedRelation.geometry.type, "multipolygon");
+assert.equal(normalizedRelation.geometry.parts.length, 2);
+assert.equal(normalizedRelation.geometry.parts.flatMap(p => p.interiors).length, 1);
 assert.deepEqual(normalizedRelation.source.rawMembers, relation.members);
-assert(relationResult.warnings.some((warning) => warning.code === 'UNSUPPORTED_RELATION'));
+assert(!relationResult.warnings.some((warning) => warning.code === 'UNSUPPORTED_RELATION'));
 const missingMember = structuredClone(relation);
 delete missingMember.members[1].geometry;
 assert.equal(normalize([missingMember]).unassociatedFeatures[0].geometry, null);

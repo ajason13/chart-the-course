@@ -138,7 +138,7 @@ describe("mapped-water contract regressions", () => {
     }
   });
 
-  it("excludes other geometry and reports invalid polygon evidence without suppressing valid water", () => {
+  it("excludes other feature kinds and withholds comparison when any golf-water geometry is invalid", () => {
     const polygon = water(square(91.44, 0, 100));
     const invalid = [
       water([[0, 0], [1, 1], [2, 2], [0, 0]]), // zero area
@@ -154,13 +154,13 @@ describe("mapped-water contract regressions", () => {
       { ...polygon, geometry: { type: "line", coordinates: [coordinate(0, 0), coordinate(200, 0)] } },
       { ...polygon, geometry: null },
     ];
-    expect(row(excluded)).toMatchObject({ status: "unavailable", penalty: null, warnings: ["missing-risk-geometry"] });
+    expect(row(excluded)).toMatchObject({ status: "unavailable", penalty: null, warnings: ["irregular-risk-polygon", "missing-risk-geometry"] });
     for (const bad of invalid) {
       expect(row([bad])).toMatchObject({ status: "unavailable", penalty: null, warnings: ["irregular-risk-polygon", "missing-risk-geometry"] });
-      expect(row([bad, polygon])).toMatchObject({ penalty: 100, warnings: ["irregular-risk-polygon"] });
+      expect(row([bad, polygon])).toMatchObject({ status: "unavailable", penalty: null, warnings: ["irregular-risk-polygon", "missing-risk-geometry"] });
     }
     const repeated = water([[0, -100], [200, -100], [200, -100], [200, 100], [0, 100], [0, -100]]);
-    expect(row([repeated])).toMatchObject({ penalty: 100, warnings: [] });
+    expect(row([repeated])).toMatchObject({ status: "unavailable", penalty: null, warnings: ["irregular-risk-polygon", "missing-risk-geometry"] });
   });
 
   it("keeps endpoint tolerance in metres across edge lengths and viewport scales", () => {
@@ -200,5 +200,25 @@ describe("mapped-water contract regressions", () => {
     const before = structuredClone(input);
     expect(scoreTargetRisks(input).candidates[1]).toMatchObject({ penalty: null, warnings: ["missing-risk-geometry"] });
     expect(input).toEqual(before);
+  });
+});
+
+describe("multipolygon water occupied areas", () => {
+  it("subtracts interiors, unions parts and withholds incomplete comparison", () => {
+    const ring = (x: number,y: number,r: number) => square(x,y,r).map(([a,b])=>coordinate(a,b));
+    const feature: NormalizedFeature = {kind:"golf-water",classifiedBy:["golf","water_hazard"],source:{sourceKey:"relation/20",type:"relation",id:20,tags:{}},geometry:{type:"multipolygon",parts:[
+      {exterior:ring(91.44,0,100),interiors:[ring(91.44,0,50)]},
+      {exterior:ring(400,0,20),interiors:[]},
+    ]}};
+    const targets = [target("t-000000000000",0,0),target("t-000000000001",300,0)];
+    const input = {club,origin:{kind:"target" as const,targetId:targets[0].id},projection,targets};
+    const result = scoreTargetRisks({...input,hole:hole([feature])});
+    expect(result.candidates[1]).toMatchObject({penalty:0,sampleCount:512});
+    if (feature.geometry?.type !== "multipolygon") throw new Error("fixture");
+    feature.geometry.parts[0].interiors=[];
+    expect(scoreTargetRisks({...input,hole:hole([feature,feature])}).candidates[1]).toMatchObject({penalty:100,overlapSamples:512});
+    const incomplete = hole([feature]);
+    incomplete.riskGeometryUnavailable=true;
+    expect(scoreTargetRisks({...input,hole:incomplete}).candidates[1]).toMatchObject({status:"unavailable",penalty:null});
   });
 });

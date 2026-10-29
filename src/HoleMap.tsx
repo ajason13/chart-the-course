@@ -1,3 +1,4 @@
+import { geometryPaths } from "./simpleGeometry";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import type {
   Coordinate,
@@ -60,6 +61,13 @@ function geometryElement(
   if (geometry.type === "point") {
     return <circle key={key} className={className} cx={points[0].x} cy={points[0].y} r="7" />;
   }
+  if (geometry.type === "multipolygon") {
+    const d = geometryPaths(geometry).map(ring => ring.map((coordinate, index) => {
+      const p = projectCoordinate(projection, coordinate);
+      return `${index === 0 ? "M" : "L"}${p.x},${p.y}`;
+    }).join(" ") + " Z").join(" ");
+    return <path key={key} className={className} d={d} fillRule="evenodd" />;
+  }
   const value = points.map(({ x, y }) => `${x},${y}`).join(" ");
   return geometry.type === "line"
     ? <polyline key={key} className={className} points={value} />
@@ -68,6 +76,11 @@ function geometryElement(
 
 function warningText(warning: NormalizationWarning): string {
   const copy: Partial<Record<NormalizationWarning["code"], string>> = {
+    INVALID_RELATION_TOPOLOGY: "Invalid or incomplete multipolygon topology; entire area unavailable",
+    RELATION_GEOMETRY_LIMIT: "Multipolygon exceeds processing limits; entire area unavailable",
+    DUPLICATE_MEMBER_FILL: "Member retained in source evidence; duplicate parent fill suppressed",
+    DISTINCT_MEMBER_FEATURE: "Independently tagged member retained as a distinct feature",
+    RELATION_TEE_ORIGIN_UNAVAILABLE: "Relation tee is displayable; analytic origin unavailable pending an origin policy",
     COURSE_SCOPE_UNAVAILABLE: "Course association unavailable: a validated facility boundary is required; bbox is not ownership",
     FEATURE_SCOPE_UNRESOLVED: "Feature scope unresolved: missing geometry, outside, touching or conflicting facility evidence",
     HOLE_SCOPE_UNRESOLVED: "Hole scope unresolved: route unavailable or not strictly inside one facility",

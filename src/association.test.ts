@@ -109,6 +109,6 @@ describe("selected facility association contract", () => {
     const result = normalize(response.elements);
     expect(result.holes[0].features).toEqual([]);
     expect(result.unassociatedFeatures[0].source.rawMembers).toEqual([]);
-    expect(result.warnings.map(w=>w.code)).toEqual(expect.arrayContaining(["UNSUPPORTED_MEMBERSHIP","UNSUPPORTED_RELATION","FEATURE_SCOPE_UNRESOLVED"]));
+    expect(result.warnings.map(w=>w.code)).toEqual(expect.arrayContaining(["UNSUPPORTED_MEMBERSHIP","INVALID_RELATION_TOPOLOGY","FEATURE_SCOPE_UNRESOLVED"]));
   });
 });

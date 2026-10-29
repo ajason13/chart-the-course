@@ -1,3 +1,4 @@
+import { areaParts, isAreaGeometry } from "./simpleGeometry";
 import type { Coordinate, NormalizedHole } from "./normalize";
 import {
   YARDS_PER_METER,
@@ -134,10 +135,24 @@ export function estimateFairwayWidth(hole: NormalizedHole, yards: number): Fairw
   if ("kind" in projection) return { yards, warnings: ["invalid-target-line"] };
   const route = routeStation(hole, projection, yards);
   if ("warning" in route) return { yards, warnings: [route.warning] };
-  const fairways = hole.features.flatMap((feature) => feature.kind === "fairway" && feature.geometry?.type === "polygon"
-    ? [feature.geometry.coordinates] : []);
+  const fairways = hole.features.flatMap((feature) => feature.kind === "fairway" && isAreaGeometry(feature.geometry)
+    ? areaParts(feature.geometry) : []);
   if (fairways.length === 0) return { yards, warnings: ["missing-fairway"] };
-  const collected = fairways.map((coordinates) => polygonIntervals(coordinates.map((coordinate) => localPoint(projection, coordinate)), route.station, route.unit));
+  const collected = fairways.map(part => {
+    const exterior = polygonIntervals(part.exterior.map(c => localPoint(projection, c)), route.station, route.unit);
+    const interiors = part.interiors.map(r => polygonIntervals(r.map(c => localPoint(projection, c)), route.station, route.unit));
+    const warnings = [...exterior.warnings, ...interiors.flatMap(r => r.warnings)];
+    // If a ring cannot be intersected reliably, never fall back to filling it.
+    if (warnings.some(w => w !== "tangent-fairway-boundary")) return { intervals: [], warnings };
+    let intervals = exterior.intervals;
+    for (const cut of interiors.flatMap(r => r.intervals)) {
+      intervals = intervals.flatMap(interval => cut.end <= interval.start || cut.start >= interval.end ? [interval] : [
+        ...(cut.start > interval.start ? [{ start: interval.start, end: cut.start }] : []),
+        ...(cut.end < interval.end ? [{ start: cut.end, end: interval.end }] : []),
+      ]);
+    }
+    return { intervals, warnings };
+  });
   const warnings = collected.flatMap((entry) => entry.warnings);
   const intervals = collected.flatMap((entry) => entry.intervals).sort((a, b) => a.start - b.start);
   if (intervals.length === 0) return { yards, warnings: uniqueWarnings(warnings) };

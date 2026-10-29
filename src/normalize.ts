@@ -1,4 +1,5 @@
-import { disjointFrom, pointLocation, routeAreaHit, samePoint, strictlyInside, usableSimpleGeometry } from "./simpleGeometry.ts";
+import { assembleMultipolygon } from "./multipolygon.ts";
+import { areaLocation, disjointFrom, isAreaGeometry, routeAreaHit, samePoint, strictlyInside, usableSimpleGeometry } from "./simpleGeometry.ts";
 import type { OverpassElement, OverpassResponse, SourceMetadata } from "./overpass";
 
 export type Coordinate = { lat: number; lon: number };
@@ -17,7 +18,11 @@ export type SourceRecord = {
 export type Geometry =
   | { type: "point"; coordinate: Coordinate }
   | { type: "line"; coordinates: Coordinate[] }
-  | { type: "polygon"; coordinates: Coordinate[] };
+  | { type: "polygon"; coordinates: Coordinate[] }
+  | { type: "multipolygon"; parts: AreaPart[] };
+
+export type AreaPart = { exterior: Coordinate[]; interiors: Coordinate[][] };
+export type AreaGeometry = Extract<Geometry, { type: "polygon" | "multipolygon" }>;
 
 export type FeatureKind =
   | "tee" | "green" | "fairway" | "bunker" | "rough"
@@ -38,6 +43,7 @@ export type NormalizedHole = {
   // Only source-ref assertions within inferred facility scope enter analytics.
   features: NormalizedFeature[];
   displayFeatures?: DisplayFeature[];
+  riskGeometryUnavailable?: boolean;
 };
 
 export type DisplayFeature = {
@@ -53,6 +59,11 @@ export type CourseCandidate = {
 };
 
 export type WarningCode =
+  | "INVALID_RELATION_TOPOLOGY"
+  | "RELATION_GEOMETRY_LIMIT"
+  | "DUPLICATE_MEMBER_FILL"
+  | "DISTINCT_MEMBER_FEATURE"
+  | "RELATION_TEE_ORIGIN_UNAVAILABLE"
   | "COURSE_SCOPE_UNAVAILABLE"
   | "FEATURE_SCOPE_UNRESOLVED"
   | "HOLE_SCOPE_UNRESOLVED"
@@ -263,6 +274,17 @@ function deduplicateElements(elements: OverpassElement[], warnings: Normalizatio
 export function normalizeGolfCourse(response: OverpassResponse, source: SourceMetadata, selectedCourseKey?: SourceKey): NormalizationResult {
   const warnings: NormalizationWarning[] = [];
   const elements = deduplicateElements(response.elements, warnings);
+  const ways = new Map(elements.filter(e => e.type === "way").map(e => [e.id, e]));
+  const conflicted = new Set(warnings.filter(w => w.code === "DUPLICATE_SOURCE_KEY").map(w => w.sourceKey));
+  const memberParents = new Map<number, OverpassElement[]>();
+  for (const relation of elements.filter(e => e.type === "relation" && e.tags?.type === "multipolygon" && classify(e))) {
+    if (!Array.isArray(relation.members) || relation.members.length > 1000) continue;
+    for (const member of relation.members) {
+      if (member?.type === "way" && Number.isSafeInteger(member.ref)) {
+        memberParents.set(member.ref, [...(memberParents.get(member.ref) ?? []), relation]);
+      }
+    }
+  }
   const courseCandidates: CourseCandidate[] = [];
   const holes: NormalizedHole[] = [];
   const features: Array<{ feature: NormalizedFeature; ref: number | null }> = [];
@@ -282,11 +304,35 @@ export function normalizeGolfCourse(response: OverpassResponse, source: SourceMe
       geometry = null;
     }
     if (element.type === "relation") {
-      warnings.push(warning("UNSUPPORTED_RELATION", "warning", sourceRecord.sourceKey, [sourceRecord.sourceKey], undefined, sourceRecord.sourceKey));
+      const assembled = isArea(classification) ? assembleMultipolygon(element, ways, new Set([...conflicted].filter(k => k !== undefined))) : { error: "UNSUPPORTED_RELATION" as const };
+      if ("geometry" in assembled) geometry = assembled.geometry;
+      else warnings.push(warning(assembled.error, "error", sourceRecord.sourceKey, [sourceRecord.sourceKey], undefined, sourceRecord.sourceKey));
     } else if (!geometry) {
       warnings.push(warning("MISSING_OR_MALFORMED_GEOMETRY", "error", sourceRecord.sourceKey, [sourceRecord.sourceKey], undefined, sourceRecord.sourceKey));
     }
 
+    if (element.type === "way") {
+      const parents = memberParents.get(element.id) ?? [];
+      const duplicate = parents.filter(parent => {
+        const c = classify(parent);
+        // Inner members occupy an area the parent explicitly excludes; their
+        // independent tags are not a duplicate fill, even with identical refs.
+        const outer = Array.isArray(parent.members) && parent.members.some(member =>
+          member?.type === "way" && member.ref === element.id && member.role === "outer");
+        return outer && c?.kind === classification.kind && canonical(c.classifiedBy) === canonical(classification.classifiedBy)
+          && canonical(tagsOf(parent).ref) === canonical(sourceRecord.tags.ref);
+      });
+      if (duplicate.length) {
+        warnings.push(warning("DUPLICATE_MEMBER_FILL", "warning", sourceRecord.sourceKey,
+          [sourceRecord.sourceKey, ...duplicate.map(sourceKey)], undefined, sourceRecord.sourceKey));
+        continue;
+      }
+      if (parents.length) warnings.push(warning("DISTINCT_MEMBER_FEATURE", "warning", sourceRecord.sourceKey,
+        [sourceRecord.sourceKey, ...parents.map(sourceKey)], undefined, sourceRecord.sourceKey));
+    }
+    if (classification.kind === "tee" && geometry?.type === "multipolygon") {
+      warnings.push(warning("RELATION_TEE_ORIGIN_UNAVAILABLE", "warning", sourceRecord.sourceKey, [sourceRecord.sourceKey], undefined, sourceRecord.sourceKey));
+    }
     if (classification.kind === "course") {
       courseCandidates.push({ classifiedBy: classification.classifiedBy, source: sourceRecord, geometry });
       continue;
@@ -308,7 +354,7 @@ export function normalizeGolfCourse(response: OverpassResponse, source: SourceMe
   }
 
   courseCandidates.sort((left, right) => {
-    const rank = (candidate: CourseCandidate) => candidate.geometry?.type === "polygon" ? 0 : candidate.source.type === "relation" ? 1 : 2;
+    const rank = (candidate: CourseCandidate) => isAreaGeometry(candidate.geometry) ? 0 : candidate.source.type === "relation" ? 1 : 2;
     return rank(left) - rank(right) || compareText(left.source.sourceKey, right.source.sourceKey);
   });
   holes.sort((left, right) => (left.number ?? Number.POSITIVE_INFINITY) - (right.number ?? Number.POSITIVE_INFINITY)
@@ -323,18 +369,17 @@ export function normalizeGolfCourse(response: OverpassResponse, source: SourceMe
   // supplies the explicitly selected source key; bbox/name never establish scope.
   const selected = courseCandidates.find(c => c.source.sourceKey === selectedCourseKey)
     ?? (selectedCourseKey === undefined && courseCandidates.length === 1 ? courseCandidates[0] : undefined);
-  const conflicted = new Set(warnings.filter(w => w.code === "DUPLICATE_SOURCE_KEY").map(w => w.sourceKey));
-  const validArea = (c: CourseCandidate) => c.geometry?.type === "polygon"
+  const validArea = (c: CourseCandidate) => isAreaGeometry(c.geometry)
     && usableSimpleGeometry(c.geometry) && !conflicted.has(c.source.sourceKey);
   const scopeAvailable = selected && validArea(selected) && courseCandidates.every(validArea)
     && courseCandidates.filter(c => c !== selected).every(c => disjointFrom(selected.geometry!,
-      (c.geometry as Extract<Geometry, { type: "polygon" }>).coordinates));
+      c.geometry as AreaGeometry));
   if (!scopeAvailable) warnings.push(warning("COURSE_SCOPE_UNAVAILABLE", "error", selectedCourseKey ?? "facility-scope"));
   const inScope = (geometry: Geometry | null, key: SourceKey) => Boolean(scopeAvailable
     && !conflicted.has(key) && usableSimpleGeometry(geometry)
-    && strictlyInside(geometry, (selected!.geometry as Extract<Geometry, { type: "polygon" }>).coordinates)
+    && strictlyInside(geometry, selected!.geometry as AreaGeometry)
     && courseCandidates.filter(c => c !== selected).every(c => disjointFrom(geometry,
-      (c.geometry as Extract<Geometry, { type: "polygon" }>).coordinates)));
+      c.geometry as AreaGeometry)));
   const scopedHoles = holes.filter(hole => {
     if (inScope(hole.route, hole.source.sourceKey)) return true;
     warnings.push(warning("HOLE_SCOPE_UNRESOLVED", "warning", hole.source.sourceKey, [hole.source.sourceKey], undefined, hole.source.sourceKey));
@@ -354,6 +399,11 @@ export function normalizeGolfCourse(response: OverpassResponse, source: SourceMe
     const key = feature.source.sourceKey;
     const scoped = inScope(feature.geometry, key);
     if (!scoped) {
+      // Incomplete/conflicting water with a potentially applicable source ref
+      // cannot be silently omitted from a complete-looking score.
+      if (feature.kind === "golf-water" && (!feature.geometry || conflicted.has(key))) {
+        for (const hole of scopedHoles) if (!("ref" in feature.source.tags) || ref === hole.number) hole.riskGeometryUnavailable = true;
+      }
       unassociatedFeatures.push(feature);
       warnings.push(warning("FEATURE_SCOPE_UNRESOLVED", "warning", key, [key], undefined, key));
       continue;
@@ -379,10 +429,10 @@ export function normalizeGolfCourse(response: OverpassResponse, source: SourceMe
       let hit: "inside" | "outside" | "boundary" = "outside";
       if (feature.kind === "tee" || feature.kind === "green") {
         const endpoint = feature.kind === "tee" ? hole.route.coordinates[0] : hole.route.coordinates.at(-1)!;
-        if (feature.geometry.type === "polygon") hit = pointLocation(endpoint, feature.geometry.coordinates);
+        if (isAreaGeometry(feature.geometry)) hit = areaLocation(endpoint, feature.geometry);
         else if (feature.kind === "tee" && feature.geometry.type === "point" && samePoint(endpoint, feature.geometry.coordinate)) hit = "inside";
-      } else if (feature.kind === "fairway" && feature.geometry.type === "polygon") {
-        hit = routeAreaHit(hole.route.coordinates, feature.geometry.coordinates);
+      } else if (feature.kind === "fairway" && isAreaGeometry(feature.geometry)) {
+        hit = routeAreaHit(hole.route.coordinates, feature.geometry);
       }
       if (hit === "inside") candidates.push(hole.source.sourceKey);
       if (hit === "boundary") boundaryOnly = true;

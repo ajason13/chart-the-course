@@ -120,6 +120,7 @@ function titleFromCandidate(candidate: CourseCandidate | undefined): string {
 }
 
 function projectGeometry(geometry: Geometry, projection: Projection, sourceKey: SourceKey, kind: FeatureKind): PdfGeometry {
+  if (geometry.type === "multipolygon") throw new Error("Fixed synthetic PDF experiment does not support multipolygons");
   if (geometry.type === "point") {
     return { type: "point", sourceKey, kind, point: projectCoordinate(projection, geometry.coordinate), radius: 4, style: CTC008_STYLES[kind] };
   }
