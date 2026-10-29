@@ -1,7 +1,7 @@
 {
   "chartTheCourseFixture": {
     "synthetic": true,
-    "purpose": "Selected course identity with two candidates sharing bounds",
+    "purpose": "Selected course identity with disjoint facilities sharing request bounds",
     "contract": "docs/overpass-query-contract.md",
     "sourceCopyrightUrl": "https://www.openstreetmap.org/copyright",
     "bbox": {
@@ -290,28 +290,51 @@
       "geometry": [
         {
           "lat": 35,
-          "lon": -80
+          "lon": -79.98
         },
         {
           "lat": 35.01,
-          "lon": -80
+          "lon": -79.98
         },
         {
           "lat": 35.01,
-          "lon": -79.99
+          "lon": -79.97
         },
         {
           "lat": 35,
-          "lon": -79.99
+          "lon": -79.97
         },
         {
           "lat": 35,
-          "lon": -80
+          "lon": -79.98
         }
       ],
       "tags": {
         "leisure": "golf_course",
         "name": "Synthetic Course A"
+      }
+    },
+    {
+      "type": "way",
+      "id": 9000060100,
+      "geometry": [
+        {
+          "lat": 35.001,
+          "lon": -79.979
+        },
+        {
+          "lat": 35.004,
+          "lon": -79.9765
+        },
+        {
+          "lat": 35.008,
+          "lon": -79.973
+        }
+      ],
+      "tags": {
+        "golf": "hole",
+        "ref": "1",
+        "par": "4"
       }
     }
   ]

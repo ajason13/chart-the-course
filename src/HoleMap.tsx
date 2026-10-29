@@ -67,7 +67,19 @@ function geometryElement(
 }
 
 function warningText(warning: NormalizationWarning): string {
-  return `${warning.code}: ${warning.affectedIdentity}`;
+  const copy: Partial<Record<NormalizationWarning["code"], string>> = {
+    COURSE_SCOPE_UNAVAILABLE: "Course association unavailable: a validated facility boundary is required; bbox is not ownership",
+    FEATURE_SCOPE_UNRESOLVED: "Feature scope unresolved: missing geometry, outside, touching or conflicting facility evidence",
+    HOLE_SCOPE_UNRESOLVED: "Hole scope unresolved: route unavailable or not strictly inside one facility",
+    INVALID_FEATURE_REF: "Invalid explicit feature ref; no inferred association",
+    UNMATCHED_FEATURE_REF: "Explicit feature ref has no in-scope hole; no inferred association",
+    AMBIGUOUS_FEATURE_REF: "Explicit feature ref matches multiple holes; association unavailable",
+    MULTIPLE_FEATURE_CANDIDATES: "Shared inferred feature: multiple route candidates; display only",
+    BOUNDARY_ONLY_CANDIDATE: "Route boundary contact is ambiguous; no interior candidate from that contact",
+    INVALID_SIMPLE_GEOMETRY: "Invalid or unsupported simple geometry; unavailable for association",
+    UNSUPPORTED_MEMBERSHIP: "Course/hole relation membership is retained as evidence but unsupported",
+  };
+  return `${copy[warning.code] ?? warning.code}: ${warning.affectedIdentity}`;
 }
 
 export function HoleMap({ hole, warnings, source, synthetic = false, project, onProjectChange, clubProfile, onClubProfileChange }: HoleMapProps) {
@@ -404,6 +416,17 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
           onClick={() => { setMode("place-target"); setRepositionId(null); setAnnouncement("Place target mode."); }}>Add target</button>
       </div>
       <p className="map-instructions">{mode === "measure" ? "Click or tap two map points." : "Click, tap, or use the keyboard crosshair to place the target."} Keyboard: arrows move the crosshair, Enter or Space selects, Escape clears or cancels.</p>
+      <p className="hint">Facility scope is inferred from whole-geometry containment within the selected boundary and outside other returned facilities; bounded data may omit neighbors. Source-ref associations are mapping assertions, not verified ownership. Playing-course membership remains unresolved.</p>
+      <details className="association-evidence">
+        <summary>Feature association evidence</summary>
+        <p>Inferred and shared candidates and course context are display only: excluded from tee origins, fairway width and mapped-water calculations. Missing mapped evidence does not mean no hazards exist. Context is clipped to this viewport and does not change map fit.</p>
+        <ul>
+          {hole.features.map(feature => <li key={feature.source.sourceKey}>{feature.kind} {feature.source.sourceKey}: Source-ref association; inferred facility scope.</li>)}
+          {(hole.displayFeatures ?? []).map(({ feature, basis, candidateHoleKeys }) => <li key={feature.source.sourceKey}>
+            {feature.kind} {feature.source.sourceKey}: {basis === "inferred-candidate" ? "Inferred candidate" : basis === "shared-candidate" ? "Shared/ambiguous candidate" : "Course context"} (display only; inferred facility scope){candidateHoleKeys.length > 0 && `; route candidates: ${candidateHoleKeys.join(", ")}`}.
+          </li>)}
+        </ul>
+      </details>
       <svg className="hole-map" data-testid="hole-vector-map"
         viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`} preserveAspectRatio="xMidYMid meet"
         tabIndex={0} role="group" aria-label="Selected hole vector map and measurement surface"
@@ -416,6 +439,13 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
           width={INNER_MAX_X - INNER_MIN_X} height={INNER_MAX_Y - INNER_MIN_Y} />
         {LAYER_ORDER.map((kind) => (
           <g key={kind} data-layer={kind} className={`map-layer layer-${kind}`}>
+            <g clipPath={`url(#${clipId})`}>
+              {(hole.displayFeatures ?? []).filter(({ feature }) => feature.kind === kind && feature.geometry).map(({ feature, basis }) =>
+                <g key={feature.source.sourceKey} data-association={basis} className={`association-${basis}`}>
+                  <title>{feature.kind} {feature.source.sourceKey}: {basis}; display only, inferred facility scope</title>
+                  {geometryElement(feature.geometry!, projection, feature.source.sourceKey, "map-feature")}
+                </g>)}
+            </g>
             {hole.features.filter((feature) => feature.kind === kind && feature.geometry)
               .map((feature) => geometryElement(feature.geometry!, projection, feature.source.sourceKey, "map-feature"))}
           </g>

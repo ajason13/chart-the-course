@@ -190,6 +190,7 @@ describe("mapped-water contract regressions", () => {
   it("does not score raw out-of-bounds or unassociated mapped water and does not mutate inputs", () => {
     const ring = square(91.44, 0, 100).map(([x, y]) => coordinate(x, y));
     const normalized = normalizeGolfCourse({ elements: [
+      { type: "way", id: 99, tags: { leisure: "golf_course" }, geometry: square(150, 0, 500).map(([x,y])=>coordinate(x,y)) },
       { type: "way", id: 1, tags: { golf: "hole", ref: "1" }, geometry: [coordinate(0, 0), coordinate(300, 0)] },
       { type: "way", id: 2, tags: { golf: "out_of_bounds", ref: "1" }, geometry: ring },
       { type: "way", id: 3, tags: { golf: "water_hazard" }, geometry: ring },
