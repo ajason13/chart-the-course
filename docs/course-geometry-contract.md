@@ -1,10 +1,13 @@
 # Course geometry compatibility contract
 
 Issue: [#46](https://github.com/ajason13/chart-the-course/issues/46).
-Status: **Recommendation awaiting maintainer adoption**. Research baseline:
-`1953da0` (PR #71). This document does not change runtime behavior or approve a
-persisted schema, provider, data acquisition flow or production PDF dependency.
-Dependent implementation remains Backlog until adoption is recorded in #46.
+Status: **Adopted by the maintainer on 2026-10-29 UTC** (2026-10-28 local),
+recorded in #46. Adoption covers scope-first refs, display-only missing-ref
+candidates, required bounded multipolygons/interiors for the first usable
+release, and deferred course-membership relations/manual assignment. Research
+baseline: `1953da0` (PR #71). This decision does not change runtime behavior or
+approve a persisted schema, provider, data acquisition flow or production PDF
+dependency. Dependent implementation requires its own scoped delivery.
 
 ## Evidence and limits
 
@@ -57,7 +60,7 @@ The simple arithmetic examples explain topology consequences; they are not a
 prototype spatial association or ring-assembly algorithm. The shared-feature schematic asserts full segment
 containment in a convex rectangle, not execution of the proposed candidate policy.
 
-## Recommended support matrix
+## Adopted support matrix
 
 “Source-associated” means a recorded mapping assertion, not verified truth.
 “Candidate” and “context” are display-only and must be separate from analytic
@@ -132,7 +135,7 @@ schema/version, source binding, import/export and undo decision.
 
 ## Relation topology and downstream contract
 
-Recommendation: **bounded multipolygons, including interiors, are required for
+Decision: **bounded multipolygons, including interiors, are required for
 the first usable release**, through #48. A simple-ring-only release would
 exclude documented valid mapping structures; there is no prevalence evidence
 supporting a broader claim. Unsupported cases remain honest partial coverage,
@@ -161,7 +164,7 @@ parent or suppress a genuinely distinct feature without explicit diagnostics.
 
 Bound processing before topology work: at most 1,000 members, 10,000 supplied
 coordinate positions and 256 assembled rings per relation. Exceeding any cap
-makes that relation unavailable with a limit diagnostic. These are proposed
+makes that relation unavailable with a limit diagnostic. These are adopted
 application limits, not OSM limits; test exact boundaries and avoid exponential
 cycle search. No additional network request is authorized to complete topology.
 Near-pole, antimeridian-crossing or otherwise unsupported projection cases
@@ -216,9 +219,9 @@ This issue authorizes no implementation of them.
 Verification for implementations remains focused geometry/browser regressions,
 `npm run check`, `npm run compliance`, whitespace checks and fresh-context Codex
 public-contract/safety review. This research document itself needs its probe,
-link checks and a fresh-context architecture/schema review. Record adoption or
-an explicit maintainer deferral in #46 before closing it; never infer that
-approval from a passing test or reviewer recommendation.
+link checks and a fresh-context architecture/schema review. Adoption is recorded
+in #46; closure also requires verified PR delivery.
+A passing test or reviewer recommendation alone is not maintainer approval.
 
 Non-goals: runtime work here, map providers, basemaps, live research requests,
 real-course fixtures, generic GIS frameworks, nearest-hole coaching, topology
