@@ -171,6 +171,12 @@ not describe shipped behavior.
 The adopted [planning-to-print contract](docs/pdf-export-contract.md) specifies
 the PDF dependency, selected-hole content, text limits and matching source
 evidence for #49; production PDF export remains unimplemented.
+The active-project scene preparation API in `src/pdfScene.ts` now validates an
+immutable source/project snapshot, binds its exact source bytes to SHA-256, and
+builds typed vector pages with measured text continuations. Its font metrics
+must come from application-owned Helvetica metrics. It does not render or
+download a PDF; that integration remains #51. Focused regressions run with
+`npm run test:unit -- src/pdfScene.test.ts`.
 Focused policies cover [security](SECURITY.md),
 [reference reuse](docs/reference-project-reuse-policy.md) and
 [legal disclaimers](docs/legal-disclaimers.md).
