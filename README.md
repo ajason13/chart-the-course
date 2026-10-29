@@ -168,6 +168,9 @@ For development, read [repository guidance](AGENTS.md),
 The [course geometry contract](docs/course-geometry-contract.md) records research,
 adopted support and explicit deferrals for the geometry follow-ups; it does
 not describe shipped behavior.
+The adopted [planning-to-print contract](docs/pdf-export-contract.md) specifies
+the PDF dependency, selected-hole content, text limits and matching source
+evidence for #49; production PDF export remains unimplemented.
 Focused policies cover [security](SECURITY.md),
 [reference reuse](docs/reference-project-reuse-policy.md) and
 [legal disclaimers](docs/legal-disclaimers.md).

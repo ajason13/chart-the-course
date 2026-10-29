@@ -67,6 +67,11 @@ approval to distribute those bundles. Any future experiment distribution needs
 its own reviewed entry inventory and runtime SBOM/license/audit coverage before
 shipping. Do not promote PDF packages merely to pass the production check.
 
+The adopted [planning-to-print contract](pdf-export-contract.md) records #49's
+candidate dependency closure and the narrow future jsPDF adoption path. The
+existing build bans remain in force until the approved implementation in #51
+passes the same artifact and production evidence gates.
+
 Build tools, tests and other dev-only packages are outside the production SBOM
 and license policy because they do not enter shipped output.
 `npm run audit:all` runs npm audit without
