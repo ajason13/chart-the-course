@@ -87,3 +87,15 @@ test("production config rejects inline and emitted worker graphs", async () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+
+test("production admits only the approved jsPDF browser module and retains other PDF bans", () => {
+  const config = configFactory({ command: "build", mode: "production" });
+  const boundary = config.plugins.find(plugin => plugin?.name === "exclude-production-experiments");
+  const check = id => boundary.generateBundle.call({ getModuleIds: () => [id], error: message => { throw new Error(message); } });
+  check("/repo/node_modules/jspdf/dist/jspdf.es.min.js");
+  for (const id of ["jspdf/dist/jspdf.node.min.js", "jspdf/dist/jspdf.umd.min.js", "pdfjs-dist/build/pdf.mjs", "pdfkit/js/pdfkit.js", "svg2pdf.js/dist/svg2pdf.es.min.js", "svg-to-pdfkit/source.js", "blob-stream/index.js"]) {
+    assert.throws(() => check(`/repo/node_modules/${id}`), /forbidden|Only the approved/);
+  }
+  assert.throws(() => check("/repo/src/ctc008Pdf.ts"), /forbidden/);
+});

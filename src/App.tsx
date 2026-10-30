@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { PdfExport } from "./PdfExport";
 import { HoleMap } from "./HoleMap";
 import { normalizeGolfCourse } from "./normalize";
 import {
@@ -733,6 +734,9 @@ export function App() {
                     </div>}
                   </section>
                 )}
+                {normalized && courseSourceKey && <PdfExport normalized={normalized} courseSourceKey={courseSourceKey}
+                  selectedHoleKey={selectedHoleKey} synthetic={isDemo} evidence={activeSourceEvidence} context={activeContext} refreshing={loading}
+                  project={{ ...emptyProject(courseSourceKey, loadedResult.source.completedAt), holes: projectHoles, clubProfile }} />}
                 <section className="source-export" aria-labelledby="source-export-title">
                   <h3 id="source-export-title">{isDemo ? "Synthetic demo source" : "OpenStreetMap source data"}</h3>
                   <p className="hint">{isDemo ? "Raw GIS source export is unavailable for synthetic demo data. Export a project to save authored targets, carries and clubs." : "Raw GIS source exports contain exact OpenStreetMap response evidence only. They do not include project targets, carries, notes, or normalized map geometry."}</p>

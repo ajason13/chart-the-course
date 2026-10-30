@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-This scaffold contains the following reviewed production runtime dependencies:
+The application contains the following reviewed production runtime dependencies:
 
 | Package | Version | License | Purpose |
 | --- | --- | --- | --- |
@@ -8,9 +8,35 @@ This scaffold contains the following reviewed production runtime dependencies:
 | `react-dom` | 19.2.7 | MIT | Browser DOM rendering |
 | `scheduler` | 0.27.0 | MIT | Transitive React scheduling runtime |
 
-These packages were verified through the production SBOM and license checks on
-2026-06-05. Their upstream license files are preserved in installed package
-artifacts and represented in `sbom.json`.
+Production PDF adoption follows the maintainer-approved [contract](docs/pdf-export-contract.md). Exact jsPDF 4.2.1 is used only for local vector drawing. Its conservative installed closure (including optional packages) is:
+
+| Package | Version | License choice |
+| --- | --- | --- |
+| `@babel/runtime` | 7.29.7 | MIT |
+| `@types/pako` | 2.0.4 | MIT |
+| `@types/raf` | 3.4.3 | MIT |
+| `@types/trusted-types` | 2.0.7 | MIT |
+| `base64-arraybuffer` | 1.0.2 | MIT |
+| `canvg` | 3.0.11 | MIT |
+| `core-js` | 3.49.0 | MIT |
+| `css-line-break` | 2.1.0 | MIT |
+| `dompurify` | 3.4.17 | Apache-2.0 alternative |
+| `fast-png` | 6.4.0 | MIT |
+| `fflate` | 0.8.3 | MIT |
+| `html2canvas` | 1.4.1 | MIT |
+| `iobuffer` | 5.4.0 | MIT |
+| `jspdf` | 4.2.1 | MIT |
+| `pako` | 2.1.0 | MIT AND Zlib (both preserved) |
+| `performance-now` | 2.1.0 | MIT |
+| `raf` | 3.4.1 | MIT |
+| `regenerator-runtime` | 0.13.11 | MIT |
+| `rgbcolor` | 1.0.1 | MIT alternative |
+| `stackblur-canvas` | 2.7.0 | MIT |
+| `svg-pathdata` | 6.0.3 | MIT |
+| `text-segmentation` | 1.0.3 | MIT |
+| `utrie` | 1.0.2 | MIT |
+
+Every production build emits `dependency-licenses.txt` with complete reviewed license texts for all 26 packages, including Pako’s zlib origin/restrictions. DOMPurify uses its Apache-2.0 alternative and rgbcolor its MIT alternative; no blanket compound-license exception applies. Ship this file with the application. Version/closure changes fail the license-asset build gate until reviewed. Production SBOM/license/audit evidence is regenerated for the actual build under `.compliance/`; the scanner is not a substitute for these preserved texts.
 
 ## Current Map and Tile Provider Policy
 
@@ -101,10 +127,7 @@ root package as `UNLICENSED` even though `package.json` declares Apache-2.0 and
 ## Future Production Dependencies
 
 The adopted [PDF dependency and export contract](docs/pdf-export-contract.md)
-records the exact candidate jsPDF closure and license choices for #49. It is
-not an addition to the production inventory above. The implementation PR must
-update this inventory and distribute complete applicable license/notice texts
-after maintainer approval and verification of the actual emitted tree.
+records the approved jsPDF closure, license choices and restricted rendering APIs adopted above.
 
 Before adding MapLibre, Turf, PDF libraries, fonts, map tiles, geocoding
 providers, or analytics tooling, update this file with:

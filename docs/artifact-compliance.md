@@ -2,14 +2,19 @@
 
 The only approved deployment entry is `index.html` and its reachable assets in
 `dist/`. The production build checks the Vite manifest and rejects extra entries,
-experiment modules, workers and unexpected artifacts. Deploy only `dist/`.
+experiment modules, workers and unexpected artifacts. The approved
+`dependency-licenses.txt` is emitted by the license packaging gate, which checks
+all 26 exact production versions and retains their complete license texts,
+including Pako’s Zlib terms and the reviewed Apache/MIT alternatives. Deploy only
+`dist/`, including this license file.
 
 `dist/.vite/runtime-dependencies.json` records the lockfile hash, package paths,
 names and versions from the production module graph, plus package provenance for
 each emitted JavaScript chunk. The inventory includes static and dynamic imports.
 It conservatively includes loaded JavaScript modules even if removed or inlined during
 optimization; relying only on chunk module lists can lose dependency provenance.
-The current application graph contains React, React DOM and Scheduler.
+The application graph includes React/React DOM/Scheduler and the approved
+jsPDF browser module and inventoried optional chunks.
 
 A package used by that graph must be installed at its locked version and included
 in npm's production dependency set. A package marked `dev` or `devOptional`, an
@@ -60,17 +65,19 @@ as current validation evidence; `generate:sbom` and `build:sbom` now write the
 fresh SBOM under `.compliance/`. Never deploy that evidence directory.
 
 The CTC-008/CTC-014 outputs in `dist-experiments/` are local research artifacts,
-not approved distributions. Their PDF dependencies are excluded from production
-evidence only because they are excluded from the production graph and output.
+not approved distributions. PDF.js, PDFKit and SVG translators remain excluded from the production
+graph and output. jsPDF alone is adopted for the active-workspace renderer.
 Browser checks build and test them separately; this is not license/security
 approval to distribute those bundles. Any future experiment distribution needs
 its own reviewed entry inventory and runtime SBOM/license/audit coverage before
 shipping. Do not promote PDF packages merely to pass the production check.
 
 The adopted [planning-to-print contract](pdf-export-contract.md) records #49's
-candidate dependency closure and the narrow future jsPDF adoption path. The
-existing build bans remain in force until the approved implementation in #51
-passes the same artifact and production evidence gates.
+approved dependency closure and the narrow jsPDF adoption path. Only
+`jspdf/dist/jspdf.es.min.js` is admitted by the module gate. Other jsPDF builds,
+PDF libraries, experiments and workers remain rejected. Optional jsPDF chunks
+are inventoried even though the restricted renderer never calls HTML/image APIs.
+All production packages pass the same artifact and production evidence gates.
 
 Build tools, tests and other dev-only packages are outside the production SBOM
 and license policy because they do not enter shipped output.
