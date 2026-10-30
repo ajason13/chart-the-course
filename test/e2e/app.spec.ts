@@ -1790,3 +1790,32 @@ test("club undo handles conflicts, capacity, latest deletion and project replace
   await expect(undo).toHaveCount(0);
   expect((await downloadedJson(page, "Export project")).clubProfile).toEqual(before.clubProfile);
 });
+
+
+test("club editor preserves explicit dispersion selection and resets undo across holes", async ({ page }) => {
+  await prepareGuardWorkspace(page);
+  const add = page.getByRole("button", { name: "Add club", exact: true });
+  for (let i = 0; i < 3; i++) await add.click();
+  const before: ProjectV2 = await downloadedJson(page, "Export project");
+  const selection = page.getByLabel("Dispersion club");
+  const remove = page.getByRole("button", { name: "Delete club", exact: true });
+  const undo = page.getByRole("button", { name: "Undo delete club", exact: true });
+  await remove.last().click();
+  await expect(selection).toHaveValue(before.clubProfile.clubs[0].id);
+  await selection.selectOption(before.clubProfile.clubs[1].id);
+  await undo.click();
+  await expect(selection).toHaveValue(before.clubProfile.clubs[1].id);
+  expect((await downloadedJson(page, "Export project")).clubProfile).toEqual(before.clubProfile);
+
+  await remove.last().click();
+  await expect(undo).toBeVisible();
+  const holes = page.getByRole("combobox", { name: "Hole", exact: true });
+  const originalHole = await holes.inputValue();
+  await holes.selectOption("way/9000060102");
+  await expect(undo).toHaveCount(0);
+  await expect(page.getByLabel("Club name", { exact: true })).toHaveCount(2);
+  await expect(selection).toHaveValue(before.clubProfile.clubs[0].id);
+  expect((await downloadedJson(page, "Export project")).clubProfile.clubs).toEqual(before.clubProfile.clubs.slice(0, 2));
+  await holes.selectOption(originalHole);
+  await expect(undo).toHaveCount(0);
+});
