@@ -111,6 +111,26 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
   const [dispersionClubId, setDispersionClubId] = useState<string | null>(null);
   const [fairwayYards, setFairwayYards] = useState(250);
   const undoButton = useRef<HTMLButtonElement>(null);
+  const [deletedClub, setDeletedClub] = useState<{ club: ClubV2; index: number; selected: boolean } | null>(null);
+  const clubUndoButton = useRef<HTMLButtonElement>(null);
+  const [restoredClubId, setRestoredClubId] = useState<string | null>(null);
+  const restoredClubInput = useRef<HTMLInputElement>(null);
+  const expectedProfile = useRef(clubProfile);
+
+  // A replacement project must not inherit undo history from the prior profile.
+  useEffect(() => {
+    if (expectedProfile.current !== clubProfile) setDeletedClub(null);
+    expectedProfile.current = clubProfile;
+  }, [clubProfile]);
+
+  useEffect(() => {
+    if (deletedClub) requestAnimationFrame(() => clubUndoButton.current?.focus());
+  }, [deletedClub?.club.id]);
+
+  function changeClubProfile(profile: ClubProfileV2) {
+    expectedProfile.current = profile;
+    onClubProfileChange(profile);
+  }
 
   useEffect(() => {
     setMeasurement({ start: null, end: null });
@@ -118,6 +138,7 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
     setMode("measure");
     setRepositionId(null);
     setLastDeleted(null);
+    setDeletedClub(null);
     setFairwayYards(250);
     setDispersionOrigin(null);
     setDispersionTargetId(null);
@@ -323,8 +344,9 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
     let number = clubProfile.clubs.length + 1;
     while (used.has(`club ${number}`)) number += 1;
     const club: ClubV2 = { id: generateProjectId("club"), label: `Club ${number}`, carry: 150, longitudinal: 30, lateral: 20 };
-    onClubProfileChange({ clubs: [...clubProfile.clubs, club] });
+    changeClubProfile({ clubs: [...clubProfile.clubs, club] });
     setDispersionClubId(club.id);
+    setDeletedClub((current) => current ? { ...current, selected: false } : null);
     setAnnouncement(`${club.label} added to the club profile.`);
   }
 
@@ -352,7 +374,7 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
         return false;
       }
     }
-    onClubProfileChange({ clubs: clubProfile.clubs.map((club) => club.id === id ? { ...club, [field]: value } : club) });
+    changeClubProfile({ clubs: clubProfile.clubs.map((club) => club.id === id ? { ...club, [field]: value } : club) });
     setClubErrors((current) => ({ ...current, [key]: "" }));
     setAnnouncement("Club profile updated.");
     return true;
@@ -539,11 +561,31 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
       <section className="project-panel dispersion-panel" aria-labelledby="dispersion-title">
         <div className="map-heading"><h4 id="dispersion-title">Club profile and dispersion</h4>
           <button className="secondary" type="button" disabled={clubProfile.clubs.length >= 14} onClick={addClub}>Add club</button></div>
+        {deletedClub && <>
+          <button ref={clubUndoButton} className="secondary" type="button" onClick={() => {
+            const { club, index, selected } = deletedClub;
+            if (clubProfile.clubs.length >= 14) {
+              setAnnouncement("Cannot restore club: the profile already has fourteen clubs. Existing clubs were kept.");
+              return;
+            }
+            if (clubProfile.clubs.some((current) => current.id === club.id || current.label.normalize("NFC").toLowerCase() === club.label.normalize("NFC").toLowerCase())) {
+              setAnnouncement("Cannot restore club: its ID or name is already in use. Rename the conflicting club before retrying.");
+              return;
+            }
+            changeClubProfile({ clubs: [...clubProfile.clubs.slice(0, index), club, ...clubProfile.clubs.slice(index)] });
+            if (selected) setDispersionClubId(club.id);
+            setRestoredClubId(club.id);
+            setDeletedClub(null);
+            setAnnouncement(`${club.label} restored to the club profile.`);
+            requestAnimationFrame(() => restoredClubInput.current?.focus());
+          }}>Undo delete club</button>
+          <p className="hint">Restores the last deleted club at its original position. Current clubs are kept; fourteen-club and unique-name limits still apply.</p>
+        </>}
         <p className="hint">Local dispersion guide only; it is not a shot recommendation or confidence estimate.</p>
         <p className="hint">The club profile is saved only in an exported project file. Loading a different course clears unsaved profile data.</p>
         {clubProfile.clubs.length === 0 ? <p>No clubs added.</p> : <ul className="club-list">
           {clubProfile.clubs.map((club) => <li key={club.id}>
-            <label>Club name<input key={`${club.id}-label-${club.label}`} defaultValue={club.label} maxLength={40}
+            <label>Club name<input ref={club.id === restoredClubId ? restoredClubInput : undefined} key={`${club.id}-label-${club.label}`} defaultValue={club.label} maxLength={40}
               onBlur={(event) => { if (!updateClub(club.id, "label", event.currentTarget.value)) event.currentTarget.value = club.label; }}
               onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></label>
             {clubErrors[`${club.id}-label`] && <p className="warning">{clubErrors[`${club.id}-label`]}</p>}
@@ -555,7 +597,9 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
               {clubErrors[`${club.id}-${field}`] && <span className="warning">{clubErrors[`${club.id}-${field}`]}</span>}
             </label>)}
             <button className="secondary danger" type="button" onClick={() => {
-              onClubProfileChange({ clubs: clubProfile.clubs.filter(({ id }) => id !== club.id) });
+              setDeletedClub({ club, index: clubProfile.clubs.findIndex(({ id }) => id === club.id), selected: dispersionClubId === club.id });
+              setClubErrors({});
+              changeClubProfile({ clubs: clubProfile.clubs.filter(({ id }) => id !== club.id) });
               setAnnouncement(`${club.label} deleted from the club profile.`);
             }}>Delete club</button>
           </li>)}
@@ -571,7 +615,10 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
             <option value="" disabled>Select target</option>
             {project.targets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}
           </select></label>
-          <label>Dispersion club<select value={dispersionClubId ?? ""} onChange={(event) => setDispersionClubId(event.target.value)} disabled={clubProfile.clubs.length === 0}>
+          <label>Dispersion club<select value={dispersionClubId ?? ""} onChange={(event) => {
+              setDispersionClubId(event.target.value);
+              setDeletedClub((current) => current ? { ...current, selected: false } : null);
+            }} disabled={clubProfile.clubs.length === 0}>
             <option value="" disabled>Select club</option>
             {clubProfile.clubs.map((club) => <option key={club.id} value={club.id}>{club.label}</option>)}
           </select></label>

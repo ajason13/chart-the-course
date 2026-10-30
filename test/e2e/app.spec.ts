@@ -1706,3 +1706,81 @@ for (const mobile of [false,true]) {
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
   });
 }
+
+
+test("club deletion undo preserves identity, ordering, edits and keyboard selection", async ({ page }) => {
+  await isolateNetwork(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Open synthetic demo", exact: true }).click();
+  const add = page.getByRole("button", { name: "Add club", exact: true });
+  for (let i = 0; i < 3; i++) await add.click();
+  await page.getByLabel("Carry yards", { exact: true }).nth(1).fill("212");
+  await page.getByLabel("Carry yards", { exact: true }).nth(1).blur();
+  const before: ProjectV2 = await downloadedJson(page, "Export project");
+  await page.getByLabel("Dispersion club").selectOption(before.clubProfile.clubs[1].id);
+  const remove = page.getByRole("button", { name: "Delete club", exact: true }).nth(1);
+  await remove.focus();
+  await page.keyboard.press("Enter");
+  const undo = page.getByRole("button", { name: "Undo delete club", exact: true });
+  await expect(undo).toBeFocused();
+  await expect(page.getByLabel("Dispersion club")).toHaveValue(before.clubProfile.clubs[0].id);
+  await page.getByLabel("Club name", { exact: true }).first().fill("Edited survivor");
+  await page.getByLabel("Club name", { exact: true }).first().blur();
+  await undo.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByLabel("Club name", { exact: true }).nth(1)).toBeFocused();
+  await expect(page.getByLabel("Dispersion club")).toHaveValue(before.clubProfile.clubs[1].id);
+  await expect(page.getByText("Club 2 restored to the club profile.", { exact: true })).toHaveCount(1);
+  const restored: ProjectV2 = await downloadedJson(page, "Export project");
+  expect(restored.clubProfile.clubs).toEqual(before.clubProfile.clubs.map((club, i) => i === 0 ? { ...club, label: "Edited survivor" } : club));
+  await expect(undo).toHaveCount(0);
+  await page.getByRole("button", { name: "Delete club", exact: true }).nth(1).click();
+  await add.click();
+  const added: ProjectV2 = await downloadedJson(page, "Export project");
+  await undo.click();
+  await expect(page.getByLabel("Dispersion club")).toHaveValue(added.clubProfile.clubs[2].id);
+  expect((await downloadedJson(page, "Export project")).clubProfile.clubs).toEqual([...restored.clubProfile.clubs, added.clubProfile.clubs[2]]);
+  await assertAxe(page);
+});
+
+test("club undo handles conflicts, capacity, latest deletion and project replacement", async ({ page }) => {
+  await isolateNetwork(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Open synthetic demo", exact: true }).click();
+  const add = page.getByRole("button", { name: "Add club", exact: true });
+  await add.click();
+  await add.click();
+  const before: ProjectV2 = await downloadedJson(page, "Export project");
+  const remove = page.getByRole("button", { name: "Delete club", exact: true });
+  const undo = page.getByRole("button", { name: "Undo delete club", exact: true });
+  await remove.first().click();
+  await page.getByLabel("Club name", { exact: true }).fill("CLUB 1");
+  await page.getByLabel("Club name", { exact: true }).blur();
+  await undo.click();
+  await expect(page.getByText(/Cannot restore club: its ID or name is already in use/)).toHaveCount(1);
+  expect((await downloadedJson(page, "Export project")).clubProfile.clubs).toEqual([{ ...before.clubProfile.clubs[1], label: "CLUB 1" }]);
+  await page.getByLabel("Club name", { exact: true }).fill("Survivor");
+  await page.getByLabel("Club name", { exact: true }).blur();
+  await undo.click();
+  for (let i = 2; i < 14; i++) await add.click();
+  await remove.first().click();
+  await add.click();
+  const full: ProjectV2 = await downloadedJson(page, "Export project");
+  await undo.click();
+  await expect(page.getByText(/Cannot restore club: the profile already has fourteen clubs/)).toHaveCount(1);
+  expect((await downloadedJson(page, "Export project")).clubProfile).toEqual(full.clubProfile);
+  await remove.last().click(); // A second deletion replaces the single undo entry.
+  await undo.click();
+  expect((await downloadedJson(page, "Export project")).clubProfile).toEqual(full.clubProfile);
+  await remove.first().click();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByLabel("Import project file (.json)").evaluate((element: HTMLInputElement, text) => {
+    const files = new DataTransfer();
+    files.items.add(new File([text], "replacement.json", { type: "application/json" }));
+    element.files = files.files;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  }, JSON.stringify(before));
+  await expect(page.getByText("Project imported successfully.", { exact: true })).toBeVisible();
+  await expect(undo).toHaveCount(0);
+  expect((await downloadedJson(page, "Export project")).clubProfile).toEqual(before.clubProfile);
+});
