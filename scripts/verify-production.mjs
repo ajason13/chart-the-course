@@ -7,7 +7,7 @@ export function verifyProduction(directory = "dist") {
   const manifest = JSON.parse(readFileSync(resolve(directory, ".vite/manifest.json"), "utf8"));
   assert.deepEqual(Object.entries(manifest).filter(([, item]) => item.isEntry).map(([key]) => key),
     ["index.html"], "Production must contain only the application entry");
-  const allowed = new Set(["index.html", ".vite/manifest.json", ".vite/runtime-dependencies.json"]);
+  const allowed = new Set(["index.html", ".vite/manifest.json", ".vite/runtime-dependencies.json", "dependency-licenses.txt"]);
   const visited = new Set();
   function visit(key) {
     if (visited.has(key)) return;
@@ -23,7 +23,7 @@ export function verifyProduction(directory = "dist") {
     if (!entry.isFile()) continue;
     const file = relative(resolve(directory), resolve(entry.parentPath, entry.name)).replaceAll("\\", "/");
     assert.ok(allowed.has(file), `Unexpected production artifact: ${file}`);
-    assert.doesNotMatch(file, /ctc008|ctc014|pdf|worker/i, `Forbidden production artifact: ${file}`);
+    assert.doesNotMatch(file, /ctc008|ctc014|worker|pdfkit|pdfjs|svg2pdf|svg-to-pdf/i, `Forbidden production artifact: ${file}`);
     if (/\.(?:html|js|css)$/.test(file)) {
       assert.doesNotMatch(readFileSync(resolve(directory, file), "utf8"),
         /ctc008Experiment|ctc014Experiment|pdf\.worker/i,

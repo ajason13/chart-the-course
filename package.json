@@ -28,7 +28,7 @@
     "compliance": "npm run build && npm run generate:sbom && npm run license:check && npm run audit:prod && npm run verify:compliance",
     "build:experiments": "tsc --noEmit && vite build --mode experiments",
     "preview:experiments": "vite preview --mode experiments --host 127.0.0.1",
-    "verify:production": "node --test scripts/verify-production.test.mjs scripts/runtime-inventory.test.mjs && node scripts/verify-production.mjs",
+    "verify:production": "node --test scripts/verify-production.test.mjs scripts/runtime-inventory.test.mjs scripts/production-licenses.test.mjs && node scripts/verify-production.mjs",
     "verify:compliance": "node --test scripts/verify-compliance.test.mjs && node scripts/verify-compliance.mjs",
     "audit:all": "mkdir -p .compliance && npm audit --audit-level=high --json > .compliance/audit-full-tree.json"
   },
@@ -40,7 +40,6 @@
     "@types/react-dom": "19.2.0",
     "@vitejs/plugin-react": "6.0.2",
     "blob-stream": "0.1.3",
-    "jspdf": "4.2.1",
     "license-checker-rseidelsohn": "4.4.2",
     "pdfjs-dist": "6.2.108",
     "pdfkit": "0.19.1",
@@ -52,6 +51,7 @@
   },
   "dependencies": {
     "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "react-dom": "19.2.7",
+    "jspdf": "4.2.1"
   }
 }

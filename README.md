@@ -2,8 +2,8 @@
 
 Chart the Course is an open-source, browser-based golf course planning app.
 It uses OpenStreetMap course geometry, deterministic client-side spatial math,
-and user-authored planning overlays. Printable yardage books are a planned
-outcome; production PDF export is not yet available.
+and user-authored planning overlays. Printable yardage books use local vector
+PDFs paired with matching source downloads.
 
 No LLM is required at runtime. The app is designed to run as deterministic
 browser software, with LLMs used only as development aids under repository
@@ -138,7 +138,7 @@ to `npm run compliance`; generated evidence is written under `.compliance/`.
 `npm run preview` serves that production output. Deploy only `dist/`.
 
 The CTC-008 and CTC-014 fixture-backed PDF experiments are research artifacts;
-production PDF export has not been adopted. Build them explicitly with
+the active-project export is separate. Build experiments explicitly with
 `npm run build:experiments`, then serve `dist-experiments/` with
 `npm run preview:experiments`. Open `/ctc008.html` or `/ctc014.html` on the
 printed URL. Keep this separate output out of application deployments.
@@ -155,13 +155,41 @@ and reconciles its package inventory with fresh production SBOM, license and
 audit evidence. See [artifact compliance](docs/artifact-compliance.md) for the
 artifact boundary, CI evidence and separate experiment/tooling checks.
 
+## Print the active workspace
+
+After opening a course or the synthetic demo, use **Printable yardage book**.
+Choose 1–36 holes (the current hole is selected initially), then **Prepare yardage
+book**. Download both the PDF and its adjacent matching source file. Share that
+exact source file with PDF recipients; starting downloads does not confirm files
+were saved or delivered. Preparation is local and requests no new course data.
+
+The Letter-size vector book includes a cover, summary, hole maps and measured
+continuations for current unsaved targets/carries. Clubs, notes and analysis are
+excluded. Non-ASCII dynamic names are printed as visible `[U+XXXX]` escapes;
+original source/project strings stay unchanged. Missing map data and unavailable
+distances remain explicit. Previously consented stale data is disclosed with
+completion date and age. Changing the workspace, source, print selection or
+refresh state invalidates both prepared files; prepare again. Errors preserve
+edits and allow retry. Export supports at most 128 pages, 100,000 projected
+vertices, 20,000 primitives, 1 MiB source and 10 MiB PDF; exceeding a limit blocks
+the entire download rather than producing a partial book.
+
+Live PDFs print OpenStreetMap attribution and its complete copyright URL on
+every page, and bind the exact raw-source download by filename and SHA-256.
+Demo PDFs are marked synthetic on every page and pair the exact bundled fixture,
+without an ODbL envelope or an invented endpoint. The app uses jsPDF 4.2.1 with
+built-in Helvetica and no remote fonts, images or PDF viewer. Deploy
+`dist/dependency-licenses.txt` alongside the app to retain complete dependency
+licenses. PDF inspection/rendering tests use local test-only PDF.js; they do not
+establish universal real-course or print-driver compatibility, or PDF accessibility
+conformance. Release/printed-page readiness remains issue #52.
+
 ## Governance Notes
 
 See the [GitHub roadmap](https://github.com/ajason13/chart-the-course/issues/32)
 for execution order and dependencies, and the
 [open issues](https://github.com/ajason13/chart-the-course/issues) for current
-status. Geometry compatibility improvements, mapped-water
-overlap and active-project PDF export remain tracked work, not shipped features.
+status. Release readiness and optional future work remain tracked there.
 
 For development, read [repository guidance](AGENTS.md),
 [contributing](CONTRIBUTING.md) and the [Codex session entry point](docs/codex-sessions.md).
@@ -170,13 +198,13 @@ adopted support and explicit deferrals for the geometry follow-ups; it does
 not describe shipped behavior.
 The adopted [planning-to-print contract](docs/pdf-export-contract.md) specifies
 the PDF dependency, selected-hole content, text limits and matching source
-evidence for #49; production PDF export remains unimplemented.
+evidence adopted for the active-project PDF export.
 The active-project scene preparation API in `src/pdfScene.ts` now validates an
 immutable source/project snapshot, binds its exact source bytes to SHA-256, and
 builds typed vector pages with measured text continuations. Its font metrics
-must come from application-owned Helvetica metrics. It does not render or
-download a PDF; that integration remains #51. Focused regressions run with
-`npm run test:unit -- src/pdfScene.test.ts`.
+must come from application-owned Helvetica metrics. `src/pdfRenderer.ts` draws
+only that closed scene vocabulary. Focused regressions run with
+`npm run test:unit -- src/pdfScene.test.ts src/pdfRenderer.test.ts`.
 Focused policies cover [security](SECURITY.md),
 [reference reuse](docs/reference-project-reuse-policy.md) and
 [legal disclaimers](docs/legal-disclaimers.md).
