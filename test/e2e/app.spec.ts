@@ -56,7 +56,7 @@ async function assertAxe(page: Page) {
   expect(results.violations).toEqual([]);
 }
 
-test("discovers candidates, loads detail explicitly, caches it, and shows attribution", async ({ page }) => {
+test("discovers candidates, loads detail explicitly, caches it, and shows attribution", { tag: "@planning-smoke" }, async ({ page }) => {
   let discoveryRequests = 0;
   let detailRequests = 0;
   await isolateNetwork(page, async (route) => {
@@ -93,6 +93,10 @@ test("discovers candidates, loads detail explicitly, caches it, and shows attrib
   await page.getByRole("button", { name: "Search courses" }).click();
   await expect(page.getByText(/course candidates loaded from cache/)).toBeVisible();
   expect(discoveryRequests).toBe(1);
+  // Both discovery and detail must survive a document reload in IndexedDB.
+  await page.getByRole("button", { name: "Open course", exact: true }).click();
+  await expect(page.getByText("Course data loaded from cache.", { exact: true }).first()).toBeVisible();
+  expect(detailRequests).toBe(1);
 });
 
 test("expired detail requires explicit consent or cancellation and exports exact stale evidence", async ({ page }) => {
@@ -772,7 +776,7 @@ async function downloadedJson(page: Page, button: string) {
 }
 
 for (const width of [1280, 390]) {
-  test(`synthetic demo supports offline planning and project round trips at ${width}px`, async ({ page }) => {
+  test(`synthetic demo supports offline planning and project round trips at ${width}px`, { tag: "@planning-smoke" }, async ({ page, browserName }) => {
     await isolateNetwork(page); // Any external request fails this test, including Overpass.
     await page.addInitScript(() => {
       const original = URL.createObjectURL.bind(URL);
@@ -785,7 +789,9 @@ for (const width of [1280, 390]) {
     await page.goto("/");
     const demo = page.getByRole("button", { name: "Open synthetic demo", exact: true });
     await expect(demo).toBeVisible();
-    await page.keyboard.press("Tab");
+    // macOS WebKit uses Option-Tab to include buttons in keyboard navigation.
+    const macWebKit = browserName === "webkit" && await page.evaluate(() => navigator.platform.startsWith("Mac"));
+    await page.keyboard.press(macWebKit ? "Alt+Tab" : "Tab");
     await expect(demo).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("heading", { name: "Selected-hole map", exact: true })).toBeFocused();
@@ -1076,7 +1082,7 @@ test("accessibility oracle detects a known injected violation", async ({ page })
   expect(results.violations.map((violation) => violation.id)).toContain("image-alt");
 });
 
-test("renders and measures the selected hole with pointer, keyboard, mobile, and attribution support", async ({ page }) => {
+test("renders and measures the selected hole with pointer, keyboard, mobile, and attribution support", { tag: "@planning-smoke" }, async ({ page }) => {
   await isolateNetwork(page, async (route) => {
     const query = new URLSearchParams(route.request().postData() ?? "").get("data") ?? "";
     await route.fulfill({ json: query.includes("purpose:golf-course-detail") ? ctc006Detail : discovery });
@@ -1242,7 +1248,7 @@ async function importProjectJson(page: Page, project: unknown) {
   }, JSON.stringify(project));
 }
 
-test("restores a populated live-course project download and keeps raw GIS source separate", async ({ page }) => {
+test("restores a populated live-course project download and keeps raw GIS source separate", { tag: "@planning-smoke" }, async ({ page }) => {
   const saved = await preparePopulatedProject(page);
   const source = await downloadedJson(page, "Download Raw GIS Source (ODbL)");
   expect(source.rawResponse).toBe(JSON.stringify(ctc006Detail));

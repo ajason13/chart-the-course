@@ -102,13 +102,13 @@ engine constraints define the supported local and CI runtime.
 
 ```bash
 npm ci
-npx playwright install chromium
+npx playwright install chromium webkit
 npm run dev
 ```
 
 Run these commands from the repository root. If you use nvm, run `nvm use`
 first. Open the local URL printed by Vite (normally `http://127.0.0.1:5173`).
-On Linux/CI, use `npx playwright install --with-deps chromium` to install
+On Linux/CI, use `npx playwright install --with-deps chromium webkit` to install
 browser system dependencies as well. No API key or local backend is required.
 
 ## Deterministic Checks
@@ -127,8 +127,23 @@ this same command. Build both outputs before running `npm run test:e2e` alone.
 For focused checks, `npm run verify:scaffold` checks dependency pins and scaffold
 policy, `npm run build` type-checks and verifies the production build,
 `npm run test:unit` runs Vitest, and `npm run test:e2e` runs Playwright.
-Browser coverage currently uses Chromium, including mobile viewport checks;
-it does not certify Safari/WebKit or Firefox.
+Chromium runs the full application and PDF experiment suites, including mobile
+viewport checks and the existing PDF visual baselines. The `webkit-smoke`
+project reuses five tagged planning checks: durable discovery/detail cache reuse,
+SVG pointer/keyboard measurement and target placement, offline synthetic demo
+planning at desktop/mobile widths, and project download/import with source
+separation. All use local fixtures; no live Overpass requests are sent. After
+building both outputs, run it with
+`npm run test:e2e -- --project=webkit-smoke`.
+
+CI installs Chromium and WebKit and runs both through `npm run check`. Failed
+browser tests retain traces and screenshots under `test-results/`, uploaded as
+`browser-failures` in CI; open a trace with `npx playwright show-trace <trace.zip>`.
+The demo keyboard check uses Option-Tab on macOS WebKit to include buttons,
+consistent with [Safari keyboard navigation](https://support.apple.com/guide/safari/cpsh003/mac).
+Playwright WebKit coverage does not certify installed Safari, iOS devices, or
+Firefox. PDF screenshot baselines remain Chromium-only; the WebKit subset
+excludes PDF rendering and experiments.
 
 `npm run compliance` rebuilds production and verifies its SBOM, license and
 vulnerability evidence. `npm run audit:all` separately audits development and

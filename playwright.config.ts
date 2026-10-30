@@ -7,7 +7,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: "list",
   snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}{ext}",
-  use: { trace: "on-first-retry" },
+  use: { trace: "retain-on-failure", screenshot: "only-on-failure" },
   webServer: [
     {
       command: "npm run preview -- --port 4173 --strictPort",
@@ -23,6 +23,12 @@ export default defineConfig({
       name: "chromium",
       testIgnore: experimentTests,
       use: { ...devices["Desktop Chrome"], baseURL: "http://127.0.0.1:4173" }
+    },
+    {
+      name: "webkit-smoke",
+      testMatch: "app.spec.ts",
+      grep: /@planning-smoke/,
+      use: { ...devices["Desktop Safari"], baseURL: "http://127.0.0.1:4173" }
     },
     {
       name: "experiments-chromium",
