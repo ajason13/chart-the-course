@@ -27,8 +27,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Verify production artifacts and app and experiment checks
         run: npm run check
@@ -50,3 +50,11 @@ jobs:
             .compliance/
             dist/.vite/runtime-dependencies.json
             dist/.vite/manifest.json
+
+      - name: Preserve browser failure artifacts
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: browser-failures
+          if-no-files-found: ignore
+          path: test-results/
