@@ -21,6 +21,9 @@ The merged React/TypeScript application supports:
   course without course-data requests, using the same planning tools.
 - A selected-hole SVG map with distance measurement, editable targets and
   carries, fairway-width estimates, and club profiles with dispersion guides.
+  Club deletion has one-level undo that restores identity, values and position
+  while retaining other edits, subject to the fourteen-club and unique-name limits.
+  Changing holes or replacing the project clears this undo history.
   A local mapped-risk panel compares existing targets against associated mapped
   golf-water polygons using 512 fixed, area-weighted samples. Missing usable
   water geometry and off-map guides are unavailable. Percentages describe sampled
