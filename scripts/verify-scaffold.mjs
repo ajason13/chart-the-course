@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
 const packageLock = JSON.parse(readFileSync("package-lock.json", "utf8"));
-const workflow = readFileSync(".github/workflows/ci.yml", "utf8");
+const workflow = readFileSync(".github/workflows/ci.yml", "utf8").replace(/\r\n/g, "\n");
 const indexHtml = readFileSync("index.html", "utf8");
 
 for (const group of ["dependencies", "devDependencies"]) {
