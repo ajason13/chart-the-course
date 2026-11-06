@@ -11,8 +11,19 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            shell: bash
+          - os: windows-2025
+            shell: pwsh
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
 
     steps:
       - name: Check out repository
@@ -26,6 +37,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Record verification environment
+        run: |
+          node -p "JSON.stringify({platform: process.platform, arch: process.arch, os: require('node:os').release(), node: process.version})"
+          npm --version
+          npm config get script-shell
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium webkit
@@ -43,7 +60,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: production-compliance
+          name: production-compliance-${{ matrix.os }}
           include-hidden-files: true
           if-no-files-found: error
           path: |
@@ -55,6 +72,18 @@ jobs:
         if: ${{ failure() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: browser-failures
+          name: browser-failures-${{ matrix.os }}
           if-no-files-found: ignore
           path: test-results/
+
+  required-verification:
+    name: verify
+    needs: verify
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every platform to pass
+        env:
+          PLATFORM_RESULT: ${{ needs.verify.result }}
+        run: test "$PLATFORM_RESULT" = success
