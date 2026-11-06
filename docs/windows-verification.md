@@ -58,6 +58,15 @@ the positive inventory case and every negative compliance/worker/PDF assertion.
 The hosted Windows job continues to exercise its native TEMP configuration;
 no CI environment workaround, baseline change or assertion relaxation is used.
 
+The next Windows run passed those build checks and exposed a raw Markdown
+input difference: default Windows Git checkout converted the legal disclaimer
+to CRLF, while the PDF parser expects LF fenced-text delimiters. Git checkout
+filters reproduced the 14 failing PDF tests locally. A targeted `.gitattributes`
+rule now preserves LF for `docs/legal-disclaimers.md`, matching the committed
+source and Linux build input. With Windows checkout filters applied, the bytes
+match the original LF input and all 16 focused PDF scene/renderer tests pass.
+Legal wording, runtime parsing and PDF assertions remain unchanged.
+
 Hosted Windows Server results do not certify Windows 10/11 desktop support.
 This desktop run supplies one Windows 11 x64 observation, not Windows 10, ARM64,
 Safari/iOS, arbitrary hardware or print-driver certification. Windows setup and
