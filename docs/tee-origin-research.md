@@ -1,12 +1,13 @@
-# Polygon tee origins: research and proposed deferral
+# Polygon tee origins: research and approved deferral
 
 Issue: [#53](https://github.com/ajason13/chart-the-course/issues/53).
 Baseline: `a7e146c23fc7e6af94f6feaae975779be483df8b`.
-Status: proposal awaiting maintainer decision. No runtime change is authorized
-by this document. The existing [geometry contract](course-geometry-contract.md)
+Status: explicit deferral approved by the maintainer on 2026-11-06;
+[decision evidence](https://github.com/ajason13/chart-the-course/issues/53#issuecomment-6694956404).
+No runtime change is authorized by this document. The existing [geometry contract](course-geometry-contract.md)
 continues to govern shipped origin behavior.
 
-## Recommendation for approval
+## Approved decision
 
 Explicitly defer an automatic polygon-origin replacement. Retain current
 source-associated simple-tee behavior and relation-tee unavailability until a
@@ -82,7 +83,7 @@ relation topology, source association or a user-selection flow.
 | Interior representative | Contained for the tested simple shapes; stable under tested reordering | Algorithm/tie/projection dependent; no evidence of real marker position |
 | Explicit selection using an existing target | User chooses a coordinate; independent of tee boundary order | Manual placement accuracy unverified; deleting the target makes the origin unavailable |
 
-## Scope of the proposed deferral
+## Scope of the approved deferral
 
 - Point tees keep their source coordinate. Do not infer an origin from invalid
   coordinates or replace unavailable data with (0,0).
@@ -109,7 +110,7 @@ consumers resolve the same coordinate and document reopened-project semantics.
 Measure practical impact before choosing centroid/interior algorithms; do not
 claim a geometric representative point is an actual playing position.
 
-Maintainer approval of the explicit deferral above would satisfy #53's decision
-outcome without an implementation follow-up. Until approval is recorded, the
-issue remains open. No release, provider, geolocation or persistence decision is
-made here.
+The maintainer approved this explicit deferral, satisfying #53's decision
+outcome without an implementation follow-up. Completion still requires the
+linked PR's checks, review and merge. No release, provider, geolocation or
+persistence decision is made here.
