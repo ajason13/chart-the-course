@@ -24,10 +24,12 @@ The merged React/TypeScript application supports:
   Club deletion has one-level undo that restores identity, values and position
   while retaining other edits, subject to the fourteen-club and unique-name limits.
   Changing holes or replacing the project clears this undo history.
-  A local mapped-risk panel compares existing targets against associated mapped
+  A local mapped-water overlap panel compares existing targets against associated mapped
   golf-water polygons using 512 fixed, area-weighted samples. Missing usable
   water geometry and off-map guides are unavailable. Percentages describe sampled
   geometric overlap, not shot probability; small areas between samples may be missed.
+  Low (0–4%), intermediate (5–24%) and high (25–100%) bands use the rounded
+  sampled percentage and do not measure safety, including at 0%.
 - Project JSON export/import for authored targets, carries and clubs, separate
   from raw GIS source downloads containing the loaded Overpass response and
   provenance.
