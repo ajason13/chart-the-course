@@ -86,6 +86,11 @@ and license policy because they do not enter shipped output.
 it does not establish production reachability or experiment distribution approval.
 No new package exclusions or license exceptions are introduced here.
 
+The [#84 tooling advisory assessment](tooling-advisory-triage.md) records the
+2026-11-05 unresolved glob/minimatch findings, their development-only paths,
+upstream compatibility blockers and revalidation steps. A passing full-tree
+audit exit at the configured threshold must not be described as zero findings.
+
 Regression checks include real controlled Vite builds that reject an arbitrary
 static or dynamically imported dev-only package (including inlined code), accept
 it only when covered by the production set, and reject external dynamic imports.
