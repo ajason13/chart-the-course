@@ -217,6 +217,8 @@ not describe shipped behavior.
 The adopted [planning-to-print contract](docs/pdf-export-contract.md) specifies
 the PDF dependency, selected-hole content, text limits and matching source
 evidence adopted for the active-project PDF export.
+The [tee-origin research](docs/tee-origin-research.md) compares synthetic polygon
+origins and records a proposed deferral; it does not change automatic origins.
 The active-project scene preparation API in `src/pdfScene.ts` now validates an
 immutable source/project snapshot, binds its exact source bytes to SHA-256, and
 builds typed vector pages with measured text continuations. Its font metrics
