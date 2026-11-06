@@ -75,3 +75,15 @@ jobs:
           name: browser-failures-${{ matrix.os }}
           if-no-files-found: ignore
           path: test-results/
+
+  required-verification:
+    name: verify
+    needs: verify
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every platform to pass
+        env:
+          PLATFORM_RESULT: ${{ needs.verify.result }}
+        run: test "$PLATFORM_RESULT" = success
