@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -8,7 +8,8 @@ import configFactory from "../vite.config.ts";
 import { runtimeInventory } from "./runtime-inventory.mjs";
 
 test("real bundle rejects dev-only runtime packages, including dynamic chunks", async () => {
-  const root = mkdtempSync(join(tmpdir(), "ctc-runtime-"));
+  // Vite resolves inputs to real paths; expand Windows 8.3 TEMP aliases for the root too.
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), "ctc-runtime-")));
   const write = (path, value) => writeFileSync(join(root, path),
     typeof value === "string" ? value : JSON.stringify(value));
   const run = () => build({ root, configFile: false, logLevel: "silent", plugins: [runtimeInventory()],
@@ -73,7 +74,7 @@ test("real bundle rejects dev-only runtime packages, including dynamic chunks", 
 
 
 test("production config rejects inline and emitted worker graphs", async () => {
-  const root = mkdtempSync(join(tmpdir(), "ctc-worker-"));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), "ctc-worker-")));
   try {
     writeFileSync(join(root, "index.html"), '<script type="module" src="/main.js"></script>');
     writeFileSync(join(root, "worker.js"), 'self.onmessage = () => self.postMessage("worker");');

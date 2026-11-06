@@ -42,6 +42,22 @@ assertion was changed. Local verification logs and screenshots were retained in
 the ignored `.compliance/` directory; PR CI logs and OS-specific artifacts supply
 the hosted-runner evidence.
 
+## Windows temporary-path regression
+
+The first hosted Windows run exposed a fixture-only path mismatch in
+`scripts/runtime-inventory.test.mjs`: Windows TEMP used an 8.3 alias
+(`RUNNER~1`), while Vite canonicalized the build root. The explicit HTML input
+still contained the alias, so the emitted HTML filename escaped the root and
+Rolldown rejected it. On 2026-11-06, running the focused test with TEMP/TMP set
+to an existing 8.3 directory alias reproduced the failure locally; the ordinary
+long-path run passed.
+
+Both temporary Vite fixture roots now use `realpathSync.native` before building.
+The same three focused tests pass with long and short TEMP paths, preserving
+the positive inventory case and every negative compliance/worker/PDF assertion.
+The hosted Windows job continues to exercise its native TEMP configuration;
+no CI environment workaround, baseline change or assertion relaxation is used.
+
 Hosted Windows Server results do not certify Windows 10/11 desktop support.
 This desktop run supplies one Windows 11 x64 observation, not Windows 10, ARM64,
 Safari/iOS, arbitrary hardware or print-driver certification. Windows setup and
