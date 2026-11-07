@@ -28,6 +28,8 @@ export default defineConfig({
       name: "webkit-smoke",
       testMatch: "app.spec.ts",
       grep: /@planning-smoke/,
+      // Avoid concurrent WebKit shutdown stalls observed on Windows CI.
+      workers: 1,
       use: { ...devices["Desktop Safari"], baseURL: "http://127.0.0.1:4173" }
     },
     {

@@ -12,7 +12,7 @@ import type { SourceMetadata } from "./overpass";
 import { carryRings, teeOrigins } from "./carry";
 import { dispersionEllipse } from "./dispersion";
 import { estimateFairwayWidth, roundHalfUpNonnegative } from "./fairwayWidth";
-import { scoreTargetRisks } from "./riskScore";
+import { scoreTargetRisks, type RiskStatus } from "./riskScore";
 import { generateProjectId, type CarryOriginV1, type ClubProfileV2, type HoleStateV1, type TargetV1 } from "./project";
 import {
   INNER_MAX_X,
@@ -51,6 +51,13 @@ type HoleMapProps = {
 
 type Measurement = { start: Coordinate | null; end: Coordinate | null };
 type Mode = "measure" | "place-target" | "reposition-target";
+
+const overlapLabels: Record<RiskStatus, string> = {
+  safe: "Low mapped-water overlap",
+  marginal: "Intermediate mapped-water overlap",
+  unsafe: "High mapped-water overlap",
+  unavailable: "Mapped-water overlap unavailable",
+};
 
 function geometryElement(
   geometry: Geometry,
@@ -517,32 +524,33 @@ export function HoleMap({ hole, warnings, source, synthetic = false, project, on
         </div>
       </section>
       <section className="project-panel risk-panel" aria-labelledby="risk-title">
-        <h4 id="risk-title">Mapped-risk indicator</h4>
+        <h4 id="risk-title">Mapped-water overlap</h4>
         <p className="hint">This comparison uses the selected dispersion origin and club.</p>
         <div className="risk-status" role="status" aria-live="polite" aria-atomic="true">
           {riskComparison.candidates.length === 0
-            ? <p>Add a target to compare mapped-risk indicators.</p>
+            ? <p>Add a target to compare mapped-water overlap.</p>
             : riskComparison.warnings.includes("missing-risk-geometry")
               ? <p className="warning">No usable mapped golf-water geometry is available for this hole.</p>
               : riskComparison.warnings.some((warning) => ["projection-unavailable", "origin-unavailable", "club-unavailable"].includes(warning))
-                ? <p>{"kind" in dispersion ? `${dispersionStatus[dispersion.kind]} Mapped-risk comparison is unavailable.` : "Mapped-risk comparison is unavailable."}</p>
+                ? <p>{"kind" in dispersion ? `${dispersionStatus[dispersion.kind]} Mapped-water comparison is unavailable.` : "Mapped-water comparison is unavailable."}</p>
                 : <p>{riskComparison.lowestRiskTargetId === null
-                  ? "Mapped-risk comparison is unavailable."
-                  : "Mapped-risk comparison shown."}</p>}
+                  ? "Mapped-water comparison is unavailable."
+                  : "Mapped-water comparison shown."}</p>}
           {riskComparison.warnings.includes("irregular-risk-polygon") && <p className="warning">Some mapped golf-water outlines were not usable.</p>}
           {riskComparison.candidates.length > 0 && <ul className="risk-list">
             {riskComparison.candidates.map((candidate) => <li key={candidate.targetId}>
               <strong>{candidate.targetLabel}<span className="sr-only">, target {candidate.targetId}</span></strong>
               {candidate.penalty !== null
-                ? <p>{candidate.targetId === riskComparison.lowestRiskTargetId && <strong>Lowest mapped-overlap target. </strong>}
-                  Mapped golf-water overlap: {candidate.penalty}%. {candidate.status} mapped-risk indicator.</p>
+                ? <p>{candidate.targetId === riskComparison.lowestRiskTargetId && <strong>Lowest mapped-water overlap among available targets. </strong>}
+                  {overlapLabels[candidate.status]}: {candidate.penalty}%.</p>
                 : candidate.warnings.includes("off-map")
-                  ? <p className="warning">{candidate.targetLabel}: mapped-risk overlap is unavailable because this dispersion guide extends outside the map view.</p>
-                  : <p>{candidate.targetLabel}: mapped-risk overlap is unavailable.</p>}
+                  ? <p className="warning">{candidate.targetLabel}: mapped-water overlap is unavailable because this dispersion guide extends outside the map view.</p>
+                  : <p>{candidate.targetLabel}: mapped-water overlap is unavailable.</p>}
             </li>)}
           </ul>}
         </div>
         <p className="hint">Percentages estimate geometric overlap using 512 fixed, area-weighted samples (8 rings × 64 angles), not shot probability. Thin or small water areas between samples can be missed; 0% does not establish safety.</p>
+        <p className="hint">Overlap bands use the rounded sampled percentage: low 0–4%, intermediate 5–24%, high 25–100%. These bands do not measure safety.</p>
         <p className="hint">This local indicator considers only mapped golf-water geometry. It is not a shot recommendation, coaching, safety, or rules determination. Mapped geometry may be incomplete or inaccurate. Verify yardages, hazards, boundaries, and local course rules before play.</p>
       </section>
       <section className="project-panel" aria-labelledby="targets-title">
