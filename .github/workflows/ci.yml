@@ -48,6 +48,8 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
 
       - name: Verify production artifacts and app and experiment checks
+        env:
+          DEBUG: pw:browser
         run: npm run check
 
       - name: Reconcile production artifacts with compliance evidence
