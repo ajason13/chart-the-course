@@ -1493,12 +1493,19 @@ for (const cachedEvidence of ["missing", "duplicate"]) {
   });
 }
 
-for (const genericWater of [false, true]) {
-  test(`compares mapped-water candidates locally with ${genericWater ? "generic-only unavailable evidence" : "mobile accessible results and isolated off-map rows"}`, async ({ page }) => {
+for (const band of ["high", "intermediate", "low", "unavailable"] as const) {
+  const genericWater = band === "unavailable";
+  test(`compares mapped-water candidates locally with ${band} overlap and isolated unavailable rows`, async ({ page }) => {
     // Metre-based synthetic geometry: origin at x=0, landing at x=91.44.
     const coordinate = (x: number, y: number) => ({ lat: -y / 6_371_000 * 180 / Math.PI, lon: x / 6_371_000 * 180 / Math.PI });
-    const waterRing = [[51.44, -40], [131.44, -40], [131.44, 40], [51.44, 40], [51.44, -40]]
-      .map(([x, y]) => coordinate(x, y));
+    const radiusFraction = band === "intermediate" ? 3.5 / 8 : 0.5 / 8;
+    const waterRing = band === "low" || band === "intermediate"
+      ? Array.from({ length: 65 }, (_, i) => coordinate(
+        91.44 + 36.576 * radiusFraction * Math.cos(i % 64 / 64 * 2 * Math.PI),
+        36.576 * radiusFraction * Math.sin(i % 64 / 64 * 2 * Math.PI),
+      ))
+      : [[51.44, -40], [131.44, -40], [131.44, 40], [51.44, 40], [51.44, -40]]
+        .map(([x, y]) => coordinate(x, y));
     const detail = { elements: [
       { ...discovery.elements[0], geometry: [[-100,-100],[400,-100],[400,100],[-100,100],[-100,-100]].map(([x,y])=>coordinate(x,y)) },
       { type: "way", id: 1, tags: { golf: "hole", ref: "1" }, geometry: [coordinate(0, 0), coordinate(300, 0)] },
@@ -1517,8 +1524,8 @@ for (const genericWater of [false, true]) {
     await fillBounds(page);
     await page.getByRole("button", { name: "Search courses", exact: true }).click();
     await page.getByRole("button", { name: "Open course", exact: true }).click();
-    const panel = page.getByRole("region", { name: "Mapped-risk indicator", exact: true });
-    await expect(panel).toContainText("Add a target to compare mapped-risk indicators.");
+    const panel = page.getByRole("region", { name: "Mapped-water overlap", exact: true });
+    await expect(panel).toContainText("Add a target to compare mapped-water overlap.");
     const project: ProjectV2 = await downloadedJson(page, "Export project");
     project.holes = { "way/1": { targets: [
       { id: "t-000000000001", label: "Water landing", ...coordinate(300, 0) },
@@ -1533,25 +1540,31 @@ for (const genericWater of [false, true]) {
     await expect(panel).toContainText("512 fixed, area-weighted samples");
     await expect(panel).toContainText("Thin or small water areas between samples can be missed");
     await expect(panel).toContainText("not shot probability");
+    await expect(panel).toContainText("0% does not establish safety");
+    await expect(panel).toContainText("low 0–4%, intermediate 5–24%, high 25–100%");
+    await expect(panel).toContainText("These bands do not measure safety.");
+    await expect(panel).toContainText("Mapped geometry may be incomplete or inaccurate.");
+    await expect(panel.getByRole("status")).not.toContainText(/\b(?:safe|marginal|unsafe)\b/);
     if (genericWater) {
       await expect(panel).toContainText("No usable mapped golf-water geometry is available for this hole.");
-      await expect(rows.nth(0)).toContainText("Water landing: mapped-risk overlap is unavailable.");
-      await expect(panel).not.toContainText("safe mapped-risk indicator");
+      await expect(rows.nth(0)).toContainText("Water landing: mapped-water overlap is unavailable.");
+      await expect(panel.getByRole("status")).not.toContainText(/(?:Low|Intermediate|High) mapped-water overlap/);
     } else {
-      await expect(rows.nth(0)).toContainText("Mapped golf-water overlap: 100%. unsafe mapped-risk indicator.");
-      await expect(rows.nth(0)).toContainText("Lowest mapped-overlap target.");
-      await expect(rows.nth(1)).toContainText("Outside guide: mapped-risk overlap is unavailable because this dispersion guide extends outside the map view.");
+      const result = `${band === "high" ? "High" : band === "intermediate" ? "Intermediate" : "Low"} mapped-water overlap: ${band === "high" ? 100 : band === "intermediate" ? 14 : 0}%.`;
+      await expect(rows.nth(0)).toContainText(result);
+      await expect(rows.nth(0)).toContainText("Lowest mapped-water overlap among available targets.");
+      await expect(rows.nth(1)).toContainText("Outside guide: mapped-water overlap is unavailable because this dispersion guide extends outside the map view.");
       await page.getByLabel("Dispersion origin").selectOption("target:t-000000000001");
-      await expect(rows.nth(0)).toContainText("Water landing: mapped-risk overlap is unavailable.");
+      await expect(rows.nth(0)).toContainText("Water landing: mapped-water overlap is unavailable.");
       await page.getByLabel("Dispersion origin").selectOption("tee:node/2");
-      await expect(rows.nth(0)).toContainText("overlap: 100%");
+      await expect(rows.nth(0)).toContainText(result);
       await page.getByRole("button", { name: "Delete club", exact: true }).focus();
       await page.keyboard.press("Enter");
-      await expect(panel).toContainText("Add or select a club for the dispersion guide. Mapped-risk comparison is unavailable.");
-      await expect(rows.nth(0)).toContainText("Water landing: mapped-risk overlap is unavailable.");
+      await expect(panel).toContainText("Add or select a club for the dispersion guide. Mapped-water comparison is unavailable.");
+      await expect(rows.nth(0)).toContainText("Water landing: mapped-water overlap is unavailable.");
       await page.getByRole("button", { name: "Add club", exact: true }).click();
       await page.getByRole("combobox", { name: "Hole", exact: true }).selectOption("way/4");
-      await expect(panel).toContainText("Add a target to compare mapped-risk indicators.");
+      await expect(panel).toContainText("Add a target to compare mapped-water overlap.");
       await page.getByRole("combobox", { name: "Hole", exact: true }).selectOption("way/1");
       await expect(rows).toHaveCount(2);
       await assertAxe(page);
@@ -1563,7 +1576,7 @@ for (const genericWater of [false, true]) {
     await fillBounds(page);
     await page.getByRole("button", { name: "Search courses", exact: true }).click();
     await page.getByRole("button", { name: "Open course", exact: true }).click();
-    await expect(panel).toContainText("Add a target to compare mapped-risk indicators.");
+    await expect(panel).toContainText("Add a target to compare mapped-water overlap.");
     await expect(page.getByText("No clubs added.", { exact: true })).toBeVisible();
     expect(requests).toBe(2); // Reload reuses source cache, never authored state.
   });
